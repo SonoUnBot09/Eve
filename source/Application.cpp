@@ -1,11 +1,12 @@
 #define VOLK_IMPLEMENTATION
+#define VMA_IMPLEMENTATION
 #include "Application.hpp"
 
 bool Application::Initialize()
 {
     if(!SDL_Init(SDL_INIT_VIDEO))
     {
-        std::cerr << "ERROR: Could not initiliaze SDL" << std::endl;
+        printError("Could not initialize SDL");
         return false;
     }
 
@@ -17,12 +18,16 @@ bool Application::Initialize()
 
     if(!window)
     {
-        std::cerr << "ERROR: Could not create a window" << std::endl;
+        printError("Could not create a window");
         return false;
     }
 
-
-
+    if(!InitializeVulkan())
+    {
+        printError("Could not initialize Vulkan");
+        return false;
+    }
+    
     return true;
 }
 
@@ -30,31 +35,55 @@ bool Application::InitializeVulkan()
 {
     if(!CreateVulkanInstance())
     {
-        std::cerr << "ERROR: Could not create a vulkan instance" << std::endl;
+        printError("Could not create a vulkan instance");
         return false;
     }
 
     if(!CreateSurface())
     {
-        std::cerr << "ERROR: Could not create a surface" << std::endl;
+        printError("Could not create a surface");
         return false;
     }
 
     if(!GetPhysicalDevice())
     {
-        std::cerr << "ERROR: Could not find a physical device" << std::endl;
+        printError("Could not find a physical device");
         return false;
     }
 
     if(!GetGraphicsQueue())
     {
-        std::cerr << "ERROR: Could not find a graphics queue" << std::endl;
+        printError("Could not find a graphics queue");
+        return false;
+    }
+
+    if(!CreateDevice())
+    {
+        printError("Could not create the logical device");
         return false;
     }
 
     if(!InitializeVMA())
     {
-        std::cerr << "ERROR: Could not initialize VMA" << std::endl;
+        printError("Could not initialize VMA");
+        return false;
+    }
+
+    if(!CreateSwapchain())
+    {
+        printError("Could not create the swapchain");
+        return false;
+    }
+
+    if(!CreateShaders())
+    {
+        printError("Could not create the shaders");
+        return false;
+    }
+
+    if(!CreateGraphicsPipeline())
+    {
+        printError("Could not create the graphics pipeline");
         return false;
     }
 
@@ -66,6 +95,7 @@ bool Application::CreateVulkanInstance()
     if(volkInitialize() != VK_SUCCESS)
     {
         std::cerr << "ERROR: Could not initialize Volk" << std::endl;
+        return false;
     }
 
     VkApplicationInfo appInfo = {
@@ -304,13 +334,396 @@ bool Application::CreateSwapchain()
         return false;
     }
 
-    
+    uint32_t requestedImagesCount = std::max(2u, surfaceCaps.minImageCount);
+    if(surfaceCaps.maxImageCount != 0)
+    {
+        // we have limited images and not infinite
+        requestedImagesCount = std::min(requestedImagesCount, surfaceCaps.maxImageCount);
+    }
+
+    uint32_t formatsCount = 0;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, nullptr);
+    std::vector<VkSurfaceFormatKHR> supportedSurfaceFormats (formatsCount);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, supportedSurfaceFormats.data());
+
+    bool isRequiredFormatSupported = false;
+    for(const VkSurfaceFormatKHR format : supportedSurfaceFormats)
+    {
+        if(format.format == swapchainFormat)
+        {
+            isRequiredFormatSupported = true;
+            break;
+        }
+    }
+
+    if(!isRequiredFormatSupported)
+    {
+        std::cerr << "ERROR: The required surface format is not supported" << std::endl;
+        return false;
+    }
+
+    VkSwapchainCreateInfoKHR swapchainCI
+    {
+        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .surface = surface,
+        .minImageCount = requestedImagesCount,
+        .imageFormat = swapchainFormat,
+        .imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+        .imageExtent {.width = swapchainWidth, .height = swapchainHeight},
+        .imageArrayLayers = 1,
+        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .preTransform = surfaceCaps.currentTransform,
+        .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        .presentMode = VK_PRESENT_MODE_FIFO_KHR
+    };
+
+    if(vkCreateSwapchainKHR(device, &swapchainCI, nullptr, &swapchain) != VK_SUCCESS)
+    {
+        std::cerr << "ERROR: Could not create the swapchain" << std::endl;
+        return false;
+    }
+
+    uint32_t imagesCount = 0;
+    vkGetSwapchainImagesKHR(device, swapchain, &imagesCount, nullptr);
+    swapchainImages.resize(imagesCount);
+    vkGetSwapchainImagesKHR(device, swapchain, &imagesCount, swapchainImages.data());
+
+    // Create swapchain image views for each swapchain image
+    swapchainImageViews.resize(imagesCount);
+    for(int i = 0; i < imagesCount; i++)
+    {
+        VkImageViewCreateInfo imageViewCI
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = swapchainImages[i],
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = swapchainFormat,
+            .subresourceRange 
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        };
+
+        if(vkCreateImageView(device, &imageViewCI, nullptr, &swapchainImageViews[i]) != VK_SUCCESS)
+        {
+            std::cerr << "ERROR: Could not create an image view" << std::endl;
+            return false;
+        }
+    }
+
+    // Create the semaphores used to signal render completition
+    renderCompleteSemaphores.resize(imagesCount);
+    for (int i = 0; i < imagesCount; i++)
+    {
+        VkSemaphoreCreateInfo semaphoreCI {.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+        if(vkCreateSemaphore(device, &semaphoreCI, nullptr, &renderCompleteSemaphores[i]) != VK_SUCCESS)
+        {
+            std::cerr << "ERROR: Could not create render completition semaphores" << std::endl;
+            return false;
+        }
+    }
+
+    // Depth image creation
+    VkImageCreateInfo depthImageCI
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = depthFormat,
+        .extent {.width = swapchainWidth, .height = swapchainHeight, .depth = 1},
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+    };
+
+    VmaAllocationCreateInfo allocationCI
+    {
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        .usage = VMA_MEMORY_USAGE_AUTO
+    };
+
+    if(vmaCreateImage(vmaAllocator, &depthImageCI, &allocationCI, 
+        &depthImage, &depthImageAllocation, nullptr) != VK_SUCCESS)
+    {
+        std::cerr << "ERROR: Could not create depth image" << std::endl;
+        return false;
+    }
+
+    VkImageViewCreateInfo depthImageViewCI
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = depthImage,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = depthFormat,
+        .subresourceRange {.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT, .baseMipLevel = 0, .levelCount = 1 , .baseArrayLayer = 0, .layerCount = 1}
+    };
+
+    if(vkCreateImageView(device, &depthImageViewCI, nullptr, &depthImageView) != VK_SUCCESS)
+    {
+        std::cerr << "ERROR: Could not create the depth image view" << std::endl;
+        return false;
+    }
 
     return true;
 }
 
+bool Application::CreateShaders()
+{
+    vertexShader = CreateShaderModule("shader.vert", shaderc_vertex_shader);
+    if(!vertexShader)
+    {
+        return false;
+    }
+
+    fragmentShader = CreateShaderModule("shader.frag", shaderc_fragment_shader);
+    if(!fragmentShader)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool Application::CreateGraphicsPipeline()
+{
+    VkPipelineLayoutCreateInfo pipelineLayoutCI
+    {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .setLayoutCount = 0,
+        .pushConstantRangeCount = 0
+    };
+
+    if(vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelineLayout) != VK_SUCCESS)
+    {
+        printError("Could not create the graphics pipeline layout");
+        return false;
+    }
+
+    const char *entryFuncName = "main";
+    std::vector<VkPipelineShaderStageCreateInfo> shadersStage
+    {
+        {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .module = vertexShader,
+            .pName = entryFuncName
+        },
+        {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .module = fragmentShader,
+            .pName = entryFuncName
+        }
+    };
+
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
+    };
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+    };
+
+    VkPipelineDepthStencilStateCreateInfo depthStencilInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+        .depthTestEnable = VK_TRUE,
+        .depthWriteEnable = VK_TRUE,
+        .depthCompareOp = VK_COMPARE_OP_LESS,
+        .stencilTestEnable = VK_FALSE
+    };
+
+    VkPipelineViewportStateCreateInfo viewportInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+        .viewportCount = 1,
+        .pViewports = nullptr,
+        .scissorCount = 1,
+        .pScissors = nullptr
+    };
+
+    VkPipelineRasterizationStateCreateInfo rasterInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+        .polygonMode = VK_POLYGON_MODE_FILL,
+        .cullMode = VK_CULL_MODE_BACK_BIT,
+        .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        .lineWidth = 1.0f
+    };
+
+    VkPipelineMultisampleStateCreateInfo multiSampleInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
+    };
+
+    VkPipelineColorBlendAttachmentState attachmentState
+    {
+        .blendEnable = VK_FALSE,
+        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+    };
+    VkPipelineColorBlendStateCreateInfo blendInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+        .attachmentCount = 1,
+        .pAttachments = &attachmentState
+    };
+
+    std::vector<VkDynamicState> dynamicState
+    {
+        VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR
+    };
+
+    VkPipelineDynamicStateCreateInfo dynamicStateInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+        .dynamicStateCount = static_cast<uint32_t>(dynamicState.size()),
+        .pDynamicStates = dynamicState.data()
+    };
+
+    VkPipelineRenderingCreateInfo renderInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+        .colorAttachmentCount = 1,
+        .pColorAttachmentFormats = &swapchainFormat,
+        .depthAttachmentFormat = depthFormat
+    };
+
+    VkGraphicsPipelineCreateInfo pipelineCI
+    {
+        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+        .pNext = &renderInfo,
+        .stageCount = static_cast<uint32_t>(shadersStage.size()),
+        .pStages = shadersStage.data(),
+        .pVertexInputState = &vertexInputInfo,
+        .pInputAssemblyState = &inputAssemblyInfo,
+        .pViewportState = &viewportInfo,
+        .pRasterizationState = &rasterInfo,
+        .pMultisampleState = &multiSampleInfo,
+        .pDepthStencilState = &depthStencilInfo,
+        .pColorBlendState = &blendInfo,
+        .pDynamicState = &dynamicStateInfo,
+        .layout = pipelineLayout,
+        .renderPass = VK_NULL_HANDLE
+    };
+
+    if(vkCreateGraphicsPipelines(device, nullptr, 1, &pipelineCI, nullptr, &pipeline) != VK_SUCCESS)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+VkShaderModule Application::CreateShaderModule(const std::string shaderName, const shaderc_shader_kind shaderKind)
+{
+    const std::string shaderPath = "../source/shaders/" + shaderName;
+    std::string src = readTextFile(shaderPath);
+    if(src.empty())
+    {
+        printError("Shader '" + shaderName +  "' at path '" + shaderPath + "' does not exists");
+        return nullptr;
+    }
+
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions compilerOptions;
+
+    compilerOptions.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
+    compilerOptions.SetTargetSpirv(shaderc_spirv_version_1_6);
+    compilerOptions.SetOptimizationLevel(shaderc_optimization_level_performance);
+
+    shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(src, shaderKind, shaderName.c_str(), compilerOptions);
+
+    if(result.GetCompilationStatus() != shaderc_compilation_status_success)
+    {
+        printError("Compilation Error | " + result.GetErrorMessage());
+        return nullptr;
+    }
+
+    const size_t shaderSize = (result.cend() - result.cbegin()) * sizeof(uint32_t);
+
+    VkShaderModuleCreateInfo shaderModuleCI
+    {
+        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+        .codeSize = shaderSize,
+        .pCode = result.cbegin()
+    };
+
+    VkShaderModule shaderModule = nullptr;
+    if(vkCreateShaderModule(device, &shaderModuleCI, nullptr, &shaderModule) != VK_SUCCESS)
+    {
+        printError("Could not create the shader module");
+        return nullptr;
+    }
+
+    return shaderModule;
+}
+
+void Application::DestroySwapchain()
+{
+    for (VkImageView &swapchainImageView : swapchainImageViews)
+    {
+        vkDestroyImageView(device, swapchainImageView, nullptr);
+    }
+    swapchainImageViews.clear();
+
+    for(VkSemaphore &semaphore : renderCompleteSemaphores)
+    {
+        vkDestroySemaphore(device, semaphore, nullptr);
+    }
+    renderCompleteSemaphores.clear();
+
+    if(swapchain)
+    {
+        vkDestroySwapchainKHR(device, swapchain, nullptr);
+        swapchain = nullptr;
+    }
+
+    if(depthImageView)
+    {
+        vkDestroyImageView(device, depthImageView, nullptr);
+        vmaDestroyImage(vmaAllocator, depthImage, depthImageAllocation);
+
+        depthImageView = nullptr;
+        depthImage = nullptr;
+        depthImageAllocation = nullptr;
+    }
+}
+
 void Application::Shutdown()
 {
+
+    if(pipelineLayout != VK_NULL_HANDLE)
+    {
+        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+    }
+
+    if(pipeline != VK_NULL_HANDLE)
+    {
+        vkDestroyPipeline(device, pipeline, nullptr);
+    }
+
+    if(vertexShader)
+    {
+        vkDestroyShaderModule(device, vertexShader, nullptr);
+    }
+
+    if(fragmentShader)
+    {
+        vkDestroyShaderModule(device, fragmentShader, nullptr);
+    }
+
+    DestroySwapchain();
+
     if(vmaAllocator)
     {
         vmaDestroyAllocator(vmaAllocator);

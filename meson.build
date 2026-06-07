@@ -1,10 +1,16 @@
 project(
-    'project01', 
-    'cpp'
+    'Eve', 
+    'cpp',
+    default_options: ['cpp_std=c++20', 'b_vscrt=md']
 )
 
-
 cpp = meson.get_compiler('cpp')
+
+# Flag CRT corretto per clang++ in GCC-driver mode su Windows
+if cpp.get_id() == 'clang' and host_machine.system() == 'windows'
+    add_project_arguments('-fms-runtime-lib=dll', language: 'cpp')
+endif
+
 
 cmd = find_program('cmd', required: true)
 vulkan_sdk_path = run_command(cmd, '/c', 'echo %VULKAN_SDK%', check: true).stdout().strip()
@@ -25,11 +31,17 @@ glm = declare_dependency(include_directories: vulkan_inc)
 
 # sdl3 and vulkan
 sdl3 = dependency('sdl3')
-vulkan = dependency('vulkan')
+vulkan = dependency('vulkan', include_type: 'system')
+
+include_dir = include_directories('source')
 
 executable(
     'app',
-    'main.cpp',
+    [
+        'main.cpp',
+        'source/Application.cpp'
+    ],
+    include_directories: include_dir,
     dependencies: 
     [
         sdl3,
