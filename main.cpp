@@ -8,9 +8,9 @@ int main(int argc, char* argv[])
     std::cout <<"Hello World!" <<endl;
 
     Application app;
-    if(!app.Initialize())
+    if(app.Initialize())
     {
-        printError("Could not initialize the application");
+        app.Run();
     }
 
     app.Shutdown();

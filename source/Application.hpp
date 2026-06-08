@@ -11,6 +11,7 @@
 #include <shaderc/shaderc.hpp>
 
 #include <vector>
+#include <array>
 #include <iostream>
 
 #include "Debug.hpp"
@@ -24,12 +25,24 @@ class Application
 
     public:
 
+        struct FrameResources
+        {
+            VkCommandPool commandPool;
+            VkCommandBuffer commandBuffer;
+            VkSemaphore imageAcquiredSemaphore;
+        };
+
         static constexpr uint32_t vulkanVersion {VK_API_VERSION_1_4};
         static constexpr VkFormat swapchainFormat {VK_FORMAT_R8G8B8A8_SRGB};
         static constexpr VkFormat depthFormat {VK_FORMAT_D32_SFLOAT};
+        static constexpr uint32_t maxFramesInFlight = 2;
 
         bool isRunning;
+        bool isSwapchainRecreationRequired = false;
         SDL_Window* window;
+
+        uint64_t frameIndex = 0;
+        uint64_t nextSignalValue = maxFramesInFlight + 1;
 
         uint32_t windowWidth = 512;
         uint32_t windowHeight = 512;
@@ -61,6 +74,9 @@ class Application
         VkShaderModule vertexShader;
         VkShaderModule fragmentShader;
 
+        VkSemaphore timelineSemaphore;
+        std::array<FrameResources, maxFramesInFlight> frameResources;
+
         bool Initialize();
         void Run();
         void Shutdown();
@@ -68,6 +84,7 @@ class Application
     private:
 
         bool InitializeVulkan();
+        void Render();
 
         bool CreateVulkanInstance();
         bool CreateSurface();
@@ -78,6 +95,8 @@ class Application
         bool CreateSwapchain();
         bool CreateShaders();
         bool CreateGraphicsPipeline();
+        bool CreateSyncResources();
+        bool CreateCommandBuffers();
 
         VkShaderModule CreateShaderModule(std::string shaderName, shaderc_shader_kind shaderKind);
 
