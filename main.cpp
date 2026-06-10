@@ -1,4 +1,3 @@
-#include "Debug.hpp"
 #include "source/Application.hpp"
 
 using namespace std;

@@ -1,18 +1,15 @@
-#pragma once
-
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
 #include <Volk/volk.h>
-#include <vulkan/vulkan.h>
-
+#include <shaderc/shaderc.h>
+#include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
 
 #include <shaderc/shaderc.hpp>
 
 #include <vector>
-#include <array>
-#include <iostream>
+
 
 #include "Debug.hpp"
 #include "Utils.hpp"
@@ -22,60 +19,7 @@ using namespace Utils;
 
 class Application
 {
-
     public:
-
-        struct FrameResources
-        {
-            VkCommandPool commandPool;
-            VkCommandBuffer commandBuffer;
-            VkSemaphore imageAcquiredSemaphore;
-        };
-
-        static constexpr uint32_t vulkanVersion {VK_API_VERSION_1_4};
-        static constexpr VkFormat swapchainFormat {VK_FORMAT_R8G8B8A8_SRGB};
-        static constexpr VkFormat depthFormat {VK_FORMAT_D32_SFLOAT};
-        static constexpr uint32_t maxFramesInFlight = 2;
-
-        bool isRunning;
-        bool isSwapchainRecreationRequired = false;
-        SDL_Window* window;
-
-        uint64_t frameIndex = 0;
-        uint64_t nextSignalValue = maxFramesInFlight + 1;
-
-        uint32_t windowWidth = 512;
-        uint32_t windowHeight = 512;
-
-        uint32_t swapchainWidth;
-        uint32_t swapchainHeight;
-
-        VkInstance vulkanInstance;
-        VkPhysicalDevice physicalDevice;
-        VkDevice device;
-        VmaAllocator vmaAllocator;
-        VkSurfaceKHR surface;
-
-        VkSwapchainKHR swapchain;
-        std::vector<VkImage> swapchainImages;
-        std::vector<VkImageView> swapchainImageViews;
-        std::vector<VkSemaphore> renderCompleteSemaphores;
-
-        VkImage depthImage;
-        VkImageView depthImageView;
-        VmaAllocation depthImageAllocation;
-
-        uint32_t graphicsQueueFamilyIndex;
-        VkQueue graphicsQueue;
-        
-        VkPipelineLayout pipelineLayout;
-        VkPipeline pipeline;
-
-        VkShaderModule vertexShader;
-        VkShaderModule fragmentShader;
-
-        VkSemaphore timelineSemaphore;
-        std::array<FrameResources, maxFramesInFlight> frameResources;
 
         bool Initialize();
         void Run();
@@ -83,26 +27,93 @@ class Application
 
     private:
 
+        struct FrameData
+        {
+            VkSemaphore acquiredImageSemaphore;
+            VkSemaphore renderCompletedSemaphore;
+
+            VkCommandPool commandPool;
+            VkCommandBuffer commandBuffer;
+
+            VkImage depthImage;
+            VkImageView depthImageView;
+            VmaAllocation depthImageAllocation;
+        };
+
+        static constexpr uint32_t vulkanVersion {VK_API_VERSION_1_4};
+        static constexpr VkFormat swapchainFormat {VK_FORMAT_R8G8B8A8_SRGB};
+        static constexpr VkFormat depthFormat {VK_FORMAT_D32_SFLOAT};
+        static constexpr uint32_t maxFramesInFlight = 2;
+
+        uint64_t frameIndex = 2;
+
+        uint32_t windowWidth = 512;
+        uint32_t windowHeight = 512;
+
+        uint32_t swapchainWidth = 0;
+        uint32_t swapchainHeight = 0;
+        
+        bool isSwapchainRecreationNeeded = false;
+        bool isAppRunning = true;
+
+        SDL_Window* window = nullptr;
+
+        VkInstance instance = nullptr;
+        VkPhysicalDevice physicalDevice = nullptr;
+        VkDevice device = nullptr;
+
+        VkSurfaceKHR surface = nullptr;
+
+        VkSwapchainKHR swapchain = nullptr;
+        std::vector<VkImage> swapchainImages;
+        std::vector<VkImageView> swapchainImageViews;
+
+        VkQueue graphicsQueue = nullptr;
+        uint32_t graphicsQueueFamIndex;
+
+        VmaAllocator vmaAllocator = nullptr;
+
+        std::vector<FrameData> frameData;
+
+        VkPipelineLayout grapchisPipelineLayout = nullptr;
+        VkPipeline graphicsPipeline = nullptr;
+
+        VkShaderModule vertexShader = nullptr;
+        VkShaderModule fragmentShader = nullptr;
+
+        VkSemaphore timelineSemaphore = nullptr;
+
         bool InitializeVulkan();
         void Render();
 
         bool CreateVulkanInstance();
-        bool CreateSurface();
         bool GetPhysicalDevice();
+        bool CreateSurface();
         bool GetGraphicsQueue();
         bool CreateDevice();
         bool InitializeVMA();
         bool CreateSwapchain();
         bool CreateShaders();
         bool CreateGraphicsPipeline();
-        bool CreateSyncResources();
+        bool CreateSyncResource();
         bool CreateCommandBuffers();
 
-        VkShaderModule CreateShaderModule(std::string shaderName, shaderc_shader_kind shaderKind);
-
+        VkShaderModule CreateShaderModule(std::string fileName, shaderc_shader_kind kind);
         void DestroySwapchain();
 
-        static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData);
+
+        // vulkan dedicated func to print out errors
+        static inline VKAPI_ATTR VkBool32 VKAPI_CALL PrintVulkanMessages( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                            VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                            const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+                                                            void *pUserData)
+        {
+            if(messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+            {
+               std::cerr << pCallbackData->pMessage << std::endl;
+            }
+                                                                
+            return VK_FALSE;
+        }
 
 };

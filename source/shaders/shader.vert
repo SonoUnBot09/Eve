@@ -1,14 +1,34 @@
 #version 460
-
+/*
 const vec3 positions[] = vec3[]
 (
     vec3(0.0, -0.5, 0.0), // Top
     vec3(-0.5, 0.5, 0.0), // Bottom left
     vec3(0.5, 0.5, 0.0)   // Bottom right
 );
+vec3(-0.5, -0.5 , 1.0),
+vec3(0.5, -0.5, 1.0),
+vec3(-0.5,  0.5, 1.0),
+*/
+
+const vec3 positions[] = vec3[]
+(
+    vec3(-0.5, -0.5 , 0.0),
+    vec3(-0.5,  0.5, 0.0),
+    vec3(0.5, -0.5, 0.0),
+
+    // Secondo triangolo
+    vec3(-0.5,  0.5, 0.0),
+    vec3(0.5,  0.5 , 0.0),
+    vec3(0.5, -0.5, 0.0)
+);
 
 const vec3 colors[] = vec3[]
 (
+    vec3(0.0, 1.0, 0.0),
+    vec3(1.0, 0.0, 0.0),
+    vec3(0.0, 0.0, 1.0),
+
     vec3(1.0, 0.0, 0.0),
     vec3(0.0, 1.0, 0.0),
     vec3(0.0, 0.0, 1.0)
