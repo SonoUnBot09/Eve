@@ -1,3 +1,4 @@
+#include "glm/trigonometric.hpp"
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -228,45 +229,61 @@ void Application::Render()
         vkCmdSetScissor(data.commandBuffer, 0, 1, &scissor);
 
         vkCmdBindPipeline(data.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+        
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(data.commandBuffer, 0, 1, &vertexBuffer.bufferHandle, &offset);
+        vkCmdBindIndexBuffer(data.commandBuffer, indexBuffer.bufferHandle, offset, VK_INDEX_TYPE_UINT16);
 
-        const float fov = 60.0f;
+
+        const float fov = 70.0f;
         const float aspect = static_cast<float>(swapchainWidth) / static_cast<float>(swapchainHeight);
         const float nearPlane = 0.1f;
         const float farPlane = 100.0f;
 
-        glm::mat4 model = glm::mat4(1.0);
-        model = glm::translate(model, glm::vec3(0, 0, 6));
-        //model = glm::translate(model, glm::vec3(std::sin(frameIndex * 0.1f), std::sin(frameIndex * 0.15), std::sin(frameIndex * 0.07)));
-        model = glm::rotate(model, std::sin(frameIndex * 0.05f), glm::vec3(0, 1, 0));
-        model = glm::rotate(model, std::sin(frameIndex * 0.02f), glm::vec3(0.5f, 0, 0.1f));
+        glm::vec3 cubePositions[] = {
+            glm::vec3( 0.0f,  0.0f,  0), 
+            glm::vec3( 2.0f,  5.0f, -15.0f), 
+            glm::vec3(-1.5f, -2.2f, -2.5f),  
+            glm::vec3(-3.8f, -2.0f, -12.3f),  
+            glm::vec3( 2.4f, -0.4f, -3.5f),  
+            glm::vec3(-1.7f,  3.0f, -7.5f),  
+            glm::vec3( 1.3f, -2.0f, -2.5f),  
+            glm::vec3( 1.5f,  2.0f, -2.5f), 
+            glm::vec3( 1.5f,  0.2f, -1.5f), 
+            glm::vec3(-1.3f,  1.0f, -1.5f)  
+        };
+
         glm::mat4 view = glm::lookAt(
+            glm::vec3(0, 0, 4),
             glm::vec3(0, 0, 0),
-            glm::vec3(0, 0, 1),
             glm::vec3(0, 1, 0)
         );
         glm::mat4 projection = glm::perspective(glm::radians(fov), aspect, nearPlane, farPlane);
         projection[1][1] *= -1;
-        glm::mat4 mvp = projection * view * model;
-        
-        PushConstant pushConstantData
+        glm::mat4 mvp;
+        PushConstant pushConstantData;
+        for (int i = 0; i < 10; i++)
         {
-            .mvp = mvp
-        };
+            glm::vec3 cubePos = cubePositions[i];
 
-        vkCmdPushConstants(
+            glm::mat4 model = glm::translate(glm::mat4(1), cubePos);
+            model = glm::rotate(model, (float)glm::radians(i * 267.0f), glm::vec3(0.1,0.5,0.3));
+            
+            mvp = projection * view * model;
+
+            pushConstantData.mvp = mvp;
+
+            vkCmdPushConstants (
             data.commandBuffer, 
             grapchisPipelineLayout, 
             VK_SHADER_STAGE_VERTEX_BIT, 
             0, 
             sizeof(PushConstant),
             &pushConstantData
-        );
-    
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(data.commandBuffer, 0, 1, &vertexBuffer.bufferHandle, &offset);
-        vkCmdBindIndexBuffer(data.commandBuffer, indexBuffer.bufferHandle, offset, VK_INDEX_TYPE_UINT16);
-        vkCmdDrawIndexed(data.commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-        vkCmdDraw(data.commandBuffer, 36, 1, 0, 0);
+            );
+
+            vkCmdDrawIndexed(data.commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        }
 
     }
     vkCmdEndRendering(data.commandBuffer);
@@ -1172,43 +1189,134 @@ bool Application::CreateCommandBuffers()
 
 void Application::CreateMeshBuffers()
 {
-    VkBufferCreateInfo vertexBufferCI
+
+    VkDeviceSize vertexSize = sizeof(Vertex) * vertices.size();
+    VkDeviceSize indexSize = sizeof(uint16_t) * indices.size();
+
+    VkBufferCreateInfo stagingBufferCI
     {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = sizeof(Vertex) * vertices.size(),
-        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
 
-    VkBufferCreateInfo indexBufferCI
-    {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = sizeof(uint16_t) * indices.size(),
-        .usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
-    };
-
-    VmaAllocationCreateInfo allocationCI
+    VmaAllocationCreateInfo staginAllocationCI
     {
         .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                  VMA_ALLOCATION_CREATE_MAPPED_BIT,
         .usage = VMA_MEMORY_USAGE_AUTO
     };
 
-    if(vmaCreateBuffer(vmaAllocator, &vertexBufferCI, &allocationCI, 
-        &vertexBuffer.bufferHandle, &vertexBuffer.allocation, &vertexBuffer.allocationInfo) != VK_SUCCESS)
+    // Create vertex staging buffer
+    stagingBufferCI.size = vertexSize;
+    Buffer vertexStagingBuffer;
+    if(vmaCreateBuffer(vmaAllocator, &stagingBufferCI, &staginAllocationCI, 
+        &vertexStagingBuffer.bufferHandle, &vertexStagingBuffer.allocation, &vertexStagingBuffer.allocationInfo) != VK_SUCCESS)
     {
         printError("Unable to create vertex buffer");
     }
 
-    if(vmaCreateBuffer(vmaAllocator, &indexBufferCI, &allocationCI, 
-        &indexBuffer.bufferHandle, &indexBuffer.allocation, &indexBuffer.allocationInfo) != VK_SUCCESS)
+    // Create index staging buffer
+    stagingBufferCI.size = indexSize;
+    Buffer indexStagingBuffer;
+    if(vmaCreateBuffer(vmaAllocator, &stagingBufferCI, &staginAllocationCI, 
+        &indexStagingBuffer.bufferHandle, &indexStagingBuffer.allocation, &indexStagingBuffer.allocationInfo) != VK_SUCCESS)
     {
         printError("Unable to create index buffer");
     }
 
-    memcpy(vertexBuffer.allocationInfo.pMappedData, vertices.data(), sizeof(Vertex) * vertices.size());
-    memcpy(indexBuffer.allocationInfo.pMappedData, indices.data(), sizeof(uint16_t) * indices.size());
+    // Copy data into staging buffers
+    memcpy(vertexStagingBuffer.allocationInfo.pMappedData, vertices.data(), vertexSize);
+    memcpy(indexStagingBuffer.allocationInfo.pMappedData, indices.data(), indexSize);
+
+    VkBufferCreateInfo vertexBufferCI
+    {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = vertexSize,
+        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    VkBufferCreateInfo indexBufferCI
+    {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = vertexSize,
+        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    VmaAllocationCreateInfo allocInfo
+    {
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+    };
+
+    // Create vertex buffer
+    vmaCreateBuffer(vmaAllocator, &vertexBufferCI, &allocInfo, 
+        &vertexBuffer.bufferHandle, &vertexBuffer.allocation, &vertexBuffer.allocationInfo);
+
+    // Create index buffer
+    vmaCreateBuffer(vmaAllocator, &indexBufferCI, &allocInfo, 
+        &indexBuffer.bufferHandle, &indexBuffer.allocation, &indexBuffer.allocationInfo);
+
+    VkCommandPoolCreateInfo cmdPoolCI
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .queueFamilyIndex = graphicsQueueFamIndex
+    };
+
+    VkCommandPool cmdPool;
+    vkCreateCommandPool(device, &cmdPoolCI, nullptr, &cmdPool);
+
+    VkCommandBufferAllocateInfo cmdBufferCI
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .commandPool = cmdPool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1
+    };
+
+    VkCommandBuffer cmdBuffer;
+    vkAllocateCommandBuffers(device, &cmdBufferCI, &cmdBuffer);
+
+    VkCommandBufferBeginInfo cmdBufferBeginInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+    };
+
+    vkBeginCommandBuffer(cmdBuffer, &cmdBufferBeginInfo);
+    {
+
+        VkBufferCopy vertexCopyRegion {.srcOffset = 0, .dstOffset = 0, .size = vertexSize};
+        vkCmdCopyBuffer(cmdBuffer, vertexStagingBuffer.bufferHandle, vertexBuffer.bufferHandle, 1, &vertexCopyRegion);
+
+        VkBufferCopy indexCopyRegion {.srcOffset = 0, .dstOffset = 0, .size = indexSize};
+        vkCmdCopyBuffer(cmdBuffer, indexStagingBuffer.bufferHandle, indexBuffer.bufferHandle, 1, &indexCopyRegion);
+
+    }
+    vkEndCommandBuffer(cmdBuffer);
+
+    VkCommandBufferSubmitInfo cmdBufferSubmitInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+        .commandBuffer = cmdBuffer
+    };
+
+    VkSubmitInfo2 submitInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+        .commandBufferInfoCount = 1,
+        .pCommandBufferInfos = &cmdBufferSubmitInfo
+
+    };
+
+    vkQueueSubmit2(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkDeviceWaitIdle(device);
+
+    vkDestroyCommandPool(device, cmdPool, nullptr);
+
+    vmaDestroyBuffer(vmaAllocator, vertexStagingBuffer.bufferHandle, vertexStagingBuffer.allocation);
+    vmaDestroyBuffer(vmaAllocator, indexStagingBuffer.bufferHandle, indexStagingBuffer.allocation);
 
 }
 
