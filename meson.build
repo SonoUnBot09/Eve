@@ -26,12 +26,11 @@ volk = declare_dependency(dependencies: volk_lib, include_directories: vulkan_in
 shaderc_lib = cpp.find_library('shaderc_combined', dirs: [vulkan_lib_dir], required: true)
 shaderc = declare_dependency(dependencies: shaderc_lib, include_directories: vulkan_inc)
 
-# glm
-glm = declare_dependency(include_directories: vulkan_inc)
 
-# sdl3 and vulkan
+# glm, sdl3 and vulkan
 sdl3 = dependency('sdl3')
 vulkan = dependency('vulkan', include_type: 'system')
+glm = dependency('glm')
 
 include_dir = include_directories('source')
 

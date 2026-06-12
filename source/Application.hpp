@@ -8,8 +8,11 @@
 
 #include <shaderc/shaderc.hpp>
 
-#include <vector>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
+#include <vector>
+#include <array>
 
 #include "Debug.hpp"
 #include "Utils.hpp"
@@ -38,6 +41,24 @@ class Application
             VkImage depthImage;
             VkImageView depthImageView;
             VmaAllocation depthImageAllocation;
+        };
+
+        struct Buffer
+        {
+            VkBuffer bufferHandle;
+            VmaAllocation allocation;
+            VmaAllocationInfo allocationInfo;
+        };
+
+        struct Vertex 
+        {
+            float position[3];
+            float color[3];
+        };
+
+        struct PushConstant
+        {
+            glm::mat4 mvp;
         };
 
         static constexpr uint32_t vulkanVersion {VK_API_VERSION_1_4};
@@ -83,6 +104,29 @@ class Application
 
         VkSemaphore timelineSemaphore = nullptr;
 
+        std::vector<Vertex> vertices
+        {
+            {{-0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}}, // 0 - Rosso
+            {{ 0.5f, -0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}}, // 1 - Verde
+            {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}}, // 2 - Blu
+            {{-0.5f,  0.5f,  0.5f}, {1.0f, 1.0f, 0.0f}}, // 3 - Giallo
+            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}}, // 4 - Magenta
+            {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}}, // 5 - Ciano
+            {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}, // 6 - Bianco
+            {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, 0.0f}}  // 7 - Nero
+        };
+
+        std::vector<uint16_t> indices = {
+            0, 1, 2, 2, 3, 0, // Fronte
+            1, 5, 6, 6, 2, 1, // Destra
+            7, 6, 5, 5, 4, 7, // Retro
+            4, 0, 3, 3, 7, 4, // Sinistra
+            4, 5, 1, 1, 0, 4, // Sopra
+            3, 2, 6, 6, 7, 3  // Sotto
+        };
+        Buffer vertexBuffer;
+        Buffer indexBuffer;
+
         bool InitializeVulkan();
         void Render();
 
@@ -97,6 +141,8 @@ class Application
         bool CreateGraphicsPipeline();
         bool CreateSyncResource();
         bool CreateCommandBuffers();
+
+        void CreateMeshBuffers();
 
         VkShaderModule CreateShaderModule(std::string fileName, shaderc_shader_kind kind);
         void DestroySwapchain();

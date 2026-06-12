@@ -10,7 +10,6 @@ vec3(-0.5, -0.5 , 1.0),
 vec3(0.5, -0.5, 1.0),
 vec3(-0.5,  0.5, 1.0),
 */
-
 const vec3 positions[] = vec3[]
 (
     vec3(-0.5, -0.5 , 0.0),
@@ -19,7 +18,7 @@ const vec3 positions[] = vec3[]
 
     // Secondo triangolo
     vec3(-0.5,  0.5, 0.0),
-    vec3(0.5,  0.5 , 0.0),
+    vec3(0.5,  0.5 ,0.0),
     vec3(0.5, -0.5, 0.0)
 );
 
@@ -34,10 +33,18 @@ const vec3 colors[] = vec3[]
     vec3(0.0, 0.0, 1.0)
 );
 
+layout (push_constant) uniform PushConstant
+{
+    mat4 mvp;
+} data;
+
+layout (location = 0) in vec3 inPosition;
+layout (location = 1) in vec3 inColor;
+
 layout (location = 0) out vec3 outColor;
 
 void main()
 {
-    gl_Position = vec4(positions[gl_VertexIndex], 1.0);
-    outColor = colors[gl_VertexIndex];
+    gl_Position = data.mvp * vec4(inPosition, 1.0);
+    outColor = inColor;
 }
