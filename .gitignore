@@ -1,3 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
-**/subprojects
+subprojects/packagecache
+subprojects/SDL3-3.4.0
+subprojects/glm-1.0.1
+subprojects/.wraplock
