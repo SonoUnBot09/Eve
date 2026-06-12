@@ -1,4 +1,3 @@
-#include "glm/trigonometric.hpp"
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -267,8 +266,8 @@ void Application::Render()
             glm::vec3 cubePos = cubePositions[i];
 
             glm::mat4 model = glm::translate(glm::mat4(1), cubePos);
-            model = glm::rotate(model, (float)glm::radians(i * 267.0f), glm::vec3(0.1,0.5,0.3));
-            
+            model = glm::rotate(model, (float)glm::radians(i * 267.0f + frameIndex), glm::vec3((float)i / 10.0f, (float)i / 20.0f, (float)i / 40.0f));
+
             mvp = projection * view * model;
 
             pushConstantData.mvp = mvp;
@@ -1005,7 +1004,7 @@ bool Application::CreateGraphicsPipeline()
         .vertexBindingDescriptionCount = 1,
         .pVertexBindingDescriptions = &vertexBinding,
         .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes.size()),
-        .pVertexAttributeDescriptions = vertexAttributes.data()
+        .pVertexAttributeDescriptions = vertexAttributes.data(),
     };
 
     VkPipelineInputAssemblyStateCreateInfo inputAsseblyInfo
@@ -1036,7 +1035,7 @@ bool Application::CreateGraphicsPipeline()
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
         .polygonMode = VK_POLYGON_MODE_FILL,
-        .cullMode = VK_CULL_MODE_NONE,
+        .cullMode = VK_CULL_MODE_BACK_BIT,
         .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
         .lineWidth = 1
     };
