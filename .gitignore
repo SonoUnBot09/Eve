@@ -1,5 +1,5 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+build
+.cache
 subprojects/packagecache
 subprojects/SDL3-3.4.0
 subprojects/glm-1.0.1
