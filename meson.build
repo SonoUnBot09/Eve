@@ -33,6 +33,7 @@ vulkan = dependency('vulkan', include_type: 'system')
 glm = dependency('glm')
 
 include_dir = include_directories('source')
+third_parties = include_directories('third-parties')
 
 executable(
     'app',
@@ -40,7 +41,7 @@ executable(
         'main.cpp',
         'source/Application.cpp'
     ],
-    include_directories: include_dir,
+    include_directories: [include_dir , third_parties],
     dependencies: 
     [
         sdl3,

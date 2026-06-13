@@ -1,6 +1,7 @@
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define STB_IMAGE_IMPLEMENTATION
 #include "Application.hpp"
 
 bool Application::Initialize()
@@ -233,6 +234,8 @@ void Application::Render()
         vkCmdBindVertexBuffers(data.commandBuffer, 0, 1, &vertexBuffer.bufferHandle, &offset);
         vkCmdBindIndexBuffer(data.commandBuffer, indexBuffer.bufferHandle, offset, VK_INDEX_TYPE_UINT16);
 
+        vkCmdBindDescriptorSets(data.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+             grapchisPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
         const float fov = 70.0f;
         const float aspect = static_cast<float>(swapchainWidth) / static_cast<float>(swapchainHeight);
@@ -363,8 +366,33 @@ void Application::Shutdown()
 {
     vkDeviceWaitIdle(device);
 
+    if(descriptorLayout)
+    {
+        vkDestroyDescriptorSetLayout(device, descriptorLayout, nullptr);
+    }
+
+    if(descriptorPool)
+    {
+        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+    }
+
     vmaDestroyBuffer(vmaAllocator, vertexBuffer.bufferHandle, vertexBuffer.allocation);
     vmaDestroyBuffer(vmaAllocator, indexBuffer.bufferHandle, indexBuffer.allocation);
+
+    if(texture.imageView)
+    {
+        vkDestroyImageView(device, texture.imageView, nullptr);
+    }
+
+    if(texture.sampler)
+    {
+        vkDestroySampler(device, texture.sampler, nullptr);
+    }
+
+    if(texture.image)
+    {
+        vmaDestroyImage(vmaAllocator, texture.image, texture.allocation);
+    }
 
     if(timelineSemaphore)
     {
@@ -484,6 +512,9 @@ bool Application::InitializeVulkan()
     }
 
     CreateMeshBuffers();
+
+    CreateTexture();
+    CreateDescriptor();
 
     if(!CreateGraphicsPipeline())
     {
@@ -943,6 +974,8 @@ bool Application::CreateGraphicsPipeline()
     VkPipelineLayoutCreateInfo pipelineLayoutCI
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .setLayoutCount = 1,
+        .pSetLayouts = &descriptorLayout,
         .pushConstantRangeCount = 1,
         .pPushConstantRanges = &pushConstant
     };
@@ -980,7 +1013,7 @@ bool Application::CreateGraphicsPipeline()
         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
     };
 
-    std::array<VkVertexInputAttributeDescription, 2> vertexAttributes
+    std::array<VkVertexInputAttributeDescription, 3> vertexAttributes
     {
         VkVertexInputAttributeDescription
         {
@@ -995,6 +1028,13 @@ bool Application::CreateGraphicsPipeline()
             .binding = 0,
             .format = VK_FORMAT_R32G32B32_SFLOAT,
             .offset = offsetof(Vertex, color)
+        },
+        VkVertexInputAttributeDescription
+        {
+            .location = 2,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32_SFLOAT,
+            .offset = offsetof(Vertex, uv)
         }
     };
 
@@ -1316,6 +1356,300 @@ void Application::CreateMeshBuffers()
 
     vmaDestroyBuffer(vmaAllocator, vertexStagingBuffer.bufferHandle, vertexStagingBuffer.allocation);
     vmaDestroyBuffer(vmaAllocator, indexStagingBuffer.bufferHandle, indexStagingBuffer.allocation);
+
+}
+
+void Application::CreateDescriptor()
+{
+
+    VkDescriptorSetLayoutBinding textureLayoutBinding
+    {
+        .binding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+    };
+    
+    VkDescriptorSetLayoutCreateInfo layoutCI
+    {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = 1,
+        .pBindings = &textureLayoutBinding
+    };
+
+    vkCreateDescriptorSetLayout(device, &layoutCI, nullptr, &descriptorLayout);
+
+    VkDescriptorPoolSize poolSize
+    {
+        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1
+    };
+
+    VkDescriptorPoolCreateInfo poolCI
+    {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .maxSets = 1,
+        .poolSizeCount = 1,
+        .pPoolSizes = &poolSize
+    };
+
+    vkCreateDescriptorPool(device, &poolCI, nullptr, &descriptorPool);
+
+    VkDescriptorSetAllocateInfo setAllocInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = descriptorPool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &descriptorLayout
+    };
+
+    vkAllocateDescriptorSets(device, &setAllocInfo, &descriptorSet);
+
+    VkDescriptorImageInfo imageInfo
+    {
+        .sampler = texture.sampler,
+        .imageView = texture.imageView,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    };
+
+    VkWriteDescriptorSet writeSet
+    {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = descriptorSet,
+        .dstBinding = 0,
+        .dstArrayElement = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .pImageInfo = &imageInfo
+    };
+
+    vkUpdateDescriptorSets(device, 1, &writeSet, 0, nullptr);
+}
+
+void Application::CreateTexture()
+{
+
+    int width, height, channelsCount;
+    unsigned char *source = stbi_load("../assets/container.jpg", &width, &height, &channelsCount, 4);
+
+    VkImageCreateInfo imageCI
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = VK_FORMAT_R8G8B8A8_SRGB,
+        .extent {.width = static_cast<uint32_t>(width), .height = static_cast<uint32_t>(height), .depth = 1},
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+    };
+
+    VmaAllocationCreateInfo imageAllocInfo
+    {
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+    };
+
+    vmaCreateImage(vmaAllocator, &imageCI, &imageAllocInfo, 
+        &texture.image, &texture.allocation, &texture.allocationInfo);
+    
+    VkImageViewCreateInfo imageViewCI
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = texture.image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = VK_FORMAT_R8G8B8A8_SRGB,
+        .subresourceRange
+        {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+
+    vkCreateImageView(device, &imageViewCI, nullptr, &texture.imageView);
+
+    VkSamplerCreateInfo samplerCI
+    {
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter = VK_FILTER_LINEAR,
+        .minFilter = VK_FILTER_LINEAR,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+        .unnormalizedCoordinates = VK_FALSE
+    };
+
+    vkCreateSampler(device, &samplerCI, nullptr, &texture.sampler);
+
+    LoadTextureData(source, width, height);
+
+    stbi_image_free(source);
+}
+
+void Application::LoadTextureData(unsigned char *source, int width, int height)
+{
+    VkDeviceSize size = width * height * 4;
+    VkBufferCreateInfo stagingBufferCI
+    {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    VmaAllocationCreateInfo stagingAllocInfo
+    {
+        .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
+        .usage = VMA_MEMORY_USAGE_AUTO
+    };
+
+    Buffer stagingBuffer;
+    vmaCreateBuffer(vmaAllocator, &stagingBufferCI, &stagingAllocInfo, 
+        &stagingBuffer.bufferHandle, &stagingBuffer.allocation, &stagingBuffer.allocationInfo);
+    
+    
+    memcpy(stagingBuffer.allocationInfo.pMappedData, source, static_cast<size_t>(size));
+
+    std::array<VkImageMemoryBarrier2, 2> layoutBarriers
+    {
+        VkImageMemoryBarrier2
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+            .srcAccessMask = VK_ACCESS_2_NONE,
+            .dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT,
+            .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            .image = texture.image,
+            .subresourceRange
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        },
+        VkImageMemoryBarrier2
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT,
+            .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .image = texture.image,
+            .subresourceRange
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        }
+    };
+    
+    VkCommandPoolCreateInfo cmdPoolCI
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .queueFamilyIndex = graphicsQueueFamIndex
+    };
+
+    VkCommandPool cmdPool;
+    vkCreateCommandPool(device, &cmdPoolCI, nullptr, &cmdPool);
+
+    VkCommandBufferAllocateInfo cmdBufferCI
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .commandPool = cmdPool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1
+    };
+
+    VkCommandBuffer cmdBuffer;
+    vkAllocateCommandBuffers(device, &cmdBufferCI, &cmdBuffer);
+
+    VkCommandBufferBeginInfo cmdBufferBeginInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+    };
+
+    vkBeginCommandBuffer(cmdBuffer, &cmdBufferBeginInfo);
+    {
+
+        VkDependencyInfo barrierDep1
+        {
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .imageMemoryBarrierCount = 1,
+            .pImageMemoryBarriers = &layoutBarriers[0]
+        };
+        vkCmdPipelineBarrier2(cmdBuffer, &barrierDep1);
+
+        VkBufferImageCopy region
+        {
+            .bufferOffset = 0,
+            .bufferRowLength = 0,
+            .bufferImageHeight = 0,
+            .imageSubresource
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            },
+            .imageOffset = { 0, 0, 0 }, // Coordinate di partenza (X, Y, Z)
+            .imageExtent 
+            { 
+                .width = static_cast<uint32_t>(width), 
+                .height = static_cast<uint32_t>(height), 
+                .depth = 1 
+            }
+        };
+
+        vkCmdCopyBufferToImage(cmdBuffer, stagingBuffer.bufferHandle, texture.image, 
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+        VkDependencyInfo barrierDep2
+        {
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .imageMemoryBarrierCount = 1,
+            .pImageMemoryBarriers = &layoutBarriers[1]
+        };
+        vkCmdPipelineBarrier2(cmdBuffer, &barrierDep2);
+
+    }
+    vkEndCommandBuffer(cmdBuffer);
+
+    VkCommandBufferSubmitInfo cmdSubmitInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+        .commandBuffer = cmdBuffer
+    };
+
+    VkSubmitInfo2 submitInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+        .commandBufferInfoCount = 1,
+        .pCommandBufferInfos = &cmdSubmitInfo,
+    };
+
+    vkQueueSubmit2(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+
+    vkQueueWaitIdle(graphicsQueue);
+
+    vkDestroyCommandPool(device, cmdPool, nullptr);
+
+    vmaDestroyBuffer(vmaAllocator, stagingBuffer.bufferHandle, stagingBuffer.allocation);
 
 }
 

@@ -11,6 +11,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <stb_image.h>
+
 #include <vector>
 #include <array>
 
@@ -50,10 +52,20 @@ class Application
             VmaAllocationInfo allocationInfo;
         };
 
+        struct Texture
+        {
+            VkImage image;
+            VkImageView imageView;
+            VkSampler sampler;
+            VmaAllocation allocation;
+            VmaAllocationInfo allocationInfo;
+        };
+
         struct Vertex 
         {
             float position[3];
             float color[3];
+            float uv[2];
         };
 
         struct PushConstant
@@ -106,26 +118,58 @@ class Application
 
         std::vector<Vertex> vertices
         {
-            {{-0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}}, // 0 - Rosso
-            {{ 0.5f, -0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}}, // 1 - Verde
-            {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}}, // 2 - Blu
-            {{-0.5f,  0.5f,  0.5f}, {1.0f, 1.0f, 0.0f}}, // 3 - Giallo
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}}, // 4 - Magenta
-            {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}}, // 5 - Ciano
-            {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}, // 6 - Bianco
-            {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, 0.0f}}  // 7 - Nero
+            {{-0.5f, -0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+            {{ 0.5f, -0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+            {{ 0.5f,  0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+            {{-0.5f,  0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+            // Retro (-Z)
+            {{ 0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+            {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+            {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+            {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+            // Sinistra (-X)
+            {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+            {{-0.5f, -0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+            {{-0.5f,  0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+            {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+            // Destra (+X)
+            {{ 0.5f, -0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+            {{ 0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+            {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+            {{ 0.5f,  0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+            // Sopra (+Y)
+            {{-0.5f,  0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+            {{ 0.5f,  0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+            {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+            {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+            // Sotto (-Y)
+            {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+            {{ 0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+            {{ 0.5f, -0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+            {{-0.5f, -0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
         };
 
         std::vector<uint16_t> indices = {
-            0, 1, 2, 2, 3, 0, // Fronte
-            1, 5, 6, 6, 2, 1, // Destra
-            7, 6, 5, 5, 4, 7, // Retro
-            4, 0, 3, 3, 7, 4, // Sinistra
-            4, 5, 1, 1, 0, 4, // Sopra
-            3, 2, 6, 6, 7, 3  // Sotto
+            0, 1, 2,    0, 2, 3,    // Fronte
+            4, 5, 6,    4, 6, 7,    // Retro
+            8, 9, 10,   8, 10, 11,  // Sinistra
+            12, 13, 14, 12, 14, 15, // Destra
+            16, 17, 18, 16, 18, 19, // Sopra
+            20, 21, 22, 20, 22, 23, // Sotto
         };
+
         Buffer vertexBuffer;
         Buffer indexBuffer;
+        Texture texture;
+
+        VkDescriptorSetLayout descriptorLayout;
+        VkDescriptorPool descriptorPool;
+        VkDescriptorSet descriptorSet;
 
         bool InitializeVulkan();
         void Render();
@@ -143,6 +187,9 @@ class Application
         bool CreateCommandBuffers();
 
         void CreateMeshBuffers();
+        void CreateDescriptor();
+        void CreateTexture();
+        void LoadTextureData(unsigned char *source, int width, int height);
 
         VkShaderModule CreateShaderModule(std::string fileName, shaderc_shader_kind kind);
         void DestroySwapchain();
