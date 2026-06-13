@@ -269,7 +269,7 @@ void Application::Render()
             glm::vec3 cubePos = cubePositions[i];
 
             glm::mat4 model = glm::translate(glm::mat4(1), cubePos);
-            model = glm::rotate(model, (float)glm::radians(i * 267.0f + frameIndex), glm::vec3((float)i / 10.0f, (float)i / 20.0f, (float)i / 40.0f));
+            model = glm::rotate(model, (float)glm::radians((i + 1) * 267.0f + frameIndex), glm::vec3((float)(i + 1) / 10.0f, (float)(i + 1) / 20.0f, (float)(i + 1) / 40.0f));
 
             mvp = projection * view * model;
 
