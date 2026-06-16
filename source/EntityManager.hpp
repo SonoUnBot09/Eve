@@ -5,7 +5,6 @@
 #include <Type.hpp>
 #include <Entity.hpp>
 #include <ComponentsRegistry.hpp>
-#include <ComponentsGroup.hpp>
 #include <ArchtypeComponents.hpp>
 
 
@@ -19,9 +18,6 @@ class EntityManager
 
         static void FreeAllMemory()
         {
-            for (auto &data : componentsPools)
-            {
-                delete &(data.second);
-            }
+            componentsPools.clear();
         }
 };
