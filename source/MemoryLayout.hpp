@@ -44,6 +44,7 @@ struct MemoryLayout
         }
 
         MemoryInfo* GetMemoryInfo(const Type componentType);
+        const uint32_t GetMaxSingleComponentsCountPerBatch();
 
     private:
 

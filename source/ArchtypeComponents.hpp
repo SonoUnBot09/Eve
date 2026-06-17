@@ -13,9 +13,13 @@ class ArchtypeComponents
         ArchtypeComponents(Type archtype, uint32_t batchSizeInByte) : 
         archtype(archtype), 
         batchSize(batchSizeInByte), 
-        memoryLayout(archtype, batchSizeInByte) {};
+        memoryLayout(archtype, batchSizeInByte)
+        {
+            maxSingleComponentPerBatch = memoryLayout.GetMaxSingleComponentsCountPerBatch();
+        };
 
         char* GetBatch(const uint32_t index);
+        const uint32_t GetBatchComponentsCount(const uint32_t index);
         const MemoryInfo* GetMemoryInfo(const Type componentType); 
 
         template<typename T>
@@ -36,9 +40,12 @@ class ArchtypeComponents
         Type archtype;
         uint32_t batchSize;
 
+        uint32_t maxSingleComponentPerBatch;
         MemoryLayout memoryLayout;
 
+        std::vector<uint32_t*> entitisIndices;
         std::vector<char*> batches;
+        std::vector<uint32_t> componentsCountPerBatch;
 
         void AllocateBatches(const uint32_t count);
 

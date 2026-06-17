@@ -2,11 +2,11 @@
 
 char* ArchtypeComponents::GetBatch(const uint32_t index)
 {
-    uint32_t batchesCount = batches.size();
-
-    if(!(index < batchesCount)) { return nullptr; }
-
     return batches[index];
+}
+const uint32_t ArchtypeComponents::GetBatchComponentsCount(const uint32_t index)
+{
+    return componentsCountPerBatch[index];
 }
 
 const MemoryInfo* ArchtypeComponents::GetMemoryInfo(const Type componentType)
@@ -19,8 +19,12 @@ void ArchtypeComponents::AllocateBatches(const uint32_t count)
     for (uint32_t i = 0; i < count; i++)
     {
         char* batchArray = new char[batchSize];
+        uint32_t* entitiesIndicesArray = new uint32_t[maxSingleComponentPerBatch];
 
         batches.push_back(batchArray);
+        entitisIndices.push_back(entitiesIndicesArray);
+
+        componentsCountPerBatch.push_back(0);
     }
 }
 
@@ -29,9 +33,12 @@ void ArchtypeComponents::DeallocateAllBatches(std::vector<char*> batches)
     for (uint32_t i = 0; i < batches.size(); i++)
     {
         delete[] batches[i];
+        delete[] entitisIndices[i];
     }
 
     batches.clear();
+    entitisIndices.clear();
+    componentsCountPerBatch.clear();
 }
 
 

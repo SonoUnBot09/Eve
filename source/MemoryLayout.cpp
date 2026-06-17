@@ -1,6 +1,20 @@
 #include "MemoryLayout.hpp"
 #include <cstddef>
 
+MemoryInfo* MemoryLayout::GetMemoryInfo(const Type componentType)
+{
+    auto tuple = componentsLayout.find(componentType);
+
+    if(tuple == componentsLayout.end()) { return nullptr; }
+
+    return &tuple->second;
+}
+
+const uint32_t MemoryLayout::GetMaxSingleComponentsCountPerBatch()
+{
+    return maxSingleComponentCount;
+}
+
 const std::vector<Type> MemoryLayout::GetActiveComponentsType(Type archtype)
 {
     std::vector<Type> componets;
@@ -31,13 +45,4 @@ const std::vector<size_t> MemoryLayout::CalculateComponentsSize(const std::vecto
     }
 
     return componentsStride;
-}
-
-MemoryInfo* MemoryLayout::GetMemoryInfo(const Type componentType)
-{
-    auto tuple = componentsLayout.find(componentType);
-
-    if(tuple == componentsLayout.end()) { return nullptr; }
-
-    return &tuple->second;
 }
