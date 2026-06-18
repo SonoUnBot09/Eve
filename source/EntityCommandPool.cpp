@@ -19,11 +19,6 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
         const size_t requiredSpace = commandInfo->GetComponentsArraySize();
         const uint32_t componentsCount = componentsType.size();
 
-        std::vector<size_t> componentsSize;
-        std::vector<size_t> componentsOffset;
-        componentsSize.reserve(componentsCount);
-        componentsOffset.reserve(componentsCount);
-
         uint32_t offset = 0;
         for (uint32_t i = 0; i < componentsCount; i++)
         {
@@ -80,6 +75,9 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
             0
         );
     }
+
+    componentsSize.clear();
+    componentsOffset.clear();
 }
 
 void EntityCommandPool::ScheduleDestructionCommand(const Entity entity)
@@ -104,21 +102,18 @@ void EntityCommandPool::ScheduleTransitionCommand(const Entity entity, EntityCom
 
     // Register destruction commands
     const std::vector<Type>& destructionComponentsType = commandInfo.GetDestructionComponentsType();
-    for (int i = 0; i < destructionComponentsType.size(); i++)
-    {
-        this->destructionComponentsType.push_back(destructionComponentsType[i]);
-    }
+    
+    this->destructionComponentsType.insert(
+        this->destructionComponentsType.end(),
+        destructionComponentsType.begin(),
+        destructionComponentsType.end()
+    );
 
     const std::vector<std::byte>& components = commandInfo.GetCreationComponents();
     const std::vector<Type>& creationComponentsType = commandInfo.GetCreationComponentsType();
 
     const size_t requiredSpace = commandInfo.GetComponentsArraySize();
     const uint32_t componentsCount = creationComponentsType.size();
-
-    std::vector<size_t> componentsSize;
-    std::vector<size_t> componentsOffset;
-    componentsSize.reserve(componentsCount);
-    componentsOffset.reserve(componentsCount);
 
     uint32_t offset = 0;
     for (uint32_t i = 0; i < componentsCount; i++)
@@ -167,9 +162,19 @@ void EntityCommandPool::ScheduleTransitionCommand(const Entity entity, EntityCom
 
     activeBits = 0;
 
+    componentsSize.clear();
+    componentsOffset.clear();
+
 }
 
-void EntityCommandPool::ClearAll()
+void EntityCommandPool::Clear()
 {
+    creationCommands.clear();
+    destructionCommands.clear();
+    transitionCommands.clear();
 
+    creationComponentsOffset = 0;
+    transitionComponentsOffset = 0;
+
+    destructionComponentsType.clear();
 }

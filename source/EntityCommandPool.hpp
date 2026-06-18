@@ -26,6 +26,9 @@ struct EntityCommandPool
         creationComponentsData.resize(creationComponentsInitialSize);
         transitionComponentsData.resize(transitionComponentsInitialSize);
         destructionComponentsType.reserve(destructionComponentsTypeInitialSize);
+
+        componentsSize.reserve(64);
+        componentsOffset.reserve(64);
     };
 
     public:
@@ -33,7 +36,7 @@ struct EntityCommandPool
         void ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo);
         void ScheduleDestructionCommand(const Entity entity);
         void ScheduleTransitionCommand(const Entity entity, EntityCommandInfo& commandInfo);
-        void ClearAll();
+        void Clear();
 
     private:
 
@@ -49,6 +52,9 @@ struct EntityCommandPool
         std::vector<Type> destructionComponentsType;
 
         // Stuff needed for the correct functioning
+        std::vector<size_t> componentsSize;
+        std::vector<size_t> componentsOffset;
+
         uint64_t activeBits = 0;
         std::array<uint32_t, 64> componentsIndices = {0};
 };
