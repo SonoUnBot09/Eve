@@ -45,19 +45,19 @@ struct EntityTransitionCommand
     uint32_t entityId;
     uint32_t entityGeneration;
 
-    Type oldArchtype;
-    Type newArchtype;
+    Type createComponentsType;
+    Type destroyComponentsType;
 
     EntityTransitionCommand(
         uint32_t entityId,
         uint32_t entityGeneration,
-        Type oldArchtype,
-        Type newArchtype
+        Type createComponentsType,
+        Type destroyComponentsType
     ) :
     entityId(entityId),
     entityGeneration(entityGeneration),
-    oldArchtype(oldArchtype),
-    newArchtype(newArchtype)
+    createComponentsType(createComponentsType),
+    destroyComponentsType(destroyComponentsType)
     {};
 };
 
@@ -73,9 +73,8 @@ struct EntityCommandInfo
     EntityCommandInfo(
         uint32_t creationComponentsInitialSize, 
         uint32_t creationComponentsTypeInitialSize, 
-        uint32_t destructionComponentsTypeInitialSize,
-        Type currentArchtype
-    ) : archtype(currentArchtype)
+        uint32_t destructionComponentsTypeInitialSize
+    )
     {
         creationComponents.resize(creationComponentsInitialSize);
         creationComponentsType.reserve(creationComponentsTypeInitialSize);
@@ -100,12 +99,13 @@ struct EntityCommandInfo
             creationComponentsType.push_back(componentType);
 
             creationComponentsOffset += size;
-            archtype = (archtype | componentType);
+            createComponentsArchtype = (createComponentsArchtype | componentType);
 
         }
         void RemoveComponent(const Type componentType);
 
-        const Type GetArchtype();
+        const Type GetCreateComponentsArchtype();
+        const Type GetDestroyComponentsArchtype();
         const size_t GetComponentsArraySize();
         const std::vector<std::byte>& GetCreationComponents();
         const std::vector<Type>& GetCreationComponentsType();
@@ -114,7 +114,8 @@ struct EntityCommandInfo
     private:
         uint32_t creationComponentsOffset = 0;
 
-        Type archtype = 0;
+        Type createComponentsArchtype = 0;
+        Type destroyComponentsArchtype = 0;
         std::vector<std::byte> creationComponents;
         std::vector<Type> creationComponentsType;
         std::vector<Type> destructionComponentsType;

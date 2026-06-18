@@ -15,7 +15,8 @@ struct EntityCommandPool
         uint32_t destructionCommandBufferInitialSize, 
         uint32_t transitionCommandBufferInitialSize,
         uint32_t creationComponentsInitialSize,
-        uint32_t transitionComponentsInitialSize
+        uint32_t transitionComponentsInitialSize,
+        uint32_t destructionComponentsTypeInitialSize
     )
     {
         creationCommands.reserve(creationCommandBufferInitialSize);
@@ -24,13 +25,14 @@ struct EntityCommandPool
 
         creationComponentsData.resize(creationComponentsInitialSize);
         transitionComponentsData.resize(transitionComponentsInitialSize);
+        destructionComponentsType.reserve(destructionComponentsTypeInitialSize);
     };
 
     public:
 
         void ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo);
         void ScheduleDestructionCommand(const Entity entity);
-        void ScheduleTransitionCommand(const Entity entity, EntityCommandInfo* commandInfo);
+        void ScheduleTransitionCommand(const Entity entity, EntityCommandInfo& commandInfo);
         void ClearAll();
 
     private:
@@ -44,6 +46,7 @@ struct EntityCommandPool
 
         std::vector<std::byte> creationComponentsData;
         std::vector<std::byte> transitionComponentsData;
+        std::vector<Type> destructionComponentsType;
 
         // Stuff needed for the correct functioning
         uint64_t activeBits = 0;

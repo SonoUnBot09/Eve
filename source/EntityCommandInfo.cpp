@@ -3,14 +3,18 @@
 void EntityCommandInfo::RemoveComponent(const Type componentType)
 {
     destructionComponentsType.push_back(componentType);
-    Type notType = componentType;
-    notType.flip();
-    archtype = archtype & notType;
+
+    destroyComponentsArchtype = (destroyComponentsArchtype | componentType);
 }
 
-const Type EntityCommandInfo::GetArchtype()
+const Type EntityCommandInfo::GetCreateComponentsArchtype()
 {
-    return archtype;
+    return createComponentsArchtype;
+}
+
+const Type EntityCommandInfo::GetDestroyComponentsArchtype()
+{
+    return destroyComponentsArchtype;
 }
 
 const size_t EntityCommandInfo::GetComponentsArraySize()
