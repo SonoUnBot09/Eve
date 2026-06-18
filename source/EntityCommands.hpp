@@ -7,41 +7,77 @@
 
 struct EntityCreationCommand
 {
+    uint32_t entityId;
+    uint32_t entityGeneration;
+
     Type archtype;
     uint32_t componentOffset;
+
+    EntityCreationCommand(
+        uint32_t entityId, 
+        uint32_t entityGeneration, 
+        Type archtype,
+        uint32_t componentOffset
+    ) : 
+    entityId(entityId),
+    entityGeneration(entityGeneration),
+    archtype(archtype),
+    componentOffset(componentOffset)
+    {};
 };
 
 struct EntityDestructionCommand
 {
-    uint32_t entityID;
+    uint32_t entityId;
     uint32_t entityGeneration;
+
+    EntityDestructionCommand(
+        uint32_t entityId,
+        uint32_t entityGeneration
+    ) :
+    entityId(entityId),
+    entityGeneration(entityGeneration)
+    {};
 };
 
 struct EntityTransitionCommand
 {
-    uint32_t entityID;
+    uint32_t entityId;
     uint32_t entityGeneration;
 
     Type oldArchtype;
     Type newArchtype;
+
+    EntityTransitionCommand(
+        uint32_t entityId,
+        uint32_t entityGeneration,
+        Type oldArchtype,
+        Type newArchtype
+    ) :
+    entityId(entityId),
+    entityGeneration(entityGeneration),
+    oldArchtype(oldArchtype),
+    newArchtype(newArchtype)
+    {};
 };
 
-struct CommandInfo
+struct EntityCommandInfo
 {
 
-    CommandInfo()
+    EntityCommandInfo()
     {
-        creationComponents.reserve(2048);
-        creationComponentsType.reserve(16);
-        destructionComponentsType.reserve(16);
+        creationComponents.resize(2048);
+        creationComponentsType.reserve(64);
+        destructionComponentsType.reserve(64);
     }
-    CommandInfo(
+    EntityCommandInfo(
         uint32_t creationComponentsInitialSize, 
         uint32_t creationComponentsTypeInitialSize, 
-        uint32_t destructionComponentsTypeInitialSize
-    )
+        uint32_t destructionComponentsTypeInitialSize,
+        Type currentArchtype
+    ) : archtype(currentArchtype)
     {
-        creationComponents.reserve(creationComponentsInitialSize);
+        creationComponents.resize(creationComponentsInitialSize);
         creationComponentsType.reserve(creationComponentsTypeInitialSize);
         destructionComponentsType.reserve(destructionComponentsTypeInitialSize);
     }
@@ -52,10 +88,10 @@ struct CommandInfo
         void AddComponent(const T& component, const Type componentType)
         {
             uint32_t size = sizeof(component);
-            uint32_t availableSpace = creationComponents.max_size() - creationComponentsOffset;
+            uint32_t availableSpace = creationComponents.size() - creationComponentsOffset;
             if(availableSpace < size)
             {
-                uint32_t baseSpace = creationComponents.max_size();
+                uint32_t baseSpace = creationComponents.size();
                 creationComponents.resize(baseSpace + 512);
             }
 
@@ -64,17 +100,21 @@ struct CommandInfo
             creationComponentsType.push_back(componentType);
 
             creationComponentsOffset += size;
+            archtype = (archtype | componentType);
 
         }
         void RemoveComponent(const Type componentType);
 
-        std::vector<std::byte>* GetCreationComponents();
-        std::vector<Type>* GetCreationComponentsType();
-        std::vector<Type>* GetDestructionComponentsType();
+        const Type GetArchtype();
+        const size_t GetComponentsArraySize();
+        const std::vector<std::byte>& GetCreationComponents();
+        const std::vector<Type>& GetCreationComponentsType();
+        const std::vector<Type>& GetDestructionComponentsType();
 
     private:
         uint32_t creationComponentsOffset = 0;
 
+        Type archtype = 0;
         std::vector<std::byte> creationComponents;
         std::vector<Type> creationComponentsType;
         std::vector<Type> destructionComponentsType;

@@ -19,15 +19,15 @@ struct EntityCommandPool
         destructionCommands.reserve(destructionCommandBufferInitialSize);
         transitionCommands.reserve(transitionCommandBufferInitialSize);
 
-        creationComponentsData.reserve(creationComponentsInitialSize);
-        transitionComponentsData.reserve(transitionComponentsInitialSize);
+        creationComponentsData.resize(creationComponentsInitialSize);
+        transitionComponentsData.resize(transitionComponentsInitialSize);
     };
 
     public:
 
-        void ScheduleCreationCommand(const Entity entity, const CommandInfo* commandInfo);
+        void ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo);
         void ScheduleDestructionCommand(const Entity entity);
-        void ScheduleTransitionCommand(const Entity entity, const CommandInfo* commandInfo);
+        void ScheduleTransitionCommand(const Entity entity, EntityCommandInfo* commandInfo);
 
     private:
 
@@ -35,6 +35,9 @@ struct EntityCommandPool
         std::vector<EntityDestructionCommand> destructionCommands;
         std::vector<EntityTransitionCommand> transitionCommands;
 
-        std::vector<char> creationComponentsData;
-        std::vector<char> transitionComponentsData;
+        uint32_t creationComponentsOffset = 0;
+        uint32_t transitionComponentsOffset = 0;
+
+        std::vector<std::byte> creationComponentsData;
+        std::vector<std::byte> transitionComponentsData;
 };
