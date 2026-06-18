@@ -1,5 +1,4 @@
 #include "EntityCommandPool.hpp"
-#include "ComponentsRegistry.hpp"
 
 void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo)
 {
@@ -26,17 +25,15 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
         componentsSize.reserve(componentsCount);
         componentsOffset.reserve(componentsCount);
 
+        uint32_t offset = 0;
         for (uint32_t i = 0; i < componentsCount; i++)
         {
             const size_t size = ComponentsRegistry::GetComponentSizeFromBit(componentsType[i]);
-            componentsSize.push_back(size);
-        }
 
-        componentsOffset.push_back(0);
-        for (uint32_t i = 1; i < componentsCount; i++)
-        {
-            const size_t offset = componentsSize[i - 1] + componentsOffset[i - 1];
+            componentsSize.push_back(size);
             componentsOffset.push_back(offset);
+
+            offset += size;
         }
 
         const size_t availableSpace = creationComponentsData.size() - creationComponentsOffset;
@@ -47,25 +44,33 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
 
         for (uint32_t i = 0; i < componentsCount; i++)
         {
-            if(!archtype.test(i)) { continue; }
+            Type componentType = componentsType[i];
+            uint32_t bitIndex = std::countr_zero(componentType.to_ullong());
 
-            for (uint32_t j = 0; j < componentsCount; j++)
-            {
-                if(!componentsType[j].test(i)) { continue; }
-
-                const size_t size = componentsSize[j];
-
-                std::memcpy(
-                    creationComponentsData.data() + creationComponentsOffset, 
-                    &components[componentsOffset[j]],
-                    size
-                );
-
-                creationComponentsOffset += size;
-
-            }
+            activeBits |= (1ULL << bitIndex);
+            componentsIndices[bitIndex] = i;
         }
 
+        for(uint32_t i = 0; i < 64; i++)
+        {
+
+            if((activeBits & (1ULL << i)) == 0) { continue; }
+
+            uint32_t index = componentsIndices[i];
+            
+            const size_t size = componentsSize[index];
+
+            std::memcpy
+            (
+                creationComponentsData.data() + creationComponentsOffset, 
+                &components[componentsOffset[index]],
+                size
+            );
+
+            creationComponentsOffset += size;
+        }
+
+        activeBits = 0;
     }
     else 
     {
@@ -80,10 +85,18 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
 
 void EntityCommandPool::ScheduleDestructionCommand(const Entity entity)
 {
-
+    destructionCommands.emplace_back(
+        entity.GenerataionId,
+        entity.Id
+    );
 }
 
 void EntityCommandPool::ScheduleTransitionCommand(const Entity entity, EntityCommandInfo* commandInfo)
+{
+
+}
+
+void EntityCommandPool::ClearAll()
 {
 
 }

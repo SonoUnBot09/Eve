@@ -1,7 +1,10 @@
 #pragma once
 
 #include <vector>
+#include <array>
+
 #include "EntityCommands.hpp"
+#include "ComponentsRegistry.hpp"
 #include "Entity.hpp"
 
 struct EntityCommandPool
@@ -28,6 +31,7 @@ struct EntityCommandPool
         void ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo);
         void ScheduleDestructionCommand(const Entity entity);
         void ScheduleTransitionCommand(const Entity entity, EntityCommandInfo* commandInfo);
+        void ClearAll();
 
     private:
 
@@ -40,4 +44,8 @@ struct EntityCommandPool
 
         std::vector<std::byte> creationComponentsData;
         std::vector<std::byte> transitionComponentsData;
+
+        // Stuff needed for the correct functioning
+        uint64_t activeBits = 0;
+        std::array<uint32_t, 64> componentsIndices = {0};
 };
