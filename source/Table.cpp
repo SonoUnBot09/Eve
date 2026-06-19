@@ -1,4 +1,4 @@
-#include "ArchtypeComponents.hpp"
+#include "Table.hpp"
 
 char* Table::GetBatch(const uint32_t index)
 {
