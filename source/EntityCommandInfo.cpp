@@ -1,4 +1,4 @@
-#include "EntityCommands.hpp"
+#include "EntityCommandInfo.hpp"
 
 void EntityCommandInfo::RemoveComponent(const Type componentType)
 {

@@ -4,6 +4,7 @@
 #include <array>
 
 #include "EntityCommands.hpp"
+#include "EntityCommandInfo.hpp"
 #include "ComponentsRegistry.hpp"
 #include "Entity.hpp"
 
