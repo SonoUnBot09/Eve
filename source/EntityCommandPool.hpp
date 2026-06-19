@@ -7,7 +7,7 @@
 #include "ComponentsRegistry.hpp"
 #include "Entity.hpp"
 
-struct EntityCommandPool
+class EntityCommandPool
 {
     EntityCommandPool() = default;
     EntityCommandPool(

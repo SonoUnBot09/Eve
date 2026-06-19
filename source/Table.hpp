@@ -6,11 +6,11 @@
 #include "Type.hpp"
 #include "MemoryLayout.hpp"
 
-class ArchtypeComponents
+class Table
 {
     public:
 
-        ArchtypeComponents(Type archtype, uint32_t batchSizeInByte) : 
+        Table(Type archtype, uint32_t batchSizeInByte) : 
         archtype(archtype), 
         batchSize(batchSizeInByte), 
         memoryLayout(archtype, batchSizeInByte)
@@ -30,7 +30,7 @@ class ArchtypeComponents
             );
         }
         
-        ~ArchtypeComponents()
+        ~Table()
         {
             DeallocateAllBatches(batches);
         }

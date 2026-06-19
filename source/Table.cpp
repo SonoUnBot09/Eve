@@ -1,20 +1,20 @@
 #include "ArchtypeComponents.hpp"
 
-char* ArchtypeComponents::GetBatch(const uint32_t index)
+char* Table::GetBatch(const uint32_t index)
 {
     return batches[index];
 }
-const uint32_t ArchtypeComponents::GetBatchComponentsCount(const uint32_t index)
+const uint32_t Table::GetBatchComponentsCount(const uint32_t index)
 {
     return componentsCountPerBatch[index];
 }
 
-const MemoryInfo* ArchtypeComponents::GetMemoryInfo(const Type componentType)
+const MemoryInfo* Table::GetMemoryInfo(const Type componentType)
 {
     return memoryLayout.GetMemoryInfo(componentType);
 }
 
-void ArchtypeComponents::AllocateBatches(const uint32_t count)
+void Table::AllocateBatches(const uint32_t count)
 {
     for (uint32_t i = 0; i < count; i++)
     {
@@ -28,7 +28,7 @@ void ArchtypeComponents::AllocateBatches(const uint32_t count)
     }
 }
 
-void ArchtypeComponents::DeallocateAllBatches(std::vector<char*> batches)
+void Table::DeallocateAllBatches(std::vector<char*> batches)
 {
     for (uint32_t i = 0; i < batches.size(); i++)
     {
@@ -43,7 +43,7 @@ void ArchtypeComponents::DeallocateAllBatches(std::vector<char*> batches)
 
 
 /*
-void ArchtypeComponents::DeallocateBatch(const uint32_t index)
+void Table::DeallocateBatch(const uint32_t index)
 {  
     delete[] batches[index];
 
