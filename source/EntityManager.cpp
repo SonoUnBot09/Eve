@@ -1,8 +1,4 @@
 #include "EntityManager.hpp"
-#include "ComponentsRegistry.hpp"
-#include "EntityCommands.hpp"
-#include "Table.hpp"
-#include <cstdint>
 
 Table* EntityManager::GetTable(const Type archtype)
 {
