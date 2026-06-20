@@ -47,15 +47,19 @@ struct EntityTransitionCommand
     Type createComponentsType;
     Type destroyComponentsType;
 
+    uint32_t componentOffset = 0;
+
     EntityTransitionCommand(
         uint32_t entityId,
         uint32_t entityGeneration,
         Type createComponentsType,
-        Type destroyComponentsType
+        Type destroyComponentsType,
+        uint32_t componentsOffset
     ) :
     entityId(entityId),
     entityGeneration(entityGeneration),
     createComponentsType(createComponentsType),
-    destroyComponentsType(destroyComponentsType)
+    destroyComponentsType(destroyComponentsType),
+    componentOffset(componentsOffset)
     {};
 };

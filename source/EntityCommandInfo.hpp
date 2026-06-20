@@ -12,17 +12,14 @@ struct EntityCommandInfo
     {
         creationComponents.resize(2048);
         creationComponentsType.reserve(64);
-        destructionComponentsType.reserve(64);
     }
     EntityCommandInfo(
         uint32_t creationComponentsInitialSize, 
-        uint32_t creationComponentsTypeInitialSize, 
-        uint32_t destructionComponentsTypeInitialSize
+        uint32_t creationComponentsTypeInitialSize
     )
     {
         creationComponents.resize(creationComponentsInitialSize);
         creationComponentsType.reserve(creationComponentsTypeInitialSize);
-        destructionComponentsType.reserve(destructionComponentsTypeInitialSize);
     }
 
     public:
@@ -53,7 +50,6 @@ struct EntityCommandInfo
         const size_t GetComponentsArraySize();
         const std::vector<std::byte>& GetCreationComponents();
         const std::vector<Type>& GetCreationComponentsType();
-        const std::vector<Type>& GetDestructionComponentsType();
 
     private:
         uint32_t creationComponentsOffset = 0;
@@ -62,5 +58,4 @@ struct EntityCommandInfo
         Type destroyComponentsArchtype = 0;
         std::vector<std::byte> creationComponents;
         std::vector<Type> creationComponentsType;
-        std::vector<Type> destructionComponentsType;
 };

@@ -97,16 +97,8 @@ void EntityCommandPool::ScheduleTransitionCommand(const Entity entity, EntityCom
         entity.Id,
         entity.GenerataionId,
         createComponentsArchtype,
-        destroyComponentsArchtype
-    );
-
-    // Register destruction commands
-    const std::vector<Type>& destructionComponentsType = commandInfo.GetDestructionComponentsType();
-    
-    this->destructionComponentsType.insert(
-        this->destructionComponentsType.end(),
-        destructionComponentsType.begin(),
-        destructionComponentsType.end()
+        destroyComponentsArchtype,
+        transitionComponentsOffset
     );
 
     const std::vector<std::byte>& components = commandInfo.GetCreationComponents();
@@ -175,6 +167,4 @@ void EntityCommandPool::Clear()
 
     creationComponentsOffset = 0;
     transitionComponentsOffset = 0;
-
-    destructionComponentsType.clear();
 }

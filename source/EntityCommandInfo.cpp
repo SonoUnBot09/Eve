@@ -2,8 +2,6 @@
 
 void EntityCommandInfo::RemoveComponent(const Type componentType)
 {
-    destructionComponentsType.push_back(componentType);
-
     destroyComponentsArchtype = (destroyComponentsArchtype | componentType);
 }
 
@@ -30,9 +28,4 @@ const std::vector<std::byte>& EntityCommandInfo::GetCreationComponents()
 const std::vector<Type>& EntityCommandInfo::GetCreationComponentsType()
 {
     return creationComponentsType;
-}
-
-const std::vector<Type>& EntityCommandInfo::GetDestructionComponentsType()
-{
-    return destructionComponentsType;
 }
