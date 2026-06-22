@@ -34,7 +34,9 @@ struct MemoryLayout
 
                 MemoryInfo memoryInfo(componentSize, componentOffset);
                
-                componentsLayout[componentType] = memoryInfo;
+                //componentsLayout[componentType] = memoryInfo;
+                componentsLayout.emplace(componentType, memoryInfo);
+                //componentsLayout.e
 
                 offset = componentOffset;
 

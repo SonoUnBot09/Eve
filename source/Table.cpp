@@ -1,13 +1,13 @@
 #include "Table.hpp"
 
-uint32_t Table::GetNewSlot()
+std::tuple<uint32_t, uint32_t> Table::GetNewEntitySlot()
 {   
     uint32_t batchesSize = batches.size();
 
     if(batches.size() == 0)
     {
         AllocateBatches(1);
-        return 0;
+        return {0, 0};
     }
 
     uint32_t lastBatchIndex = batchesSize - 1;
@@ -17,11 +17,11 @@ uint32_t Table::GetNewSlot()
     if(componentsCount == maxSingleComponentPerBatch)
     {
         AllocateBatches(1);
-        return 0;
+        return { batchesSize, 0};
     }
     else
     {
-        return componentsCount;
+        return {lastBatchIndex, componentsCount};
     }
 }
 
@@ -31,9 +31,11 @@ void Table::AllocateBatches(const uint32_t count)
     {
         std::byte* batchArray = new std::byte[batchSize];
         uint32_t* entitiesIndicesArray = new uint32_t[maxSingleComponentPerBatch];
+        std::vector<bool> holesArray(maxSingleComponentPerBatch);
 
         batches.push_back(batchArray);
         entitiesIndices.push_back(entitiesIndicesArray);
+        holesBit.push_back(holesArray);
 
         componentsCountPerBatch.push_back(0);
     }

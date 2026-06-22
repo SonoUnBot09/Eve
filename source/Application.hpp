@@ -16,6 +16,9 @@
 #include <vector>
 #include <array>
 
+#include "components/Transform.hpp"
+#include "EntityManager.hpp"
+
 #include "Debug.hpp"
 #include "Utils.hpp"
 
@@ -27,6 +30,7 @@ class Application
     public:
 
         bool Initialize();
+        void Start();
         void Run();
         void Shutdown();
 

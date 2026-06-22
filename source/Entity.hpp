@@ -2,9 +2,12 @@
 
 #include <cstdint>
 #include <Type.hpp>
+#include "Table.hpp"
 
 struct Entity
 {
+    Entity(uint32_t id, uint32_t generationId) 
+        : Id(id), GenerataionId(generationId) {}
     public:
         uint32_t Id;
         uint32_t GenerataionId;
@@ -12,23 +15,26 @@ struct Entity
 
 struct EntityRecord
 {
-    EntityRecord(Type archtype, uint32_t batchIndex, uint32_t rowIndex) :
-    Archtype(archtype), BatchIndex(batchIndex), RowIndex(rowIndex) {};
-    public:
-        Type Archtype;
-        uint32_t BatchIndex;
-        uint32_t RowIndex;
+    EntityRecord(Table* table, uint32_t batchIndex, uint32_t rowIndex, Type archtype) :
+    Table(table), BatchIndex(batchIndex), RowIndex(rowIndex), Archtype(archtype) {};
+
+    Table* Table;
+    uint32_t BatchIndex;
+    uint32_t RowIndex;
+    Type Archtype;
 };
 
-struct EntityInfo
+struct SlotInfo
 {
-    EntityInfo() = default;
-    EntityInfo(uint32_t id, Type archtype, uint32_t batchIndex, uint32_t rowIndex, bool valid) :
-    Archtype(archtype), BatchIndex(batchIndex), RowIndex(rowIndex), Id(id), Valid(valid) {};
-    public:
-        Type Archtype;
-        uint32_t BatchIndex;
-        uint32_t RowIndex;
-        uint32_t Id;
-        bool Valid;
+    SlotInfo() = default;
+    SlotInfo(uint32_t id, uint32_t generationId, Table* table, uint32_t batchIndex, uint32_t rowIndex, Type archtype, bool isHole) :
+    Id(id), GenerationId(generationId), Table(table), BatchIndex(batchIndex), RowIndex(rowIndex), Archtype(archtype), IsHole(isHole) {};
+
+    uint32_t Id;
+    uint32_t GenerationId;
+    Table* Table;
+    uint32_t BatchIndex;
+    uint32_t RowIndex;
+    Type Archtype;
+    bool IsHole;
 };

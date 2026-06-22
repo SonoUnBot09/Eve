@@ -1,5 +1,4 @@
 #include "MemoryLayout.hpp"
-#include <cstddef>
 
 MemoryInfo* MemoryLayout::GetMemoryInfo(const Type componentType)
 {

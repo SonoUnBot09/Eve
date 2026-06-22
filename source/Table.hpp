@@ -19,35 +19,6 @@ class Table
             maxSingleComponentPerBatch = memoryLayout.GetMaxSingleComponentsCountPerBatch();
         };
 
-        inline std::byte* GetComponentsBatch(const uint32_t index)
-        {
-            return batches[index];
-        }
-        inline const MemoryInfo* GetMemoryInfo(const Type componentType)
-        {
-            return memoryLayout.GetMemoryInfo(componentType);
-        }
-        template<typename T>
-        T& GetComponent(const uint32_t index, std::byte* batch, const MemoryInfo& memoryInfo)
-        {
-            return *reinterpret_cast<T*>(
-                batch + memoryInfo.offset + memoryInfo.stride * index
-            );
-        }
-
-
-        inline uint32_t GetComponentsCountPerBatch(const uint32_t batchIndex)
-        {
-            return componentsCountPerBatch[batchIndex];
-        }
-        inline uint32_t GetMaxComponentsCountPerBatch()
-        {
-            return maxSingleComponentPerBatch;
-        }
-        inline uint32_t GetLastBatchIndex()
-        {
-            return batches.size() - 1;
-        }
         
         ~Table()
         {
@@ -67,20 +38,18 @@ class Table
         std::vector<std::byte*> batches;
         std::vector<uint32_t> componentsCountPerBatch;
 
-        uint32_t GetNewSlot();
+        std::tuple<uint32_t, uint32_t> GetNewEntitySlot();
+        inline std::byte* GetComponentsBatch(const uint32_t index) { return batches[index]; }
+        inline const MemoryInfo* GetMemoryInfo(const Type componentType) { return memoryLayout.GetMemoryInfo(componentType); }
 
-        inline void SetComponentsCountPerBatch(const uint32_t batchIndex, const uint32_t value)
-        {
-            componentsCountPerBatch[batchIndex] = value;
-        }
-        inline void SetEntitiesIndex(const uint32_t batchIndex, const uint32_t rowIndex, const uint32_t value)
-        {
-            entitiesIndices[batchIndex][rowIndex] = value;
-        }
-        inline void SetEntitiesHolesBitIndex(const uint32_t batchIndex, const uint32_t rowIndex, const bool value)
-        {
-            holesBit[batchIndex][rowIndex] = value;
-        }
+        inline uint32_t GetMaxComponentsCountPerBatch() { return maxSingleComponentPerBatch; }
+        inline uint32_t GetLastBatchIndex() { return batches.size() - 1; }
+
+        inline uint32_t GetComponentsCountPerBatch(const uint32_t batchIndex) { return componentsCountPerBatch[batchIndex]; }
+        inline void SetComponentsCountPerBatch(const uint32_t batchIndex, const uint32_t value) {componentsCountPerBatch[batchIndex] = value; }
+
+        inline void SetEntityIndex(const uint32_t batchIndex, const uint32_t rowIndex, const uint32_t value) { entitiesIndices[batchIndex][rowIndex] = value; }
+        inline void SetEntityHolesBitIndex(const uint32_t batchIndex, const uint32_t rowIndex, const bool isHole) { holesBit[batchIndex][rowIndex] = isHole; }
 
         void AllocateBatches(const uint32_t count);
         void DeallocateAllBatches(const std::vector<std::byte*> batches);

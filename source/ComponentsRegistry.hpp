@@ -35,6 +35,6 @@ class ComponentsRegistry
 
     private:
 
-        static std::unordered_map<std::type_index, Type> fromTypeToBit;
-        static std::unordered_map<Type, size_t> fromBitToSize;
+        inline static std::unordered_map<std::type_index, Type> fromTypeToBit;
+        inline static std::unordered_map<Type, size_t> fromBitToSize;
 };

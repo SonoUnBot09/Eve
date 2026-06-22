@@ -11,28 +11,28 @@
 
 class EntityCommandPool
 {
-    EntityCommandPool() = default;
-    EntityCommandPool(
-        uint32_t creationCommandBufferInitialSize, 
-        uint32_t destructionCommandBufferInitialSize, 
-        uint32_t transitionCommandBufferInitialSize,
-        uint32_t creationComponentsInitialSize,
-        uint32_t transitionComponentsInitialSize,
-        uint32_t destructionComponentsTypeInitialSize
-    )
-    {
-        creationCommands.reserve(creationCommandBufferInitialSize);
-        destructionCommands.reserve(destructionCommandBufferInitialSize);
-        transitionCommands.reserve(transitionCommandBufferInitialSize);
-
-        creationComponentsData.resize(creationComponentsInitialSize);
-        transitionComponentsData.resize(transitionComponentsInitialSize);
-        
-        componentsSize.reserve(64);
-        componentsOffset.reserve(64);
-    };
 
     public:
+
+        EntityCommandPool() = default;
+        EntityCommandPool(
+            uint32_t creationCommandBufferInitialSize, 
+            uint32_t destructionCommandBufferInitialSize, 
+            uint32_t transitionCommandBufferInitialSize,
+            uint32_t creationComponentsInitialSize,
+            uint32_t transitionComponentsInitialSize
+        )
+        {
+            creationCommands.reserve(creationCommandBufferInitialSize);
+            destructionCommands.reserve(destructionCommandBufferInitialSize);
+            transitionCommands.reserve(transitionCommandBufferInitialSize);
+
+            creationComponentsData.resize(creationComponentsInitialSize);
+            transitionComponentsData.resize(transitionComponentsInitialSize);
+            
+            componentsSize.reserve(64);
+            componentsOffset.reserve(64);
+        };
 
         void ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo);
         void ScheduleDestructionCommand(const Entity entity);

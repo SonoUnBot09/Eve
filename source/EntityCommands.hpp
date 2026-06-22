@@ -6,60 +6,60 @@
 
 struct EntityCreationCommand
 {
-    uint32_t entityId;
-    uint32_t entityGeneration;
+    uint32_t Id;
+    uint32_t GenerationId;
 
-    Type archtype;
-    uint32_t componentOffset;
+    Type Archtype;
+    uint32_t ComponentOffset;
 
     EntityCreationCommand(
-        uint32_t entityId, 
-        uint32_t entityGeneration, 
+        uint32_t id, 
+        uint32_t generationId, 
         Type archtype,
         uint32_t componentOffset
     ) : 
-    entityId(entityId),
-    entityGeneration(entityGeneration),
-    archtype(archtype),
-    componentOffset(componentOffset)
+    Id(id),
+    GenerationId(generationId),
+    Archtype(archtype),
+    ComponentOffset(componentOffset)
     {};
 };
 
 struct EntityDestructionCommand
 {
-    uint32_t entityId;
-    uint32_t entityGeneration;
+    uint32_t Id;
+    uint32_t GenerationId;
 
     EntityDestructionCommand(
-        uint32_t entityId,
-        uint32_t entityGeneration
+        uint32_t id,
+        uint32_t generationId
     ) :
-    entityId(entityId),
-    entityGeneration(entityGeneration)
+    Id(id),
+    GenerationId(generationId)
     {};
 };
 
 struct EntityTransitionCommand
 {
-    uint32_t entityId;
-    uint32_t entityGeneration;
+    uint32_t Id;
+    uint32_t GenerationId;
 
-    Type createComponentsType;
-    Type destroyComponentsType;
+    Type CreateComponentsType;
+    Type DestroyComponentsType;
 
-    uint32_t componentOffset = 0;
+    uint32_t ComponentOffset = 0;
 
     EntityTransitionCommand(
-        uint32_t entityId,
-        uint32_t entityGeneration,
+        uint32_t id,
+        uint32_t generationId,
         Type createComponentsType,
         Type destroyComponentsType,
         uint32_t componentsOffset
     ) :
-    entityId(entityId),
-    entityGeneration(entityGeneration),
-    createComponentsType(createComponentsType),
-    destroyComponentsType(destroyComponentsType),
-    componentOffset(componentsOffset)
+    Id(id),
+    GenerationId(generationId),
+    CreateComponentsType(createComponentsType),
+    DestroyComponentsType(destroyComponentsType),
+    ComponentOffset(componentsOffset)
     {};
 };

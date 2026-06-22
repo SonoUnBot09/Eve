@@ -1,3 +1,4 @@
+#include "EntityManager.hpp"
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -27,6 +28,47 @@ bool Application::Initialize()
     }
 
     return true;
+}
+
+void Application::Start()
+{
+    /*
+    Transform transform 
+    {
+        glm::vec3(0,0,0),
+        glm::vec3(0,0,0),
+        glm::vec3(0,0,0)
+    };
+
+    Type componentType = 0;
+    componentType.set(0);
+    ComponentsRegistry::RegisterComponent<Transform>(componentType);
+
+    uint32_t id = 0;
+    uint32_t generationId = 0;
+
+    Entity entity = {id, generationId};
+    EntityCommandInfo commandInfo
+    {
+        1,
+        1
+    };
+
+    commandInfo.AddComponent<Transform>(transform, componentType);
+    EntityCommandPool commandPool
+    {
+        1,
+        0,
+        0,
+        1,
+        0
+    };
+
+    commandPool.ScheduleCreationCommand(entity, &commandInfo);
+
+    EntityManager::RecordEntityCommandPool(commandPool);
+
+    EntityManager::ExecuteEntityCommands();*/
 }
 
 void Application::Run()
@@ -242,6 +284,7 @@ void Application::Render()
         const float nearPlane = 0.1f;
         const float farPlane = 100.0f;
 
+        
         glm::vec3 cubePositions[] = {
             glm::vec3( 0.0f,  0.0f,  0), 
             glm::vec3( 2.0f,  5.0f, -15.0f), 
@@ -286,6 +329,42 @@ void Application::Render()
 
             vkCmdDrawIndexed(data.commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
         }
+
+        /*
+        glm::mat4 view = glm::lookAt(
+            glm::vec3(0, 0, 4),
+            glm::vec3(0, 0, 0),
+            glm::vec3(0, 1, 0)
+        );
+        glm::mat4 projection = glm::perspective(glm::radians(fov), aspect, nearPlane, farPlane);
+        projection[1][1] *= -1;
+        glm::mat4 mvp;
+        PushConstant pushConstantData;
+
+        Type archtype = 0;
+        archtype.set(0);
+        Table* table = EntityManager::GetTable(archtype);
+        const MemoryInfo* memoryInfo = table->GetMemoryInfo(archtype);
+
+        std::byte* batch = table->GetComponentsBatch(0);
+
+        Transform& component = table->GetComponent<Transform>(0, batch, *memoryInfo);
+
+        glm::mat4 model = glm::translate(glm::mat4(1), component.Position);
+
+        mvp = projection * view * model;
+
+        vkCmdPushConstants 
+        (
+            data.commandBuffer, 
+            grapchisPipelineLayout, 
+            VK_SHADER_STAGE_VERTEX_BIT, 
+            0, 
+            sizeof(PushConstant),
+            &pushConstantData
+        );
+
+        vkCmdDrawIndexed(data.commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);*/
 
     }
     vkCmdEndRendering(data.commandBuffer);

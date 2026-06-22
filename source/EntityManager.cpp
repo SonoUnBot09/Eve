@@ -1,8 +1,32 @@
 #include "EntityManager.hpp"
 
+//Entity EntityManager::entities[10000];
+//EntityRecord EntityManager::entitiesRegister[10000];
+
 Table* EntityManager::GetTable(const Type archtype)
 {
-    return &componentsPools.at(archtype);
+    auto it = componentsPools.find(archtype);
+
+    if(it == componentsPools.end())
+    {
+        auto [insertedIt, success] = componentsPools.try_emplace(archtype, archtype, 16384);
+        return &(insertedIt->second);
+    }
+
+    return &(it->second);
+}
+
+void EntityManager::SetEntityInfos(const uint32_t id, Table* table, const uint32_t batchIndex, const uint32_t rowIndex, const Type archtype)
+{ 
+    table->SetEntityIndex(batchIndex, rowIndex, id);
+    table->SetEntityHolesBitIndex(batchIndex, rowIndex, false);
+
+    entitiesRegister[id] = {
+        table,
+        batchIndex,
+        rowIndex,
+        archtype
+    };
 }
 
 void EntityManager::RecordEntityCommandPool(EntityCommandPool& entityCommandPool)
@@ -19,29 +43,38 @@ void EntityManager::ExecuteEntityCommands()
         std::vector<EntityDestructionCommand>& destructionCommands = entityCommandPool->GetDestructionCommands();
         for (uint32_t i = 0; i < destructionCommands.size(); i++)
         {
-            uint32_t id = destructionCommands[i].entityId;
-            uint32_t generationId = entities[id].GenerataionId;
+            EntityDestructionCommand command = destructionCommands[i];
+            uint32_t id = command.Id;
+            uint32_t generationId = command.GenerationId;
 
-            if(generationId != destructionCommands[i].entityGeneration) { continue; }
+            if(generationId != entities[id].GenerataionId) { continue; }
 
-            EntityRecord entityRecord = entitiesRegister[id];
+            EntityRecord& entityRecord = entitiesRegister[id];
 
-            EntityInfo entityInfo{id, entityRecord.Archtype, entityRecord.BatchIndex, entityRecord.RowIndex, true};
+            SlotInfo entityInfo 
+            {
+                id, 
+                generationId,
+                entityRecord.Table,
+                entityRecord.BatchIndex,
+                entityRecord.RowIndex,
+                entityRecord.Archtype,
+                true
+            };
+
             pendingDestructionEntities.push_back(entityInfo);
-
-            Table* table = GetTable(entityRecord.Archtype);
-            table->SetEntitiesHolesBitIndex(entityRecord.BatchIndex, entityRecord.RowIndex, true);
+            entityRecord.Table->SetEntityHolesBitIndex(entityRecord.BatchIndex, entityRecord.RowIndex, true);
         }
     }
 
     SortEntitiesToDestroy(pendingDestructionEntities);
-
+    
     for(EntityCommandPool* entityCommandPool : entityCommandPools)
     {
         //transition
         ExecuteTransitionCommands(entityCommandPool);
     }
-
+    
     for(EntityCommandPool* entityCommandPool : entityCommandPools)
     {
         //creation
@@ -51,14 +84,15 @@ void EntityManager::ExecuteEntityCommands()
     pendingDestructionEntities.insert
     (
         pendingDestructionEntities.end(),
-        invalidEntities.begin(), 
-        invalidEntities.end()
+        afterTransitionInvalidSlots.begin(), 
+        afterTransitionInvalidSlots.end()
     );
 
-    invalidEntities.clear();
+    afterTransitionInvalidSlots.clear();
+
+    SortEntitiesToDestroy(pendingDestructionEntities);
 
     CompactBatches();
-
 }
 
 void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPool)
@@ -66,64 +100,87 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
     std::vector<EntityTransitionCommand>& entityTransitionCommands = entityCommandPool->GetTransitionCommands();
     std::vector<std::byte>& creationComponentsData = entityCommandPool->GetTransitionComponentsData();
 
+    Type previousOldArchtype = 0;
+    Type previousNewArchtype = 0;
+    
     for (uint32_t i = 0; i < entityTransitionCommands.size(); i++)
     {
         EntityTransitionCommand& command = entityTransitionCommands[i];
-        Entity entity = entities[command.entityId];
+        uint32_t id = command.Id;
+        uint32_t generationId = command.GenerationId;
 
         // Is Entity valid?
-        if(entity.GenerataionId != command.entityGeneration) { continue; }
+        if(generationId != entities[id].GenerataionId) { continue; }
 
-        EntityRecord& oldSlot = entitiesRegister[command.entityId];
+        EntityRecord& oldSlot = entitiesRegister[id];
+        Type validComponentsTypeFromOldArchtype = (oldSlot.Archtype & ~command.DestroyComponentsType);
 
-        Type validComponentsTypeFromOldArchtype = (oldSlot.Archtype & ~command.destroyComponentsType);
-
-        // Get valid old components type
-        for (uint32_t j = 0; j < 64; j++)
+        if(previousOldArchtype != validComponentsTypeFromOldArchtype)
         {
-            if(!validComponentsTypeFromOldArchtype.test(j)) { continue; }
-            
-            Type type = 0;
-            type.set(j);
-            oldComponentsType.push_back(type);
-            
-        }
-        // Get new components type
-        for (uint32_t j = 0; j < 64; j++)
-        {
-            if(!command.createComponentsType.test(j)) { continue; }
-            
-            Type type = 0;
-            type.set(j);
-            newComponentsType.push_back(type);
-            
+            oldComponentsType.clear();
+            // Get valid old components type
+            for (uint32_t j = 0; j < 64; j++)
+            {
+                if(!validComponentsTypeFromOldArchtype.test(j)) { continue; }
+                
+                Type type = 0;
+                type.set(j);
+                oldComponentsType.push_back(type);
+                
+            }
+
+            previousOldArchtype = validComponentsTypeFromOldArchtype;
         }
 
-        Type newArchtype = validComponentsTypeFromOldArchtype | command.createComponentsType;
+        if(previousNewArchtype != command.CreateComponentsType)
+        {
+            newComponentsType.clear();
+            // Get new components type
+            for (uint32_t j = 0; j < 64; j++)
+            {
+                if(!command.CreateComponentsType.test(j)) { continue; }
+                
+                Type type = 0;
+                type.set(j);
+                newComponentsType.push_back(type);
+                
+            }
 
-        EntityInfo* newSlot = TryGetAvailableSlot(newArchtype);
+            previousNewArchtype = command.CreateComponentsType;
+        }
 
-        Table* oldTable = GetTable(oldSlot.Archtype);
-        Table* newTable = GetTable(newArchtype);
+        Type newArchtype = validComponentsTypeFromOldArchtype | command.CreateComponentsType;
+
+        //Try to re-use the destroyed entity slots
+        SlotInfo* newSlot = TryGetAvailableSlot(newArchtype);
+
+        Table* oldTable = oldSlot.Table;
+        Table* newTable = nullptr;
 
         std::byte* oldBatch = oldTable->GetComponentsBatch(oldSlot.BatchIndex);
 
         uint32_t newBatchIndex = 0;
         std::byte* newBatch = nullptr;
-        uint32_t rowIndex = 0;
+        uint32_t newRowIndex = 0;
 
         if(newSlot == nullptr)
         {
             // No slot available, needs to allocate in a new space
-            rowIndex = newTable->GetNewSlot();
-            newBatchIndex = newTable->GetLastBatchIndex();
+            newTable = GetTable(newArchtype);
+
+            std::tuple<uint32_t, uint32_t> slotInfo = newTable->GetNewEntitySlot();
+
+            newBatchIndex = std::get<0>(slotInfo);
+            newRowIndex = std::get<1>(slotInfo);
             newBatch = newTable->GetComponentsBatch(newBatchIndex);
         }
         else 
         {
             // Slot available
-            rowIndex = newSlot->RowIndex;
+            newTable = newSlot->Table;
+
             newBatchIndex = newSlot->BatchIndex;
+            newRowIndex = newSlot->RowIndex;
             newBatch = newTable->GetComponentsBatch(newBatchIndex);
         }
 
@@ -134,7 +191,7 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
             const MemoryInfo* newMemoryInfo = newTable->GetMemoryInfo(componentType);
 
             std::memcpy(
-                newBatch + newMemoryInfo->offset + newMemoryInfo->stride * rowIndex,
+                newBatch + newMemoryInfo->offset + newMemoryInfo->stride * newRowIndex,
                 oldBatch + oldMemoryInfo->offset + oldMemoryInfo->stride * oldSlot.RowIndex,
                 ComponentsRegistry::GetComponentSizeFromBit(componentType)
             );
@@ -150,37 +207,32 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
 
             std::memcpy
             (
-                newBatch + newMemoryInfo->offset + newMemoryInfo->stride * rowIndex,
-                creationComponentsData.data() + command.componentOffset + offset,
+                newBatch + newMemoryInfo->offset + newMemoryInfo->stride * newRowIndex,
+                creationComponentsData.data() + command.ComponentOffset + offset,
                 size
             );
 
             offset += size;
         }
 
-        oldTable->SetEntitiesHolesBitIndex(oldSlot.BatchIndex, oldSlot.RowIndex, true);
-        newTable->SetEntitiesHolesBitIndex(newBatchIndex, rowIndex, false);
+        SetEntityInfos(id, newTable, newBatchIndex, newRowIndex, newArchtype);
+        oldTable->SetEntityHolesBitIndex(oldSlot.BatchIndex, oldSlot.RowIndex, true);
         
-        newTable->SetEntitiesIndex(newBatchIndex, rowIndex, command.entityId);
-
         uint32_t oldTableComponentsCount = oldTable->GetComponentsCountPerBatch(oldSlot.BatchIndex);
         uint32_t newTableComponentsCount = newTable->GetComponentsCountPerBatch(newBatchIndex);
 
         oldTable->SetComponentsCountPerBatch(oldSlot.BatchIndex, oldTableComponentsCount - 1);
         newTable->SetComponentsCountPerBatch(newBatchIndex, newTableComponentsCount + 1);
         
-        invalidEntities.emplace_back(
-            command.entityId,
-            oldSlot.Archtype,
+        afterTransitionInvalidSlots.emplace_back(
+            0,
+            0,
+            oldTable,
             oldSlot.BatchIndex,
             oldSlot.RowIndex,
+            oldSlot.Archtype,
             true
         );
-
-        entitiesRegister[command.entityId] = {newArchtype, newBatchIndex, rowIndex};
-
-        newComponentsType.clear();
-        oldComponentsType.clear();
     }
 }
 
@@ -188,40 +240,53 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
 {
     std::vector<EntityCreationCommand>& entityCreationCommands = entityCommandPool->GetCreationCommands();
     std::vector<std::byte>& creationComponentsData = entityCommandPool->GetCreationComponentsData();
-
+    
+    Type previousArchtype = 0;
     for (uint32_t i = 0; i < entityCreationCommands.size(); i++)
     {
         EntityCreationCommand& command = entityCreationCommands[i];
-
-        // Get new components type
-        for (uint32_t j = 0; j < 64; j++)
+        
+        if(previousArchtype != command.Archtype)
         {
-            if(!command.archtype.test(j)) { continue; }
-            
-            Type type = 0;
-            type.set(j);
-            newComponentsType.push_back(type);
-            
+            newComponentsType.clear();
+            // Get new components type
+            for (uint32_t j = 0; j < 64; j++)
+            {
+                if(!command.Archtype.test(j)) { continue; }
+                
+                Type type = 0;
+                type.set(j);
+                newComponentsType.push_back(type);
+            }
+
+            previousArchtype = command.Archtype;
         }
 
-        Table* newTable = GetTable(command.archtype);
-        EntityInfo* newSlot = TryGetAvailableSlot(command.archtype);
+        SlotInfo* newSlot = TryGetAvailableSlot(command.Archtype);
         
+        Table* newTable = nullptr;
+
         uint32_t newBatchIndex = 0;
+        uint32_t newRowIndex = 0;
         std::byte* newBatch = nullptr;
-        uint32_t rowIndex = 0;
         if(newSlot == nullptr)
         {
             // No slot available, needs to allocate in a new space
-            rowIndex = newTable->GetNewSlot();
-            newBatchIndex = newTable->GetLastBatchIndex();
+            newTable = GetTable(command.Archtype);
+            
+            std::tuple<uint32_t, uint32_t> slotInfo = newTable->GetNewEntitySlot();
+
+            newBatchIndex = std::get<0>(slotInfo);
+            newRowIndex = std::get<1>(slotInfo);
             newBatch = newTable->GetComponentsBatch(newBatchIndex);
         }
         else 
         {
+            newTable = newSlot->Table;
+
             // Slot available
-            rowIndex = newSlot->RowIndex;
             newBatchIndex = newSlot->BatchIndex;
+            newRowIndex = newSlot->RowIndex;
             newBatch = newTable->GetComponentsBatch(newBatchIndex);
         }
 
@@ -235,61 +300,71 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
 
             std::memcpy
             (
-                newBatch + memoryInfo->offset + memoryInfo->stride * rowIndex,
-                creationComponentsData.data() + command.componentOffset + offset,
+                newBatch + memoryInfo->offset + memoryInfo->stride * newRowIndex,
+                creationComponentsData.data() + command.ComponentOffset + offset,
                 size
             );
 
             offset += size;
         }
         
-        newTable->SetEntitiesHolesBitIndex(newBatchIndex, rowIndex, false);
-
-        newTable->SetEntitiesIndex(newBatchIndex, rowIndex, command.entityId);
+        SetEntityInfos(command.Id, newTable, newBatchIndex, newRowIndex, command.Archtype);
 
         uint32_t newTableComponentsCount = newTable->GetComponentsCountPerBatch(newBatchIndex);
         newTable->SetComponentsCountPerBatch(newBatchIndex, newTableComponentsCount + 1);
-
-        entities[command.entityId] = {command.entityId, command.entityGeneration};
-        entitiesRegister[command.entityId] = {command.archtype, newBatchIndex, rowIndex};
-
-        newComponentsType.clear();
+        
+        entities[command.Id] = {command.Id, command.GenerationId};
     }
 }
 
 void EntityManager::CompactBatches()
 {
+    Type previousArchtype = 0;
     for (uint32_t i = 0; i < pendingDestructionEntities.size(); i++)
     {   
         bool skip = false;
-        EntityInfo& entitySlot = pendingDestructionEntities[i];
+        SlotInfo& holeSlot = pendingDestructionEntities[i];
 
-        if(!entitySlot.Valid) { continue; }
+        if(!holeSlot.IsHole) { continue; }
 
-        Type archtype = entitySlot.Archtype;
-        Table* table = GetTable(archtype);
+        Table* table = holeSlot.Table;
+        Type archtype = holeSlot.Archtype;
 
-        for (uint32_t bit = 0; bit < 64; bit++)
+        if(previousArchtype != archtype)
         {
-            if(!archtype.test(bit)) { continue; }
-            
-            Type type = 0;
-            type.set(bit);
-            newComponentsType.push_back(type);
-            
+            newComponentsType.clear();
+            for (uint32_t bit = 0; bit < 64; bit++)
+            {
+                if(!archtype.test(bit)) { continue; }
+                
+                Type type = 0;
+                type.set(bit);
+                newComponentsType.push_back(type);
+            }
+
+            previousArchtype = archtype;
         }
 
-        for (int32_t batchIndex = (int32_t)(table->batchSize - 1); batchIndex >= 0; batchIndex--)
+        for (int32_t batchIndex = (int32_t)(table->GetLastBatchIndex()); batchIndex >= 0; batchIndex--)
         {
             std::vector<bool>& holesBit = table->holesBit[batchIndex];
             for (int32_t j = (int32_t)(table->GetMaxComponentsCountPerBatch() - 1); j >= 0; j--)
             {
                 if(holesBit[j]) { continue; }
+
+                if(holeSlot.BatchIndex > batchIndex || 
+                    (holeSlot.BatchIndex == batchIndex && holeSlot.RowIndex > j))
+                {
+                    uint32_t componentsCount = table->GetComponentsCountPerBatch(holeSlot.BatchIndex);
+                    table->SetComponentsCountPerBatch(holeSlot.BatchIndex, componentsCount - 1);
+                    skip = true;
+                    break;
+                }
                 
                 skip = true;
 
                 std::byte* srcBatch = table->GetComponentsBatch(batchIndex);
-                std::byte* dstBatch = table->GetComponentsBatch(entitySlot.BatchIndex);
+                std::byte* dstBatch = table->GetComponentsBatch(holeSlot.BatchIndex);
                 for (uint32_t w = 0; w < newComponentsType.size(); w++)
                 {
                     Type componentType = newComponentsType[w];
@@ -299,25 +374,19 @@ void EntityManager::CompactBatches()
                     uint32_t size = ComponentsRegistry::GetComponentSizeFromBit(componentType);
                     std::memcpy
                     (
-                        dstBatch + memoryInfo->offset + memoryInfo->stride * entitySlot.RowIndex,
+                        dstBatch + memoryInfo->offset + memoryInfo->stride * holeSlot.RowIndex,
                         srcBatch + memoryInfo->offset + memoryInfo->stride * j,
                         size
                     );
                 }
 
-                table->SetEntitiesHolesBitIndex(batchIndex, j, true);
-                table->SetEntitiesHolesBitIndex(entitySlot.BatchIndex, entitySlot.RowIndex, false);
-
                 uint32_t entityId = table->entitiesIndices[batchIndex][j];
+                SetEntityInfos(entityId, table, holeSlot.BatchIndex, holeSlot.RowIndex, holeSlot.Archtype);
+
+                table->SetEntityHolesBitIndex(batchIndex, j, true);
 
                 uint32_t componentsCountOldBatch = table->GetComponentsCountPerBatch(batchIndex);
                 table->SetComponentsCountPerBatch(batchIndex, componentsCountOldBatch - 1);
-
-                uint32_t compontntsCountNewBatch = table->GetComponentsCountPerBatch(entitySlot.BatchIndex);
-                table->SetComponentsCountPerBatch(entitySlot.BatchIndex, compontntsCountNewBatch + 1);
-                
-                table->entitiesIndices[entitySlot.BatchIndex][entitySlot.RowIndex] = entityId;
-                entitiesRegister[entityId] = {entitySlot.Archtype, entitySlot.BatchIndex, entitySlot.RowIndex};
 
                 break;
             }
@@ -325,18 +394,16 @@ void EntityManager::CompactBatches()
             if(skip) { break; }
         }
 
-        newComponentsType.clear();
-
     }
 }
 
-void EntityManager::SortEntitiesToDestroy(std::vector<EntityInfo>& vector)
+void EntityManager::SortEntitiesToDestroy(std::vector<SlotInfo>& vector)
 {
     // Sort the pendingDestructionEntities vector based on their archtype
     std::sort(
         pendingDestructionEntities.begin(),
         pendingDestructionEntities.end(),
-        [](const EntityInfo& a, const EntityInfo& b)
+        [](const SlotInfo& a, const SlotInfo& b)
         {
             if(a.Archtype != b.Archtype)
             {
@@ -353,16 +420,16 @@ void EntityManager::SortEntitiesToDestroy(std::vector<EntityInfo>& vector)
     );
 }
 
-EntityInfo* EntityManager::TryGetAvailableSlot(const Type archtype)
+SlotInfo* EntityManager::TryGetAvailableSlot(const Type archtype)
 {
-    EntityInfo value;
+    SlotInfo value;
     value.Archtype = archtype;
 
     auto range = std::equal_range(
         pendingDestructionEntities.begin(),
         pendingDestructionEntities.end(),
         value,
-        [](const EntityInfo& a, const EntityInfo& b)
+        [](const SlotInfo& a, const SlotInfo& b)
         {
             return a.Archtype.to_ullong() < b.Archtype.to_ullong();
         }
@@ -370,9 +437,9 @@ EntityInfo* EntityManager::TryGetAvailableSlot(const Type archtype)
 
     for (auto it = range.first; it != range.second; ++it)
     {
-        if(it->Valid)
+        if(it->IsHole)
         {
-            it->Valid = false;
+            it->IsHole = false;
             return &(*it);
         }
     }
