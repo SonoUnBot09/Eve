@@ -4,7 +4,7 @@ void EntityManager::Initialize(
     const uint32_t maxEntitiesCount,
     const uint32_t maxDestroyEntityCommands)
 {
-    if(!isInitialized) { return; }
+    if(isInitialized) { return; }
     if(maxEntitiesCount == 0) { return; }
     if(maxDestroyEntityCommands == 0) { return; }
 
@@ -44,7 +44,7 @@ void EntityManager::SetEntityInfos(const uint32_t id, Table* table, const uint32
 { 
     table->SetEntityIndex(batchIndex, rowIndex, id);
     table->SetEntityHolesBitIndex(batchIndex, rowIndex, false);
-
+    
     entitiesRegister[id] = {
         table,
         batchIndex,
@@ -285,7 +285,7 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
 
             previousArchtype = command.Archtype;
         }
-
+        
         SlotInfo* newSlot = TryGetAvailableSlot(command.Archtype);
         
         Table* newTable = nullptr;
@@ -293,6 +293,7 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
         uint32_t newBatchIndex = 0;
         uint32_t newRowIndex = 0;
         std::byte* newBatch = nullptr;
+        
         if(newSlot == nullptr)
         {
             // No slot available, needs to allocate in a new space
@@ -313,7 +314,7 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
             newRowIndex = newSlot->RowIndex;
             newBatch = newTable->GetComponentsBatch(newBatchIndex);
         }
-
+        
         uint32_t offset = 0;
         for (uint32_t j = 0; j < newComponentsType.size(); j++)
         {
@@ -331,9 +332,9 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
 
             offset += size;
         }
-        
-        SetEntityInfos(command.Id, newTable, newBatchIndex, newRowIndex, command.Archtype);
 
+        SetEntityInfos(command.Id, newTable, newBatchIndex, newRowIndex, command.Archtype);
+        
         uint32_t newTableComponentsCount = newTable->GetComponentsCountPerBatch(newBatchIndex);
         newTable->SetComponentsCountPerBatch(newBatchIndex, newTableComponentsCount + 1);
         

@@ -34,7 +34,7 @@ bool Application::Initialize()
 
 void Application::Start()
 {
-    /*
+    
     Transform transform 
     {
         glm::vec3(0,0,0),
@@ -65,12 +65,12 @@ void Application::Start()
         1,
         0
     };
-
+    
     commandPool.ScheduleCreationCommand(entity, &commandInfo);
 
     EntityManager::RecordEntityCommandPool(commandPool);
-
-    EntityManager::ExecuteEntityCommands();*/
+    
+    EntityManager::ExecuteEntityCommands();
 }
 
 void Application::Run()

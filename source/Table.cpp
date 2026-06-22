@@ -52,6 +52,7 @@ void Table::DeallocateAllBatches(std::vector<std::byte*> batches)
     batches.clear();
     entitiesIndices.clear();
     componentsCountPerBatch.clear();
+    holesBit.clear();
 }
 
 
