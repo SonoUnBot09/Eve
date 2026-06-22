@@ -13,10 +13,11 @@
 
 #include "iostream"
 
-
 class EntityManager
 {
     public:
+
+        static void Initialize(const uint32_t maxEntityCount = 10000, const uint32_t maxEntityCommandsCount = 500);
 
         static void RecordEntityCommandPool(EntityCommandPool& entityCommandPool);
         static void ExecuteEntityCommands();
@@ -35,11 +36,11 @@ class EntityManager
 
         static SlotInfo* TryGetAvailableSlot(const Type archtype);
 
+        inline static bool isInitialized = false;
         inline static std::unordered_map<Type, Table> componentsPools;
         inline static Entity* entities;
         inline static EntityRecord* entitiesRegister;
         inline static std::vector<EntityCommandPool*> entityCommandPools;
-
 
         inline static std::vector<SlotInfo> pendingDestructionEntities;
         inline static std::vector<SlotInfo> afterTransitionInvalidSlots;

@@ -27,6 +27,8 @@ bool Application::Initialize()
         return false;
     }
 
+    EntityManager::Initialize();
+
     return true;
 }
 

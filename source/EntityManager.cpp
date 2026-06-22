@@ -1,7 +1,24 @@
 #include "EntityManager.hpp"
 
-//Entity EntityManager::entities[10000];
-//EntityRecord EntityManager::entitiesRegister[10000];
+void EntityManager::Initialize(
+    const uint32_t maxEntitiesCount,
+    const uint32_t maxDestroyEntityCommands)
+{
+    if(!isInitialized) { return; }
+    if(maxEntitiesCount == 0) { return; }
+    if(maxDestroyEntityCommands == 0) { return; }
+
+    entities = new Entity[maxEntitiesCount];
+    entitiesRegister = new EntityRecord[maxEntitiesCount];
+
+    pendingDestructionEntities.reserve(maxDestroyEntityCommands);
+    afterTransitionInvalidSlots.reserve(maxDestroyEntityCommands);
+
+    newComponentsType.reserve(64);
+    oldComponentsType.reserve(64);
+
+    isInitialized = true;
+}
 
 Table* EntityManager::GetTable(const Type archtype)
 {

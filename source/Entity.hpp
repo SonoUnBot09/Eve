@@ -6,6 +6,7 @@
 
 struct Entity
 {
+    Entity() = default;
     Entity(uint32_t id, uint32_t generationId) 
         : Id(id), GenerataionId(generationId) {}
     public:
@@ -15,6 +16,7 @@ struct Entity
 
 struct EntityRecord
 {
+    EntityRecord() = default;
     EntityRecord(Table* table, uint32_t batchIndex, uint32_t rowIndex, Type archtype) :
     Table(table), BatchIndex(batchIndex), RowIndex(rowIndex), Archtype(archtype) {};
 
