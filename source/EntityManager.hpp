@@ -23,9 +23,11 @@ class EntityManager
         static void RecordEntityCommandPool(EntityCommandPool& entityCommandPool);
         static void ExecuteEntityCommands();
 
+        static Table* GetTable(const Type archtype);
+
     private:
 
-        static Table* GetTable(const Type archtype);
+        //static Table* GetTable(const Type archtype);
         static void SetEntityInfos(const uint32_t id, Table* table, const uint32_t batchIndex, const uint32_t rowIndex, const Type archtype);
 
         static void SortEntitiesToDestroy(std::vector<SlotInfo>& vector);

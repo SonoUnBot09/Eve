@@ -19,7 +19,13 @@ class Table
             maxSingleComponentPerBatch = memoryLayout.GetMaxSingleComponentsCountPerBatch();
         };
 
-        
+        inline std::byte* GetComponentsBatch(const uint32_t index) { return batches[index]; }
+        inline const MemoryInfo* GetMemoryInfo(const Type componentType) { return memoryLayout.GetMemoryInfo(componentType); }
+
+        template<typename T>
+        inline T& GetComponent(std::byte* batch, const uint32_t rowIndex, const MemoryInfo& memoryInfo)
+        { return *reinterpret_cast<T*>(batch + memoryInfo.offset + memoryInfo.stride * rowIndex); }
+
         ~Table()
         {
             DeallocateAllBatches(batches);
@@ -39,8 +45,6 @@ class Table
         std::vector<uint32_t> componentsCountPerBatch;
 
         std::tuple<uint32_t, uint32_t> GetNewEntitySlot();
-        inline std::byte* GetComponentsBatch(const uint32_t index) { return batches[index]; }
-        inline const MemoryInfo* GetMemoryInfo(const Type componentType) { return memoryLayout.GetMemoryInfo(componentType); }
 
         inline uint32_t GetMaxComponentsCountPerBatch() { return maxSingleComponentPerBatch; }
         inline uint32_t GetLastBatchIndex() { return batches.size() - 1; }
@@ -56,6 +60,4 @@ class Table
         //void DeallocateBatch(const uint32_t index);
 
         friend class EntityManager;
-
-        
 };

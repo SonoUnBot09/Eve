@@ -1,3 +1,4 @@
+#include "Debug.hpp"
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -286,7 +287,7 @@ void Application::Render()
         const float nearPlane = 0.1f;
         const float farPlane = 100.0f;
 
-        
+        /*
         glm::vec3 cubePositions[] = {
             glm::vec3( 0.0f,  0.0f,  0), 
             glm::vec3( 2.0f,  5.0f, -15.0f), 
@@ -330,9 +331,9 @@ void Application::Render()
             );
 
             vkCmdDrawIndexed(data.commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-        }
+        }*/
 
-        /*
+        
         glm::mat4 view = glm::lookAt(
             glm::vec3(0, 0, 4),
             glm::vec3(0, 0, 0),
@@ -350,11 +351,17 @@ void Application::Render()
 
         std::byte* batch = table->GetComponentsBatch(0);
 
-        Transform& component = table->GetComponent<Transform>(0, batch, *memoryInfo);
-
+        Transform& component = table->GetComponent<Transform>(batch, 0, *memoryInfo);
+        component.Rotation = glm::vec3(0.25, 0.75, 0) * (float)frameIndex * 0.03f;
+        //std::cout << component.Position.x << std::endl;
         glm::mat4 model = glm::translate(glm::mat4(1), component.Position);
+        model = glm::rotate(model, component.Rotation.x, glm::vec3(1, 0, 0));
+        model = glm::rotate(model, component.Rotation.y, glm::vec3(0, 1, 0));
+        model = glm::rotate(model, component.Rotation.z, glm::vec3(0, 0, 1));
 
         mvp = projection * view * model;
+
+        pushConstantData.mvp = mvp;
 
         vkCmdPushConstants 
         (
@@ -366,7 +373,7 @@ void Application::Render()
             &pushConstantData
         );
 
-        vkCmdDrawIndexed(data.commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);*/
+        vkCmdDrawIndexed(data.commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
     }
     vkCmdEndRendering(data.commandBuffer);
