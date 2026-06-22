@@ -18,10 +18,10 @@ class EntityManager
     public:
 
         static void Initialize(const uint32_t maxEntityCount = 10000, const uint32_t maxEntityCommandsCount = 500);
+        static void Destroy();
 
         static void RecordEntityCommandPool(EntityCommandPool& entityCommandPool);
         static void ExecuteEntityCommands();
-        static void FreeAllMemory();
 
     private:
 

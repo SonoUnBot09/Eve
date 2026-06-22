@@ -1,9 +1,9 @@
-#include "EntityManager.hpp"
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define STB_IMAGE_IMPLEMENTATION
 #include "Application.hpp"
+#include "EntityManager.hpp"
 
 bool Application::Initialize()
 {
@@ -445,6 +445,8 @@ void Application::Render()
 
 void Application::Shutdown()
 {
+    EntityManager::Destroy();
+
     vkDeviceWaitIdle(device);
 
     if(descriptorLayout)

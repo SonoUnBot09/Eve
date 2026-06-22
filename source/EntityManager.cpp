@@ -20,6 +20,13 @@ void EntityManager::Initialize(
     isInitialized = true;
 }
 
+void EntityManager::Destroy()
+{
+    if(!isInitialized) { return; }
+    delete[] entities;
+    delete[] entitiesRegister;
+}
+
 Table* EntityManager::GetTable(const Type archtype)
 {
     auto it = componentsPools.find(archtype);
@@ -462,9 +469,4 @@ SlotInfo* EntityManager::TryGetAvailableSlot(const Type archtype)
     }
 
     return nullptr;
-}
-
-void EntityManager::FreeAllMemory()
-{
-    componentsPools.clear();
 }
