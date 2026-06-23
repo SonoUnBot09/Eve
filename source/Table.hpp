@@ -57,7 +57,7 @@ class Table
 
         void AllocateBatches(const uint32_t count);
         void DeallocateAllBatches(const std::vector<std::byte*> batches);
-        //void DeallocateBatch(const uint32_t index);
+        void DeallocateBatch(const uint32_t index);
 
         friend class EntityManager;
 };

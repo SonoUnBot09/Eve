@@ -12,8 +12,11 @@ int main(int argc, char* argv[])
     {
         std::cout <<"A" <<endl;
         app.Start();
+        std::cout <<"D" <<endl;
         app.Run();
     }
+
+    
 
     app.Shutdown();
     return 0;

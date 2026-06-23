@@ -1,10 +1,11 @@
-#include "Debug.hpp"
+#include "EntityCommandInfo.hpp"
+#include "EntityManager.hpp"
+#include "QueryInfo.hpp"
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define STB_IMAGE_IMPLEMENTATION
 #include "Application.hpp"
-#include "EntityManager.hpp"
 
 bool Application::Initialize()
 {
@@ -51,14 +52,14 @@ void Application::Start()
     uint32_t generationId = 0;
 
     Entity entity = {id, generationId};
-    EntityCommandInfo commandInfo
+    EntityCommandInfo* commandInfo = new EntityCommandInfo
     {
         1,
         1
     };
 
-    commandInfo.AddComponent<Transform>(transform, componentType);
-    EntityCommandPool commandPool
+    commandInfo->AddComponent<Transform>(transform, componentType);
+    EntityCommandPool* commandPool = new EntityCommandPool 
     {
         1,
         0,
@@ -67,15 +68,24 @@ void Application::Start()
         0
     };
     
-    commandPool.ScheduleCreationCommand(entity, &commandInfo);
+    commandPool->ScheduleCreationCommand(entity, commandInfo);
 
-    EntityManager::RecordEntityCommandPool(commandPool);
-    
+    EntityManager::RegisterEntityCommandPool(*commandPool);
+
+    QueryInfo* queryInfo = new QueryInfo(componentType, true);
+    uint32_t queryTicket = EntityManager::RegisterQuery(*queryInfo);
+    std::cout << "B" << std::endl;
     EntityManager::ExecuteEntityCommands();
+
+    delete queryInfo;
+    delete commandInfo;
+    delete commandPool;
+    std::cout << "G" << std::endl;
 }
 
 void Application::Run()
 {
+    std::cout <<"2" << std::endl;
     while(isAppRunning)
     {
         SDL_Event event;
@@ -83,6 +93,7 @@ void Application::Run()
         {
             if(event.type == SDL_EVENT_QUIT)
             {
+                std::cout <<"E" << std::endl;
                 isAppRunning = false;
                 break;
             }
@@ -100,7 +111,6 @@ void Application::Run()
 
 void Application::Render()
 {
-
     if(isSwapchainRecreationNeeded)
     {
         vkDeviceWaitIdle(device);
@@ -333,7 +343,6 @@ void Application::Render()
             vkCmdDrawIndexed(data.commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
         }*/
 
-        
         glm::mat4 view = glm::lookAt(
             glm::vec3(0, 0, 4),
             glm::vec3(0, 0, 0),
@@ -346,7 +355,7 @@ void Application::Render()
 
         Type archtype = 0;
         archtype.set(0);
-        Table* table = EntityManager::GetTable(archtype);
+        Table* table = EntityManager::GetTablesFromQuery(0)[0];
         const MemoryInfo* memoryInfo = table->GetMemoryInfo(archtype);
 
         std::byte* batch = table->GetComponentsBatch(0);

@@ -1,8 +1,6 @@
 #include "EntityManager.hpp"
 
-void EntityManager::Initialize(
-    const uint32_t maxEntitiesCount,
-    const uint32_t maxDestroyEntityCommands)
+void EntityManager::Initialize( const uint32_t maxEntitiesCount, const uint32_t maxDestroyEntityCommands)
 {
     if(isInitialized) { return; }
     if(maxEntitiesCount == 0) { return; }
@@ -25,19 +23,72 @@ void EntityManager::Destroy()
     if(!isInitialized) { return; }
     delete[] entities;
     delete[] entitiesRegister;
+
+    for (auto &[archtype, table] : tables)
+    {
+        delete table;
+    }
+}
+
+std::vector<Table*>& EntityManager::GetTablesFromQuery(const uint32_t queryTicket)
+{
+    return queryResults[queryTicket];
+}
+
+uint32_t EntityManager::RegisterQuery(const QueryInfo queryInfo)
+{
+    queryInfos.push_back(queryInfo);
+    return queryInfos.size() - 1;
+}
+
+void EntityManager::UpdateQueries()
+{
+    queryResults.clear();
+    queryResults.resize(queryInfos.size());
+    for (auto &[archtype, table] : tables)
+    {
+        for (uint32_t i = 0; i < queryInfos.size(); i++)
+        {
+            QueryInfo queryInfo = queryInfos[i];
+
+            if(!queryInfo.IsExclusive)
+            {
+                bool isTableValid = true;
+                for (uint32_t j = 0; j < 64; j++)
+                {
+                    if(!queryInfo.ComponentsRequired.test(j)) { continue; }
+                    if(!archtype.test(j)) { isTableValid = false; break; }
+
+                }
+
+                if(!isTableValid) { continue; }
+
+                queryResults[i].push_back(table);
+            }
+            else 
+            {
+                if(queryInfo.ComponentsRequired == archtype)
+                {
+                    queryResults[i].push_back(table);
+                }
+            }
+        }
+    }
 }
 
 Table* EntityManager::GetTable(const Type archtype)
 {
-    auto it = componentsPools.find(archtype);
+    auto it = tables.find(archtype);
 
-    if(it == componentsPools.end())
+    if(it == tables.end())
     {
-        auto [insertedIt, success] = componentsPools.try_emplace(archtype, archtype, 16384);
-        return &(insertedIt->second);
+        updateQueries = true;
+        Table* table = new Table(archtype, 16384);
+        auto [insertedIt, success] = tables.try_emplace(archtype, table);
+        return (insertedIt->second);
     }
 
-    return &(it->second);
+    return (it->second);
 }
 
 void EntityManager::SetEntityInfos(const uint32_t id, Table* table, const uint32_t batchIndex, const uint32_t rowIndex, const Type archtype)
@@ -53,7 +104,7 @@ void EntityManager::SetEntityInfos(const uint32_t id, Table* table, const uint32
     };
 }
 
-void EntityManager::RecordEntityCommandPool(EntityCommandPool& entityCommandPool)
+void EntityManager::RegisterEntityCommandPool(EntityCommandPool& entityCommandPool)
 {
     entityCommandPools.push_back(&entityCommandPool);
 }
@@ -116,7 +167,14 @@ void EntityManager::ExecuteEntityCommands()
 
     SortEntitiesToDestroy(pendingDestructionEntities);
 
+    pendingDestructionEntities.clear();
+
     CompactBatches();
+
+    if(updateQueries)
+    {
+        UpdateQueries();
+    }
 }
 
 void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPool)
@@ -176,7 +234,7 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
         Type newArchtype = validComponentsTypeFromOldArchtype | command.CreateComponentsType;
 
         //Try to re-use the destroyed entity slots
-        SlotInfo* newSlot = TryGetAvailableSlot(newArchtype);
+        int32_t newSlotIndex = TryGetAvailableSlot(newArchtype);
 
         Table* oldTable = oldSlot.Table;
         Table* newTable = nullptr;
@@ -187,7 +245,7 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
         std::byte* newBatch = nullptr;
         uint32_t newRowIndex = 0;
 
-        if(newSlot == nullptr)
+        if(newSlotIndex == -1)
         {
             // No slot available, needs to allocate in a new space
             newTable = GetTable(newArchtype);
@@ -200,11 +258,12 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
         }
         else 
         {
+            SlotInfo& newSlot = pendingDestructionEntities[newSlotIndex];
             // Slot available
-            newTable = newSlot->Table;
+            newTable = newSlot.Table;
 
-            newBatchIndex = newSlot->BatchIndex;
-            newRowIndex = newSlot->RowIndex;
+            newBatchIndex = newSlot.BatchIndex;
+            newRowIndex = newSlot.RowIndex;
             newBatch = newTable->GetComponentsBatch(newBatchIndex);
         }
 
@@ -286,7 +345,7 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
             previousArchtype = command.Archtype;
         }
         
-        SlotInfo* newSlot = TryGetAvailableSlot(command.Archtype);
+        int32_t newSlotIndex = TryGetAvailableSlot(command.Archtype);
         
         Table* newTable = nullptr;
 
@@ -294,7 +353,7 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
         uint32_t newRowIndex = 0;
         std::byte* newBatch = nullptr;
         
-        if(newSlot == nullptr)
+        if(newSlotIndex == -1)
         {
             // No slot available, needs to allocate in a new space
             newTable = GetTable(command.Archtype);
@@ -307,11 +366,13 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
         }
         else 
         {
-            newTable = newSlot->Table;
+            SlotInfo& newSlot = pendingDestructionEntities[newSlotIndex];
+
+            newTable = newSlot.Table;
 
             // Slot available
-            newBatchIndex = newSlot->BatchIndex;
-            newRowIndex = newSlot->RowIndex;
+            newBatchIndex = newSlot.BatchIndex;
+            newRowIndex = newSlot.RowIndex;
             newBatch = newTable->GetComponentsBatch(newBatchIndex);
         }
         
@@ -420,6 +481,34 @@ void EntityManager::CompactBatches()
         }
 
     }
+
+    // Checks for empty batches and tables
+    for (auto it = tables.begin(); it != tables.cend();)
+    {
+        Type archtype = it->first;
+        Table* table = it->second;
+
+        uint32_t batchesCount = table->batches.size();
+
+        for(int32_t i = (int32_t)batchesCount - 1; i >= 0; i--)
+        {
+            uint32_t componentsCount = table->GetComponentsCountPerBatch(i);
+
+            if(componentsCount != 0) { break; }
+
+            table->DeallocateBatch(i);
+            batchesCount--;
+        }
+
+        if(batchesCount == 0)
+        {
+            updateQueries = true;
+            delete table;
+            tables.erase(archtype);
+        }
+
+        it++;
+    }
 }
 
 void EntityManager::SortEntitiesToDestroy(std::vector<SlotInfo>& vector)
@@ -445,7 +534,7 @@ void EntityManager::SortEntitiesToDestroy(std::vector<SlotInfo>& vector)
     );
 }
 
-SlotInfo* EntityManager::TryGetAvailableSlot(const Type archtype)
+int32_t EntityManager::TryGetAvailableSlot(const Type archtype)
 {
     SlotInfo value;
     value.Archtype = archtype;
@@ -465,9 +554,12 @@ SlotInfo* EntityManager::TryGetAvailableSlot(const Type archtype)
         if(it->IsHole)
         {
             it->IsHole = false;
-            return &(*it);
+
+            int32_t index = std::distance(pendingDestructionEntities.begin(), it);
+            return index;
         }
     }
 
-    return nullptr;
+    // No available slot
+    return -1;
 }

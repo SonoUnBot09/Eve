@@ -56,10 +56,15 @@ void Table::DeallocateAllBatches(std::vector<std::byte*> batches)
 }
 
 
-/*
+
 void Table::DeallocateBatch(const uint32_t index)
 {  
     delete[] batches[index];
+    delete[] entitiesIndices[index];
+
 
     batches.erase(batches.cbegin() + index);
-}*/
+    entitiesIndices.erase(entitiesIndices.cbegin() + index);
+    holesBit.erase(holesBit.cbegin() + index);
+    componentsCountPerBatch.erase(componentsCountPerBatch.cbegin() + index);
+}
