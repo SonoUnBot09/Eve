@@ -31,7 +31,7 @@ void Table::AllocateBatches(const uint32_t count)
     {
         std::byte* batchArray = new std::byte[batchSize];
         uint32_t* entitiesIndicesArray = new uint32_t[maxSingleComponentPerBatch];
-        std::vector<bool> holesArray(maxSingleComponentPerBatch);
+        std::vector<bool> holesArray(maxSingleComponentPerBatch, true);
 
         batches.push_back(batchArray);
         entitiesIndices.push_back(entitiesIndicesArray);
@@ -41,7 +41,7 @@ void Table::AllocateBatches(const uint32_t count)
     }
 }
 
-void Table::DeallocateAllBatches(std::vector<std::byte*> batches)
+void Table::DeallocateAllBatches()
 {
     for (uint32_t i = 0; i < batches.size(); i++)
     {
@@ -54,8 +54,6 @@ void Table::DeallocateAllBatches(std::vector<std::byte*> batches)
     componentsCountPerBatch.clear();
     holesBit.clear();
 }
-
-
 
 void Table::DeallocateBatch(const uint32_t index)
 {  

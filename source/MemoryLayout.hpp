@@ -7,6 +7,7 @@
 #include "Type.hpp"
 #include "ComponentsRegistry.hpp"
 #include "MemoryInfo.hpp"
+#include "iostream"
 
 struct MemoryLayout
 {
@@ -30,7 +31,7 @@ struct MemoryLayout
                 Type componentType = components[i];
                 uint32_t componentSize = componentsStride[i];
 
-                uint32_t componentOffset = componentSize * maxSingleComponentCount + offset;
+                uint32_t componentOffset = offset;
 
                 MemoryInfo memoryInfo(componentSize, componentOffset);
                
@@ -38,7 +39,7 @@ struct MemoryLayout
                 componentsLayout.emplace(componentType, memoryInfo);
                 //componentsLayout.e
 
-                offset = componentOffset;
+                offset = componentOffset + componentSize * maxSingleComponentCount;
 
             }
 

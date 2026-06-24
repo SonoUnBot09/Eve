@@ -55,5 +55,18 @@ executable(
         shaderc,
         glm
     ],
-    win_subsystem: 'console'
+    win_subsystem: 'console',
+    cpp_args: [
+        '-D_DISABLE_STRING_ANNOTATION',
+        '-D_DISABLE_VECTOR_ANNOTATION',
+        '-D_DISABLE_DEQUE_ANNOTATION'
+    ],
+    link_args: [
+        '-fms-runtime-lib=dll',
+        '-shared-libsan', # Suggerisce a Clang di preferire il runtime ASan condiviso
+        '-Wl,/NODEFAULTLIB:clang_rt.asan_static_runtime_thunk-x86_64.lib', # Esclude il thunk statico buggato
+        '-Wl,clang_rt.asan_dynamic_runtime_thunk-x86_64.lib',             # Forza il thunk dinamico corretto
+        '-Wl,clang_rt.asan_dynamic-x86_64.lib'
+    ],
+    override_options: ['b_sanitize=address']
 )

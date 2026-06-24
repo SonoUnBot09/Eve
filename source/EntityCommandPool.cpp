@@ -1,5 +1,6 @@
 #include "EntityCommandPool.hpp"
-
+#include <iostream>
+#include "string"
 void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo)
 {
     if(commandInfo != nullptr)
@@ -31,6 +32,7 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
         }
 
         const size_t availableSpace = creationComponentsData.size() - creationComponentsOffset;
+
         if(availableSpace < requiredSpace)
         {
             creationComponentsData.resize(creationComponentsData.size() + requiredSpace + 8192);
@@ -57,7 +59,7 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
             std::memcpy
             (
                 creationComponentsData.data() + creationComponentsOffset, 
-                &components[componentsOffset[index]],
+                components.data() + componentsOffset[index],
                 size
             );
 
@@ -83,8 +85,8 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
 void EntityCommandPool::ScheduleDestructionCommand(const Entity entity)
 {
     destructionCommands.emplace_back(
-        entity.GenerataionId,
-        entity.Id
+        entity.Id,
+        entity.GenerataionId
     );
 }
 
@@ -145,7 +147,7 @@ void EntityCommandPool::ScheduleTransitionCommand(const Entity entity, EntityCom
         std::memcpy
         (
             transitionComponentsData.data() + transitionComponentsOffset, 
-            &components[componentsOffset[index]],
+            components.data() + componentsOffset[index],
             size
         );
 

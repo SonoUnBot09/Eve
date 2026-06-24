@@ -10,9 +10,8 @@ int main(int argc, char* argv[])
     Application app;
     if(app.Initialize())
     {
-        std::cout <<"A" <<endl;
         app.Start();
-        std::cout <<"D" <<endl;
+        
         app.Run();
     }
 

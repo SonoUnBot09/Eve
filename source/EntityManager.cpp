@@ -24,10 +24,18 @@ void EntityManager::Destroy()
     delete[] entities;
     delete[] entitiesRegister;
 
+    entities = nullptr;
+    entitiesRegister = nullptr;
+
     for (auto &[archtype, table] : tables)
     {
         delete table;
     }
+    
+    tables.clear();
+
+    isInitialized = false;
+
 }
 
 std::vector<Table*>& EntityManager::GetTablesFromQuery(const uint32_t queryTicket)
@@ -167,13 +175,14 @@ void EntityManager::ExecuteEntityCommands()
 
     SortEntitiesToDestroy(pendingDestructionEntities);
 
-    pendingDestructionEntities.clear();
-
     CompactBatches();
+
+    pendingDestructionEntities.clear();
 
     if(updateQueries)
     {
         UpdateQueries();
+        updateQueries = false;
     }
 }
 
@@ -506,8 +515,10 @@ void EntityManager::CompactBatches()
             delete table;
             tables.erase(archtype);
         }
-
-        it++;
+        else 
+        {
+            it++;
+        }
     }
 }
 
@@ -515,8 +526,8 @@ void EntityManager::SortEntitiesToDestroy(std::vector<SlotInfo>& vector)
 {
     // Sort the pendingDestructionEntities vector based on their archtype
     std::sort(
-        pendingDestructionEntities.begin(),
-        pendingDestructionEntities.end(),
+        vector.begin(),
+        vector.end(),
         [](const SlotInfo& a, const SlotInfo& b)
         {
             if(a.Archtype != b.Archtype)

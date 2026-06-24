@@ -59,12 +59,12 @@ void Application::Start()
     };
 
     commandInfo->AddComponent<Transform>(transform, componentType);
-    EntityCommandPool* commandPool = new EntityCommandPool 
+    EntityCommandPool* commandPool = new EntityCommandPool
     {
-        1,
         0,
         0,
-        1,
+        0,
+        0,
         0
     };
     
@@ -74,18 +74,15 @@ void Application::Start()
 
     QueryInfo* queryInfo = new QueryInfo(componentType, true);
     uint32_t queryTicket = EntityManager::RegisterQuery(*queryInfo);
-    std::cout << "B" << std::endl;
     EntityManager::ExecuteEntityCommands();
 
     delete queryInfo;
     delete commandInfo;
     delete commandPool;
-    std::cout << "G" << std::endl;
 }
 
 void Application::Run()
 {
-    std::cout <<"2" << std::endl;
     while(isAppRunning)
     {
         SDL_Event event;
@@ -93,7 +90,6 @@ void Application::Run()
         {
             if(event.type == SDL_EVENT_QUIT)
             {
-                std::cout <<"E" << std::endl;
                 isAppRunning = false;
                 break;
             }
