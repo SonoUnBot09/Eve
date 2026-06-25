@@ -1,11 +1,11 @@
-#include "EntityCommandInfo.hpp"
-#include "EntityManager.hpp"
-#include "QueryInfo.hpp"
+#include <Eve/EntityCommandInfo.hpp>
+#include <Eve/EntityManager.hpp>
+#include <Eve/QueryInfo.hpp>
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define STB_IMAGE_IMPLEMENTATION
-#include "Application.hpp"
+#include <Application.hpp>
 
 bool Application::Initialize()
 {

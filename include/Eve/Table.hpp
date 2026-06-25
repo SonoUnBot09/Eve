@@ -3,9 +3,9 @@
 #include <vector>
 #include <cstdint>
 
-#include "MemoryInfo.hpp"
-#include "Type.hpp"
-#include "MemoryLayout.hpp"
+#include <Eve/MemoryInfo.hpp>
+#include <Eve/Type.hpp>
+#include <MemoryLayout.hpp>
 
 class Table
 {

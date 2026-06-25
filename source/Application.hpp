@@ -16,11 +16,11 @@
 #include <vector>
 #include <array>
 
-#include "components/Transform.hpp"
-#include "EntityManager.hpp"
+#include <components/Transform.hpp>
+#include <Eve/EntityManager.hpp>
 
-#include "Debug.hpp"
-#include "Utils.hpp"
+#include <Eve/Debug.hpp>
+#include <Eve/Utils.hpp>
 
 using namespace Debug;
 using namespace Utils;

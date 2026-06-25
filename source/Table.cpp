@@ -1,4 +1,4 @@
-#include "Table.hpp"
+#include <Eve/Table.hpp>
 
 std::tuple<uint32_t, uint32_t> Table::GetNewEntitySlot()
 {   

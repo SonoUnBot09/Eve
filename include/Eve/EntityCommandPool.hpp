@@ -4,10 +4,10 @@
 #include <array>
 #include <algorithm>
 
-#include "EntityCommands.hpp"
-#include "EntityCommandInfo.hpp"
-#include "ComponentsRegistry.hpp"
-#include "Entity.hpp"
+#include <Eve/EntityCommands.hpp>
+#include <Eve/EntityCommandInfo.hpp>
+#include <Eve/ComponentsRegistry.hpp>
+#include <Eve/Entity.hpp>
 
 class EntityCommandPool
 {

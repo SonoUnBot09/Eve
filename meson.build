@@ -20,19 +20,22 @@ vulkan_lib_dir = vulkan_sdk_path / 'Lib'
 
 # volk
 volk_lib = cpp.find_library('volk', dirs: [vulkan_lib_dir], required: true)
-volk = declare_dependency(dependencies: volk_lib, include_directories: vulkan_inc)
-
-# shaderc
 shaderc_lib = cpp.find_library('shaderc_combined', dirs: [vulkan_lib_dir], required: true)
-shaderc = declare_dependency(dependencies: shaderc_lib, include_directories: vulkan_inc)
 
 
 # glm, sdl3 and vulkan
 sdl3 = dependency('sdl3')
 vulkan = dependency('vulkan', include_type: 'system')
 glm = dependency('glm')
+volk = declare_dependency(dependencies: volk_lib, include_directories: vulkan_inc)
+shaderc = declare_dependency(dependencies: shaderc_lib, include_directories: vulkan_inc)
 
-include_dir = include_directories('source')
+engine_source = []
+
+subdir('source')
+
+include_dir_source = include_directories('source')
+include_dir = include_directories('include')
 third_parties = include_directories('third-parties')
 
 executable(
@@ -46,7 +49,7 @@ executable(
         'source/MemoryLayout.cpp',
         'source/Table.cpp',
     ],
-    include_directories: [include_dir , third_parties],
+    include_directories: [include_dir_source, include_dir , third_parties],
     dependencies: 
     [
         sdl3,

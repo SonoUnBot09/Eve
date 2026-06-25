@@ -4,15 +4,14 @@
 #include <vector>
 #include <algorithm>
 
-#include <Type.hpp>
-#include <Entity.hpp>
-#include <ComponentsRegistry.hpp>
-#include <Table.hpp>
-#include "EntityCommandPool.hpp"
-#include "EntityCommands.hpp"
-#include "QueryInfo.hpp"
-
-#include "iostream"
+#include <Eve/Type.hpp>
+#include <Eve/Entity.hpp>
+#include <Eve/ComponentsRegistry.hpp>
+#include <Eve/Table.hpp>
+#include <Eve/EntityCommandPool.hpp>
+#include <Eve/EntityCommands.hpp>
+#include <Eve/QueryInfo.hpp>
+#include <SlotInfo.hpp>
 
 class EntityManager
 {

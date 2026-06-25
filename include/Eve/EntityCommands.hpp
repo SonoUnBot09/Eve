@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "Type.hpp"
+#include <Eve/Type.hpp>
 
 struct EntityCreationCommand
 {

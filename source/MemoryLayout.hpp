@@ -4,10 +4,9 @@
 #include <iterator>
 #include <unordered_map>
 
-#include "Type.hpp"
-#include "ComponentsRegistry.hpp"
-#include "MemoryInfo.hpp"
-#include "iostream"
+#include <Eve/Type.hpp>
+#include <Eve/ComponentsRegistry.hpp>
+#include <Eve/MemoryInfo.hpp>
 
 struct MemoryLayout
 {

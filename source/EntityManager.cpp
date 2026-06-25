@@ -1,4 +1,4 @@
-#include "EntityManager.hpp"
+#include <Eve/EntityManager.hpp>
 
 void EntityManager::Initialize( const uint32_t maxEntitiesCount, const uint32_t maxDestroyEntityCommands)
 {

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "Type.hpp"
+#include <Eve/Type.hpp>
 
 struct EntityCommandInfo
 {

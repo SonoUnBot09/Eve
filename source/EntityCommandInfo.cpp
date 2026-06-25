@@ -1,4 +1,4 @@
-#include "EntityCommandInfo.hpp"
+#include <Eve/EntityCommandInfo.hpp>
 
 void EntityCommandInfo::RemoveComponent(const Type componentType)
 {

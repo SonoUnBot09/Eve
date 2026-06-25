@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Type.hpp"
+#include <Eve/Type.hpp>
 
 struct QueryInfo
 {
