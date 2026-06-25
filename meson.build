@@ -42,12 +42,7 @@ executable(
     'app',
     [
         'main.cpp',
-        'source/Application.cpp',
-        'source/EntityCommandInfo.cpp',
-        'source/EntityCommandPool.cpp',
-        'source/EntityManager.cpp',
-        'source/MemoryLayout.cpp',
-        'source/Table.cpp',
+        engine_source
     ],
     include_directories: [include_dir_source, include_dir , third_parties],
     dependencies: 
