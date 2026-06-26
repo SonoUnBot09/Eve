@@ -1,11 +1,11 @@
-#include <source/Application.hpp>
+#include "source/Application.hpp"
 
 using namespace std;
 
 int main(int argc, char* argv[])
 {
 
-    std::cout <<"Hello World!" <<endl;
+    std::cout <<"Hello World!" << std::endl;
 
     Application app;
     if(app.Initialize())
@@ -14,8 +14,6 @@ int main(int argc, char* argv[])
         
         app.Run();
     }
-
-    
 
     app.Shutdown();
     return 0;
