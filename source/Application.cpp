@@ -1525,7 +1525,13 @@ void Application::CreateTexture()
 {
 
     int width, height, channelsCount;
-    unsigned char *source = stbi_load("../assets/container.jpg", &width, &height, &channelsCount, 4);
+    unsigned char *source = stbi_load("../../assets/container.jpg", &width, &height, &channelsCount, 4);
+
+    if(source == nullptr)
+    {
+        printError("Unable to find the image");
+        return;
+    }
 
     VkImageCreateInfo imageCI
     {
@@ -1750,7 +1756,7 @@ void Application::LoadTextureData(unsigned char *source, int width, int height)
 
 VkShaderModule Application::CreateShaderModule(std::string fileName, shaderc_shader_kind kind)
 {
-    const std::string path = "../source/shaders/" + fileName;
+    const std::string path = "../../source/shaders/" + fileName;
     std::string source = readTextFile(path);
     if(source.empty())
     {
