@@ -48,7 +48,7 @@ target_link_libraries(Eve PRIVATE
 )
 
 target_include_directories(Eve
-    PRIVATE source
     PRIVATE third-parties
+    PRIVATE source
     PUBLIC include
 )

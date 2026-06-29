@@ -11,52 +11,55 @@
 #include <Eve/EntityCommandPool.hpp>
 #include <Eve/EntityCommands.hpp>
 #include <Eve/QueryInfo.hpp>
-#include <SlotInfo.hpp>
+#include <Eve/internal/SlotInfo.hpp>
 
-class EntityManager
+namespace Eve::Entities
 {
-    public:
-        //10000, 500
-        static void Initialize(const uint32_t maxEntityCount = 1, const uint32_t maxEntityCommandsCount = 1);
-        static void Destroy();
+    class EntityManager
+    {
+        public:
+            //10000, 500
+            static void Initialize(const uint32_t maxEntityCount = 1, const uint32_t maxEntityCommandsCount = 1);
+            static void Destroy();
 
-        static std::vector<Table*>& GetTablesFromQuery(const uint32_t queryTicket);
+            static std::vector<Table*>& GetTablesFromQuery(const uint32_t queryTicket);
 
-        static uint32_t RegisterQuery(const QueryInfo queryInfo);
-        static void RegisterEntityCommandPool(EntityCommandPool& entityCommandPool);
-        static void ExecuteEntityCommands();
-
-
-    private:
+            static uint32_t RegisterQuery(const QueryInfo queryInfo);
+            static void RegisterEntityCommandPool(EntityCommandPool& entityCommandPool);
+            static void ExecuteEntityCommands();
 
 
-        static Table* GetTable(const Type archtype);
-        static void SetEntityInfos(const uint32_t id, Table* table, const uint32_t batchIndex, const uint32_t rowIndex, const Type archtype);
+        private:
 
-        static void SortEntitiesToDestroy(std::vector<SlotInfo>& vector);
-        
-        static void ExecuteTransitionCommands(EntityCommandPool* entityCommandPool);
-        static void ExecuteCreationCommands(EntityCommandPool* entityCommandPool);
-        static void CompactBatches();
 
-        static void UpdateQueries();
+            static Table* GetTable(const Type archtype);
+            static void SetEntityInfos(const uint32_t id, Table* table, const uint32_t batchIndex, const uint32_t rowIndex, const Type archtype);
 
-        static int32_t TryGetAvailableSlot(const Type archtype);
+            static void SortEntitiesToDestroy(std::vector<Eve::Internal::SlotInfo>& vector);
+            
+            static void ExecuteTransitionCommands(EntityCommandPool* entityCommandPool);
+            static void ExecuteCreationCommands(EntityCommandPool* entityCommandPool);
+            static void CompactBatches();
 
-        inline static bool isInitialized = false;
-        inline static std::unordered_map<Type, Table*> tables;
-        inline static Entity* entities;
-        inline static EntityRecord* entitiesRegister;
-        inline static std::vector<EntityCommandPool*> entityCommandPools;
+            static void UpdateQueries();
 
-        inline static bool updateQueries = true; 
-        inline static std::vector<QueryInfo> queryInfos;
-        inline static std::vector<std::vector<Table*>> queryResults;
+            static int32_t TryGetAvailableSlot(const Type archtype);
 
-        // Internal data
-        inline static std::vector<SlotInfo> pendingDestructionEntities;
-        inline static std::vector<SlotInfo> afterTransitionInvalidSlots;
+            inline static bool isInitialized = false;
+            inline static std::unordered_map<Type, Table*> tables;
+            inline static Entity* entities;
+            inline static EntityRecord* entitiesRegister;
+            inline static std::vector<EntityCommandPool*> entityCommandPools;
 
-        inline static std::vector<Type> newComponentsType;
-        inline static std::vector<Type> oldComponentsType;
-};
+            inline static bool updateQueries = true; 
+            inline static std::vector<QueryInfo> queryInfos;
+            inline static std::vector<std::vector<Table*>> queryResults;
+
+            // Internal data
+            inline static std::vector<Eve::Internal::SlotInfo> pendingDestructionEntities;
+            inline static std::vector<Eve::Internal::SlotInfo> afterTransitionInvalidSlots;
+
+            inline static std::vector<Type> newComponentsType;
+            inline static std::vector<Type> oldComponentsType;
+    };
+}

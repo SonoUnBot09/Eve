@@ -1,4 +1,5 @@
 #include <Eve/EntityCommandInfo.hpp>
+using namespace Eve::Entities;
 
 void EntityCommandInfo::RemoveComponent(const Type componentType)
 {

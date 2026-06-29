@@ -6,35 +6,38 @@
 
 #include <Eve/Type.hpp>
 
-class ComponentsRegistry
+namespace Eve::Entities
 {
-    public:
+    class ComponentsRegistry
+    {
+        public:
 
-        template<typename T>
-        inline static void RegisterComponent(Type componentId)
-        {
-            std::type_index componentType = std::type_index(typeid(T));
-            std::size_t componentSize = sizeof(T);
+            template<typename T>
+            inline static void RegisterComponent(Type componentId)
+            {
+                std::type_index componentType = std::type_index(typeid(T));
+                std::size_t componentSize = sizeof(T);
 
-            fromTypeToBit[componentType] = componentId;
-            fromBitToSize[componentId] = componentSize;
-        }
+                fromTypeToBit[componentType] = componentId;
+                fromBitToSize[componentId] = componentSize;
+            }
 
-        template<typename T>
-        inline static Type GetComponentBit()
-        {
-            std::type_index componentType = std::type_index(typeid(T));
+            template<typename T>
+            inline static Type GetComponentBit()
+            {
+                std::type_index componentType = std::type_index(typeid(T));
 
-            return fromTypeToBit[componentType];
-        }
+                return fromTypeToBit[componentType];
+            }
 
-        inline static size_t GetComponentSizeFromBit(Type componentId)
-        {
-            return fromBitToSize[componentId];
-        }
+            inline static size_t GetComponentSizeFromBit(Type componentId)
+            {
+                return fromBitToSize[componentId];
+            }
 
-    private:
+        private:
 
-        inline static std::unordered_map<std::type_index, Type> fromTypeToBit;
-        inline static std::unordered_map<Type, size_t> fromBitToSize;
-};
+            inline static std::unordered_map<std::type_index, Type> fromTypeToBit;
+            inline static std::unordered_map<Type, size_t> fromBitToSize;
+    };
+}

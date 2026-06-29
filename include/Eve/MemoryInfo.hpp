@@ -2,10 +2,13 @@
 
 #include <cstdint>
 
-struct MemoryInfo
+namespace Eve::Entities
 {
-    uint32_t stride;
-    uint32_t offset;
+    struct MemoryInfo
+    {
+        uint32_t stride;
+        uint32_t offset;
 
-    MemoryInfo(uint32_t stride, uint32_t offset) : stride(stride), offset(offset) {};
-};
+        MemoryInfo(uint32_t stride, uint32_t offset) : stride(stride), offset(offset) {};
+    };
+}

@@ -1,4 +1,5 @@
-#include <MemoryLayout.hpp>
+#include <Eve/internal/MemoryLayout.hpp>
+using namespace Eve::Internal;
 
 MemoryInfo* MemoryLayout::GetMemoryInfo(const Type componentType)
 {

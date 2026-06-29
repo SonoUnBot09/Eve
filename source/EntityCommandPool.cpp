@@ -1,5 +1,6 @@
 #include <Eve/EntityCommandPool.hpp>
 
+
 void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo)
 {
     if(commandInfo != nullptr)

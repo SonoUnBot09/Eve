@@ -2,13 +2,16 @@
 
 #include <Eve/Type.hpp>
 
-struct QueryInfo
+namespace Eve::Entities
 {
-    Type ComponentsRequired;
-    bool IsExclusive;
+    struct QueryInfo
+    {
+        Type ComponentsRequired;
+        bool IsExclusive;
 
-    QueryInfo() = default;
-    QueryInfo(Type componentsRequired, bool isExclusive) :
-    ComponentsRequired(componentsRequired),
-    IsExclusive(isExclusive) {};
-};
+        QueryInfo() = default;
+        QueryInfo(Type componentsRequired, bool isExclusive) :
+        ComponentsRequired(componentsRequired),
+        IsExclusive(isExclusive) {};
+    };
+}
