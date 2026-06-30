@@ -1,6 +1,7 @@
-#include <Eve/EntityCommandInfo.hpp>
-#include <Eve/EntityManager.hpp>
-#include <Eve/QueryInfo.hpp>
+#include "Eve/Debug.hpp"
+#include "Eve/SystemDispatcher.hpp"
+#include "SDL3/SDL_stdinc.h"
+#include "SDL3/SDL_timer.h"
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -9,6 +10,7 @@
 
 bool Application::Initialize()
 {
+    
     if(!SDL_Init(SDL_INIT_VIDEO))
     {
         printError("Unable to initialize SDL");
@@ -36,7 +38,9 @@ bool Application::Initialize()
 
 void Application::Start()
 {
-    
+
+    SystemDispatcher::ExecuteStartStage();
+
     Transform transform 
     {
         glm::vec3(0,0,0),
@@ -83,8 +87,18 @@ void Application::Start()
 
 void Application::Run()
 {
+    Uint64 lastTick = SDL_GetTicksNS();
+    Uint64 currentTick = 0;
     while(isAppRunning)
     {
+        currentTick = SDL_GetTicksNS();
+
+        Uint64 elapsedNS = currentTick - lastTick;
+
+        const float deltaTime = (double)elapsedNS / SDL_NS_PER_MS;
+
+        lastTick = currentTick;
+
         SDL_Event event;
         while(SDL_PollEvent(&event))
         {
@@ -99,6 +113,10 @@ void Application::Run()
                 windowHeight = event.window.data2;
             }
         }
+        
+        print(std::to_string(deltaTime));
+
+        SystemDispatcher::ExecuteUpdateStage(deltaTime);
 
         Render();
         

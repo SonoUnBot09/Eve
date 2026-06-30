@@ -36,6 +36,7 @@ add_executable(Eve
     source/EntityManager.cpp
     source/MemoryLayout.cpp
     source/Table.cpp
+    source/SystemDispatcher.cpp
 )
 
 target_compile_features(Eve PRIVATE cxx_std_20)

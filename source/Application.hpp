@@ -15,9 +15,14 @@
 
 #include <vector>
 #include <array>
+#include <string>
 
 #include <components/Transform.hpp>
 #include <Eve/EntityManager.hpp>
+#include <Eve/SystemDispatcher.hpp>
+#include <Eve/EntityCommandInfo.hpp>
+#include <Eve/EntityManager.hpp>
+#include <Eve/QueryInfo.hpp>
 
 #include <Eve/Debug.hpp>
 #include <Eve/Utils.hpp>

@@ -11,6 +11,6 @@ namespace Debug
 
     inline void print(std::string message)
     {
-        std::cout << "ERROR: " << message << std::endl;
+        std::cout << message << std::endl;
     }
 }
