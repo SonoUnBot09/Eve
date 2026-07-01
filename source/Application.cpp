@@ -39,7 +39,7 @@ bool Application::Initialize()
 void Application::Start()
 {
 
-    SystemDispatcher::ExecuteStartStage();
+    //SystemDispatcher::ExecuteStartStage();
 
     Transform transform 
     {
@@ -113,8 +113,6 @@ void Application::Run()
                 windowHeight = event.window.data2;
             }
         }
-        
-        print(std::to_string(deltaTime));
 
         SystemDispatcher::ExecuteUpdateStage(deltaTime);
 
@@ -367,36 +365,45 @@ void Application::Render()
         glm::mat4 mvp;
         PushConstant pushConstantData;
 
+        
         Type archtype = 0;
         archtype.set(0);
         Table* table = EntityManager::GetTablesFromQuery(0)[0];
+        uint32_t batchesCount = table->GetBatchesCount();
         const MemoryInfo* memoryInfo = table->GetMemoryInfo(archtype);
+        
+        for(uint32_t i = 0; i < batchesCount; i++)
+        {
+            std::byte* batch = table->GetComponentsBatch(i);
+            uint32_t componentsCount = table->GetComponentsCountPerBatch(i);
 
-        std::byte* batch = table->GetComponentsBatch(0);
+            for (uint32_t j = 0; j < componentsCount; j++)
+            {
+                Transform& component = table->GetComponent<Transform>(batch, j, *memoryInfo);
 
-        Transform& component = table->GetComponent<Transform>(batch, 0, *memoryInfo);
-        component.Rotation = glm::vec3(0.25, 0.75, 0) * (float)frameIndex * 0.03f;
-        //std::cout << component.Position.x << std::endl;
-        glm::mat4 model = glm::translate(glm::mat4(1), component.Position);
-        model = glm::rotate(model, component.Rotation.x, glm::vec3(1, 0, 0));
-        model = glm::rotate(model, component.Rotation.y, glm::vec3(0, 1, 0));
-        model = glm::rotate(model, component.Rotation.z, glm::vec3(0, 0, 1));
+                glm::mat4 model = glm::translate(glm::mat4(1), component.Position);
+                model = glm::rotate(model, component.Rotation.x, glm::vec3(1, 0, 0));
+                model = glm::rotate(model, component.Rotation.y, glm::vec3(0, 1, 0));
+                model = glm::rotate(model, component.Rotation.z, glm::vec3(0, 0, 1));
+                mvp = projection * view * model;
 
-        mvp = projection * view * model;
+                pushConstantData.mvp = mvp;
 
-        pushConstantData.mvp = mvp;
+                vkCmdPushConstants 
+                (
+                    data.commandBuffer, 
+                    grapchisPipelineLayout, 
+                    VK_SHADER_STAGE_VERTEX_BIT, 
+                    0, 
+                    sizeof(PushConstant),
+                    &pushConstantData
+                );
 
-        vkCmdPushConstants 
-        (
-            data.commandBuffer, 
-            grapchisPipelineLayout, 
-            VK_SHADER_STAGE_VERTEX_BIT, 
-            0, 
-            sizeof(PushConstant),
-            &pushConstantData
-        );
+                vkCmdDrawIndexed(data.commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+            }
+        }
 
-        vkCmdDrawIndexed(data.commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        //std::cout << component.Position.x << std::endl
 
     }
     vkCmdEndRendering(data.commandBuffer);

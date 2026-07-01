@@ -32,23 +32,21 @@ namespace Eve::Entities
             static void ExecuteUpdateStage(const float deltaTime);
 
         friend class SystemRegistrar;
-        friend class Application;
+        friend class ::Application;
     };
 
     class SystemRegistrar
     {
         public:
-            template<typename T>
-            SystemRegistrar(T function, SystemStage stage)
+
+            SystemRegistrar(StartStage function, SystemStage stage)
             {
-                switch (stage)
-                {
-                    case SystemStage::Start : 
-                        SystemDispatcher::GetStartStage().push_back(function);
-                        break;
-                    case SystemStage::Update : 
-                        SystemDispatcher::GetUpdateStage().push_back(function);
-                }
+                SystemDispatcher::GetStartStage().push_back(function);
+            }
+
+            SystemRegistrar(UpdateStage function, SystemStage stage)
+            {
+                SystemDispatcher::GetUpdateStage().push_back(function);
             }
     };
 }
