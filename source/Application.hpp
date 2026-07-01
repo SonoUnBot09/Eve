@@ -18,6 +18,7 @@
 #include <string>
 
 #include <components/Transform.hpp>
+#include <components/Camera.hpp>
 #include <Eve/EntityManager.hpp>
 #include <Eve/SystemDispatcher.hpp>
 #include <Eve/EntityCommandInfo.hpp>

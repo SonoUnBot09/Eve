@@ -52,6 +52,7 @@ namespace Eve::Entities
             const size_t GetComponentsArraySize();
             const std::vector<std::byte>& GetCreationComponents();
             const std::vector<Type>& GetCreationComponentsType();
+            void Clean();
 
         private:
             uint32_t creationComponentsOffset = 0;

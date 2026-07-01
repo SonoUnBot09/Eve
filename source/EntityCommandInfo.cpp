@@ -30,3 +30,14 @@ const std::vector<Type>& EntityCommandInfo::GetCreationComponentsType()
 {
     return creationComponentsType;
 }
+
+void EntityCommandInfo::Clean()
+{
+    creationComponentsOffset = 0;
+
+    createComponentsArchtype = 0;
+    destroyComponentsArchtype = 0;
+
+    creationComponents.clear();
+    creationComponentsType.clear();
+}

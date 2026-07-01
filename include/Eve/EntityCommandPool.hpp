@@ -9,6 +9,8 @@
 #include <Eve/ComponentsRegistry.hpp>
 #include <Eve/Entity.hpp>
 
+#include <Eve/Debug.hpp>
+
 namespace Eve::Entities
 {
     class EntityCommandPool

@@ -1,54 +1,166 @@
-#include "Eve/ComponentsRegistry.hpp"
+#include "SDL3/SDL_mouse.h"
+#include "SDL3/SDL_scancode.h"
+#include "glm/geometric.hpp"
+#include <components/Camera.hpp>
 #include <Eve/SystemDispatcher.hpp>
 #include <Eve/Debug.hpp>
-#include <string>
 #include <Eve/EntityManager.hpp>
 #include <components/Transform.hpp>
+#include <SDL3/SDL.h>
 
 using namespace Eve::Entities;
 
+Type transformComponentType = 0;
+Type cameraComponentType = 0;
+float accumulator = 0;
+
 void Start()
 {
-    Type componentType = ComponentsRegistry::GetComponentBit<Transform>();
-    EntityCommandInfo* entityCommandInfo = new EntityCommandInfo(36, 1);
-    EntityCommandPool* commandPool = new EntityCommandPool(0, 0, 0, 36*0, 0);
-    uint32_t id = 0;
+    // register components
+    transformComponentType.set(0);
+    cameraComponentType.set(1);
+    ComponentsRegistry::RegisterComponent<Transform>(transformComponentType);
+    ComponentsRegistry::RegisterComponent<Camera>(cameraComponentType);
 
-    for(uint32_t x = 0; x < 5; x++)
+    EntityCommandInfo entityCommandInfo(0, 0);
+
+    uint32_t commandPoolId = EntityManager::CreateCommandPool(0, 0, 0, 0 * 36, 0);
+    EntityCommandPool& commandPool = EntityManager::GetEntityCommandPool(commandPoolId);
+
+    uint32_t id = 0;
+    for(int32_t x = 0; x < 10; x++)
     {
-        for(uint32_t y = 0; y < 5; y++)
+        for(int32_t y = 0; y < 10; y++)
         {
-            for (uint32_t z = 0; z < 5; z++)
+            for (int32_t z = 0; z < 10; z++)
             {
                 Entity entity = {id, 0};
                 Transform transform = 
                 {
-                    glm::vec3(x,y,z),
+                    glm::vec3(3+x * 2,  2*y, 3+2*z),
                     glm::vec3(0,0,0),
                     glm::vec3(1,1,1)
                 };
-                entityCommandInfo->AddComponent<Transform>(transform, componentType);
-                Debug::printError("AAAAAAAAAAAAAAAAAAAAA");
-                commandPool->ScheduleCreationCommand(entity, entityCommandInfo);
-                Debug::printError("BBBBBBBBBBBBBBBBBBBBBBBB");
-                Debug::printError("CCCCCCCCCCCCCCCCCCCCCCC");
+
+                entityCommandInfo.AddComponent<Transform>(transform, transformComponentType);
+                commandPool.ScheduleCreationCommand(entity, &entityCommandInfo);
+                entityCommandInfo.Clean();
                 id++;
             }
 
         }
     }
 
-    EntityManager::RegisterEntityCommandPool(*commandPool);
-    EntityManager::ExecuteEntityCommands();
+    Entity cameraEntity = {id, 0};
+    Transform transform = {
+        glm::vec3(0, 0, 0),
+        glm::vec3(0, 0, 0),
+        glm::vec3(1, 1, 1)
+    };
 
-    delete entityCommandInfo;
-    delete commandPool;
+    Camera camera = 
+    {
+        glm::vec3(0,0,1),
+        glm::vec3(0,1,0),
+        4,
+        10
+    };
+
+    entityCommandInfo.AddComponent<Transform>(transform, transformComponentType);
+    entityCommandInfo.AddComponent<Camera>(camera, cameraComponentType);
+    commandPool.ScheduleCreationCommand(cameraEntity, &entityCommandInfo);
+
+    QueryInfo* queryInfo = new QueryInfo(transformComponentType, true);
+    uint32_t queryTicket = EntityManager::RegisterQuery(*queryInfo);
+    QueryInfo* queryInfo2 = new QueryInfo(transformComponentType | cameraComponentType, true);
+    uint32_t queryTicket2 = EntityManager::RegisterQuery(*queryInfo2);
+
+    EntityManager::ExecuteEntityCommands();
+    Debug::print("AAAAAAAAAAAA" + std::to_string(queryTicket2) + "   " + std::to_string(queryTicket));
+    delete queryInfo;
+    delete queryInfo2;
 }
 
 void Update(const float deltaTime)
 {
-    Debug::print("Update, ms: " + std::to_string(deltaTime));
+    #pragma region Camera
+    const bool* keyboard = SDL_GetKeyboardState(NULL);
+
+    Table* cameraTable = EntityManager::GetTablesFromQuery(1)[0];
+
+    std::byte* batch = cameraTable->GetComponentsBatch(0);
+    const MemoryInfo* cameraMemInfo = cameraTable->GetMemoryInfo(cameraComponentType);
+    const MemoryInfo* transformMemInfo = cameraTable->GetMemoryInfo(transformComponentType);
+
+    Camera& camera = cameraTable->GetComponent<Camera>(batch, 0, *cameraMemInfo);
+    Transform& transform = cameraTable->GetComponent<Transform>(batch, 0, *transformMemInfo);
+
+    
+    float mouseDeltaX = 0;
+    float mouseDeltaY = 0;
+    SDL_GetRelativeMouseState(&mouseDeltaX, &mouseDeltaY);
+    
+    camera.yaw += (float)mouseDeltaX * camera.sensitivity * deltaTime;
+    camera.pitch = glm::clamp(camera.pitch - (float)mouseDeltaY * camera.sensitivity * deltaTime, -89.0f, 89.0f);
+    
+    float radYaw = glm::radians(camera.yaw);
+    float radPitch = glm::radians(camera.pitch);
+
+    camera.forward.x = glm::cos(radPitch) * glm::sin(radYaw);
+    camera.forward.y = glm::sin(radPitch);
+    camera.forward.z = glm::cos(radPitch) * glm::cos(radYaw);
+
+
+    camera.right = glm::normalize(glm::cross(glm::vec3(0,1,0), camera.forward));
+    camera.up = glm::normalize(glm::cross(camera.forward, camera.right));
+
+    glm::vec3 movement = glm::vec3(0,0,0);
+    if (keyboard[SDL_SCANCODE_W]) movement += camera.forward;
+    if (keyboard[SDL_SCANCODE_S]) movement -= camera.forward;
+    if (keyboard[SDL_SCANCODE_D]) movement += camera.right;
+    if (keyboard[SDL_SCANCODE_A]) movement -= camera.right;
+    if (keyboard[SDL_SCANCODE_E]) movement += camera.up;
+    if (keyboard[SDL_SCANCODE_Q]) movement -= camera.up;
+    
+    if (glm::length(movement) > 0.0f)
+    {
+        movement = glm::normalize(movement);
+    }
+
+    if(keyboard[SDL_SCANCODE_LSHIFT])
+    {
+        transform.Position += movement * deltaTime * camera.speed * 2.5f;
+    }
+    else 
+    {
+        transform.Position += movement * deltaTime * camera.speed;
+    }
+    #pragma endregion
+
+    uint64_t tick = static_cast<uint64_t>(SDL_GetTicks());
+    Table* table = EntityManager::GetTablesFromQuery(0)[0];
+        uint32_t batchesCount = table->GetBatchesCount();
+        const MemoryInfo* memoryInfo = table->GetMemoryInfo(transformComponentType);
+        
+        for(uint32_t i = 0; i < batchesCount; i++)
+        {
+            std::byte* batch = table->GetComponentsBatch(i);
+            uint32_t componentsCount = table->GetComponentsCountPerBatch(i);
+
+            for (uint32_t j = 0; j < componentsCount; j++)
+            {
+                Transform& transform = table->GetComponent<Transform>(batch, j, *memoryInfo);
+
+                transform.Rotation = glm::vec3(
+                    accumulator + transform.Position.x,
+                    accumulator + transform.Position.x * 3 / transform.Position.z,
+                    accumulator + transform.Position.y / 3
+                );
+            }
+        }
+
+        accumulator += deltaTime;
 }
 
-//static SystemRegistrar start(Start, SystemStage::Start);
-//static SystemRegistrar update(Update, SystemStage::Update);
+static SystemRegistrar start(Start, SystemStage::Start);
+static SystemRegistrar update(Update, SystemStage::Update);

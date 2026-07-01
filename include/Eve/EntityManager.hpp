@@ -19,13 +19,21 @@ namespace Eve::Entities
     {
         public:
             //10000, 500
-            static void Initialize(const uint32_t maxEntityCount = 1, const uint32_t maxEntityCommandsCount = 1);
+            static void Initialize(const uint32_t maxEntityCount = 1001, const uint32_t maxEntityCommandsCount = 1);
             static void Destroy();
 
+            // Queries
+            static uint32_t RegisterQuery(const QueryInfo queryInfo);
             static std::vector<Table*>& GetTablesFromQuery(const uint32_t queryTicket);
 
-            static uint32_t RegisterQuery(const QueryInfo queryInfo);
-            static void RegisterEntityCommandPool(EntityCommandPool& entityCommandPool);
+            // Entity Command Pools
+            static uint32_t CreateCommandPool(const uint32_t creationCommandBufferInitialSize = 0, const uint32_t destructionCommandBufferInitialSize = 0, 
+                const uint32_t transitionCommandBufferInitialSize = 0, const uint32_t creationComponentsInitialSize = 0, 
+                const uint32_t transitionComponentsInitialSize = 0);
+            static void DestroyCommandPool(const uint32_t commandPoolId);
+            static EntityCommandPool& GetEntityCommandPool(const uint32_t commandPoolId);
+
+
             static void ExecuteEntityCommands();
 
 
@@ -49,7 +57,7 @@ namespace Eve::Entities
             inline static std::unordered_map<Type, Table*> tables;
             inline static Entity* entities;
             inline static EntityRecord* entitiesRegister;
-            inline static std::vector<EntityCommandPool*> entityCommandPools;
+            inline static std::vector<EntityCommandPool> entityCommandPools;
 
             inline static bool updateQueries = true; 
             inline static std::vector<QueryInfo> queryInfos;

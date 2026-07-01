@@ -1,10 +1,8 @@
-#include "Eve/Debug.hpp"
-#include "Eve/SystemDispatcher.hpp"
-#include "SDL3/SDL_stdinc.h"
-#include "SDL3/SDL_timer.h"
+#include "SDL3/SDL_events.h"
+#include "SDL3/SDL_mouse.h"
+#include "SDL3/SDL_scancode.h"
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define STB_IMAGE_IMPLEMENTATION
 #include <Application.hpp>
 
@@ -39,8 +37,11 @@ bool Application::Initialize()
 void Application::Start()
 {
 
-    //SystemDispatcher::ExecuteStartStage();
+    print("Going to execute start stages");
+    SystemDispatcher::ExecuteStartStage();
+    print("Start stage executed");
 
+    /*
     Transform transform 
     {
         glm::vec3(0,0,0),
@@ -63,26 +64,14 @@ void Application::Start()
     };
 
     commandInfo->AddComponent<Transform>(transform, componentType);
-    EntityCommandPool* commandPool = new EntityCommandPool
-    {
-        0,
-        0,
-        0,
-        0,
-        0
-    };
     
-    commandPool->ScheduleCreationCommand(entity, commandInfo);
+    uint32_t commandPoolId = EntityManager::CreateCommandPool();
+    EntityCommandPool& commandPool = EntityManager::GetEntityCommandPool(commandPoolId);
 
-    EntityManager::RegisterEntityCommandPool(*commandPool);
-
-    QueryInfo* queryInfo = new QueryInfo(componentType, true);
-    uint32_t queryTicket = EntityManager::RegisterQuery(*queryInfo);
-    EntityManager::ExecuteEntityCommands();
+    commandPool.ScheduleCreationCommand(entity, commandInfo);
 
     delete queryInfo;
-    delete commandInfo;
-    delete commandPool;
+    delete commandInfo;*/
 }
 
 void Application::Run()
@@ -95,7 +84,7 @@ void Application::Run()
 
         Uint64 elapsedNS = currentTick - lastTick;
 
-        const float deltaTime = (double)elapsedNS / SDL_NS_PER_MS;
+        const float deltaTime = (double)elapsedNS / SDL_NS_PER_SECOND;
 
         lastTick = currentTick;
 
@@ -111,6 +100,30 @@ void Application::Run()
             {
                 windowWidth = event.window.data1;
                 windowHeight = event.window.data2;
+                continue;
+            }
+        
+            if(event.type == SDL_EVENT_KEY_DOWN)
+            {
+                if(event.key.scancode == SDL_SCANCODE_ESCAPE)
+                {
+                    SDL_SetWindowRelativeMouseMode(window, false);
+                    continue;
+                }
+            }
+
+            if(event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
+            {
+                SDL_SetWindowRelativeMouseMode(window, false);
+                continue;
+            }
+            else if(event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
+            {
+                if (event.button.button == SDL_BUTTON_LEFT)
+                {   
+                    SDL_SetWindowRelativeMouseMode(window, true);
+                    continue;
+                }
             }
         }
 
@@ -279,9 +292,9 @@ void Application::Render()
 
         VkViewport viewport
         {
-            .x = 0, .y = 0,
+            .x = 0, .y = static_cast<float>(swapchainHeight),
             .width = static_cast<float>(swapchainWidth),
-            .height =  static_cast<float>(swapchainHeight),
+            .height =  -static_cast<float>(swapchainHeight),
             .minDepth = 0.0f,
             .maxDepth = 1.0f
         };
@@ -355,22 +368,30 @@ void Application::Render()
             vkCmdDrawIndexed(data.commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
         }*/
 
+        Type componentType = 0;
+        componentType.set(0);
+        Type cameraComponentType = 0;
+        cameraComponentType.set(1);
+        Table* cameraTable = EntityManager::GetTablesFromQuery(1)[0];
+        std::byte* cameraBatch = cameraTable->GetComponentsBatch(0);
+        const MemoryInfo* transformMemoryInfo = cameraTable->GetMemoryInfo(componentType);
+        const MemoryInfo* cameraMemoryInfo = cameraTable->GetMemoryInfo(cameraComponentType);
+        Transform& transform = cameraTable->GetComponent<Transform>(cameraBatch, 0, *transformMemoryInfo);
+        Camera& camera = cameraTable->GetComponent<Camera>(cameraBatch, 0, *cameraMemoryInfo);
+
         glm::mat4 view = glm::lookAt(
-            glm::vec3(0, 0, 4),
-            glm::vec3(0, 0, 0),
-            glm::vec3(0, 1, 0)
+            transform.Position,
+            transform.Position + camera.forward,
+            camera.up
         );
         glm::mat4 projection = glm::perspective(glm::radians(fov), aspect, nearPlane, farPlane);
-        projection[1][1] *= -1;
+
         glm::mat4 mvp;
         PushConstant pushConstantData;
 
-        
-        Type archtype = 0;
-        archtype.set(0);
         Table* table = EntityManager::GetTablesFromQuery(0)[0];
         uint32_t batchesCount = table->GetBatchesCount();
-        const MemoryInfo* memoryInfo = table->GetMemoryInfo(archtype);
+        const MemoryInfo* memoryInfo = table->GetMemoryInfo(componentType);
         
         for(uint32_t i = 0; i < batchesCount; i++)
         {
@@ -476,8 +497,7 @@ void Application::Render()
         .pResults = nullptr
     };
 
-    vkQueuePresentKHR(graphicsQueue, &presentInfo);
-    
+    vkQueuePresentKHR(graphicsQueue, &presentInfo); 
 }
 
 void Application::Shutdown()
@@ -789,7 +809,6 @@ bool Application::GetGraphicsQueue()
     printError("Unable to get a graphics queue with required properties");
 
     return false;
-
 }
 
 bool Application::CreateDevice()
@@ -1061,7 +1080,6 @@ bool Application::CreateSwapchain()
     }
 
     return true;
-
 }
 
 bool Application::CreateShaders()
@@ -1196,7 +1214,7 @@ bool Application::CreateGraphicsPipeline()
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
         .polygonMode = VK_POLYGON_MODE_FILL,
         .cullMode = VK_CULL_MODE_BACK_BIT,
-        .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        .frontFace = VK_FRONT_FACE_CLOCKWISE,
         .lineWidth = 1
     };
 

@@ -1,3 +1,4 @@
+#include "Eve/EntityCommandPool.hpp"
 #include <Eve/EntityManager.hpp>
 using namespace Eve::Internal;
 
@@ -113,18 +114,38 @@ void EntityManager::SetEntityInfos(const uint32_t id, Table* table, const uint32
     };
 }
 
-void EntityManager::RegisterEntityCommandPool(EntityCommandPool& entityCommandPool)
+uint32_t EntityManager::CreateCommandPool(const uint32_t creationCommandBufferInitialSize, const uint32_t destructionCommandBufferInitialSize, 
+                const uint32_t transitionCommandBufferInitialSize, const uint32_t creationComponentsInitialSize, const uint32_t transitionComponentsInitialSize)
 {
-    entityCommandPools.push_back(&entityCommandPool);
+    entityCommandPools.emplace_back(
+        creationCommandBufferInitialSize,
+        destructionCommandBufferInitialSize,
+        transitionCommandBufferInitialSize,
+        creationComponentsInitialSize,
+        transitionComponentsInitialSize
+    );
+
+    return entityCommandPools.size() - 1;
+}
+
+void EntityManager::DestroyCommandPool(const uint32_t commandPoolId)
+{
+    entityCommandPools[commandPoolId].Clear();
+    entityCommandPools.erase(entityCommandPools.cbegin() + commandPoolId);
+}
+
+EntityCommandPool& EntityManager::GetEntityCommandPool(const uint32_t commandPoolId)
+{
+    return entityCommandPools[commandPoolId];
 }
 
 void EntityManager::ExecuteEntityCommands()
 {
-    for(EntityCommandPool* entityCommandPool : entityCommandPools)
+    for(EntityCommandPool& entityCommandPool : entityCommandPools)
     {
         // Fill the pendingDestructionEntities vector with all
         // the entities which need to be destroyed
-        std::vector<EntityDestructionCommand>& destructionCommands = entityCommandPool->GetDestructionCommands();
+        std::vector<EntityDestructionCommand>& destructionCommands = entityCommandPool.GetDestructionCommands();
         for (uint32_t i = 0; i < destructionCommands.size(); i++)
         {
             EntityDestructionCommand command = destructionCommands[i];
@@ -153,16 +174,16 @@ void EntityManager::ExecuteEntityCommands()
 
     SortEntitiesToDestroy(pendingDestructionEntities);
     
-    for(EntityCommandPool* entityCommandPool : entityCommandPools)
+    for(EntityCommandPool& entityCommandPool : entityCommandPools)
     {
         //transition
-        ExecuteTransitionCommands(entityCommandPool);
+        ExecuteTransitionCommands(&entityCommandPool);
     }
     
-    for(EntityCommandPool* entityCommandPool : entityCommandPools)
+    for(EntityCommandPool& entityCommandPool : entityCommandPools)
     {
         //creation
-        ExecuteCreationCommands(entityCommandPool);
+        ExecuteCreationCommands(&entityCommandPool);
     }
 
     pendingDestructionEntities.insert
