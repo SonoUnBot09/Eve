@@ -44,7 +44,6 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
             uint32_t bitIndex = std::countr_zero(componentType.to_ullong());
 
             activeBits |= (1ULL << bitIndex);
-            Debug::print(std::to_string(bitIndex) + "    " + std::to_string(i) + "    " + std::to_string(componentType.to_ullong()));
             componentsIndices[bitIndex] = i;
         }
 

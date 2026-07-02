@@ -25,6 +25,10 @@ namespace Eve::Entities
             inline std::byte& GetComponentsBatch(const uint32_t index) { return *batches[index]; }
             inline const MemoryInfo GetMemoryInfo(const Type componentType) { return *memoryLayout.GetMemoryInfo(componentType); }
 
+            template<typename T>
+            inline T& GetComponentArray(std::byte& batch, const MemoryInfo memoryInfo)
+            { return *reinterpret_cast<T*>(&batch + memoryInfo.offset); }
+
             inline uint32_t GetBatchesCount() { return batches.size(); }
             inline uint32_t GetComponentsCountPerBatch(const uint32_t batchIndex) { return componentsCountPerBatch[batchIndex]; }
             inline int32_t GetLastBatchIndex() { return batches.size() - 1; }
@@ -33,6 +37,9 @@ namespace Eve::Entities
             template<typename T>
             inline T& GetComponent(std::byte& batch, const uint32_t rowIndex, const MemoryInfo memoryInfo)
             { return *reinterpret_cast<T*>(&batch + memoryInfo.offset + memoryInfo.stride * rowIndex); }
+            template<typename T>
+            inline T& GetComponent(T& firstComponent, const uint32_t rowIndex, const MemoryInfo memoryInfo)
+            { return *(&firstComponent + rowIndex); }
 
             ~Table()
             {

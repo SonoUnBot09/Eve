@@ -1,6 +1,3 @@
-#include "SDL3/SDL_events.h"
-#include "SDL3/SDL_mouse.h"
-#include "SDL3/SDL_scancode.h"
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
@@ -36,7 +33,6 @@ bool Application::Initialize()
 
 void Application::Start()
 {
-
     print("Going to execute start stages");
     SystemDispatcher::ExecuteStartStage();
     print("Start stage executed");
@@ -76,6 +72,8 @@ void Application::Start()
 
 void Application::Run()
 {
+    uint32_t fps = 0;
+    float timer = 0;
     Uint64 lastTick = SDL_GetTicksNS();
     Uint64 currentTick = 0;
     while(isAppRunning)
@@ -126,7 +124,15 @@ void Application::Run()
                 }
             }
         }
-
+        
+        if(timer > 1)
+        {
+            print(std::to_string(fps));
+            timer = 0;
+            fps = 0;
+        }
+        timer += deltaTime;
+        fps++;
         SystemDispatcher::ExecuteUpdateStage(deltaTime);
 
         Render();
@@ -320,7 +326,7 @@ void Application::Render()
         const float fov = 70.0f;
         const float aspect = static_cast<float>(swapchainWidth) / static_cast<float>(swapchainHeight);
         const float nearPlane = 0.1f;
-        const float farPlane = 100.0f;
+        const float farPlane = 300.0f;
 
         /*
         glm::vec3 cubePositions[] = {
@@ -392,24 +398,27 @@ void Application::Render()
         Table& table = EntityManager::GetTablesFromQuery(0)[0];
         uint32_t batchesCount = table.GetBatchesCount();
         const MemoryInfo memoryInfo = table.GetMemoryInfo(componentType);
-        
+
+        glm::mat4 viewProj = projection * view;
         for(uint32_t i = 0; i < batchesCount; i++)
         {
             std::byte& batch = table.GetComponentsBatch(i);
             uint32_t componentsCount = table.GetComponentsCountPerBatch(i);
+            Transform& transformArray = table.GetComponentArray<Transform>(batch, memoryInfo);
 
             for (uint32_t j = 0; j < componentsCount; j++)
             {
-                Transform& component = table.GetComponent<Transform>(batch, j, memoryInfo);
+                Transform& component = table.GetComponent<Transform>(transformArray, j, memoryInfo);
 
                 glm::mat4 model = glm::translate(glm::mat4(1), component.Position);
                 model = glm::rotate(model, component.Rotation.x, glm::vec3(1, 0, 0));
                 model = glm::rotate(model, component.Rotation.y, glm::vec3(0, 1, 0));
                 model = glm::rotate(model, component.Rotation.z, glm::vec3(0, 0, 1));
-                mvp = projection * view * model;
+                mvp = viewProj * model;
 
                 pushConstantData.mvp = mvp;
 
+                
                 vkCmdPushConstants 
                 (
                     data.commandBuffer, 
@@ -698,7 +707,7 @@ bool Application::CreateVulkanInstance()
 
     std::vector<const char *> requestedExtensions
     {
-        VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+        //VK_EXT_DEBUG_UTILS_EXTENSION_NAME
     };
     for (int i = 0; i < extensionsCount; i++)
     {
@@ -707,7 +716,7 @@ bool Application::CreateVulkanInstance()
 
     std::vector<const char*> requestedLayers
     {
-        "VK_LAYER_KHRONOS_validation"
+        //"VK_LAYER_KHRONOS_validation"
     };
 
     VkDebugUtilsMessengerCreateInfoEXT debugInfo
@@ -725,7 +734,7 @@ bool Application::CreateVulkanInstance()
     VkInstanceCreateInfo instanceCI
     {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        .pNext = &debugInfo,
+        .pNext = nullptr,
         .pApplicationInfo = &appInfo,
         .enabledLayerCount = static_cast<uint32_t>(requestedLayers.size()),
         .ppEnabledLayerNames = requestedLayers.data(),
@@ -984,7 +993,7 @@ bool Application::CreateSwapchain()
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = surfaceCaps.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = VK_PRESENT_MODE_FIFO_KHR
+        .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR
     };
 
     if(vkCreateSwapchainKHR(device, &swapchainCI, nullptr, &swapchain) != VK_SUCCESS)
@@ -1494,7 +1503,6 @@ void Application::CreateMeshBuffers()
 
     vmaDestroyBuffer(vmaAllocator, vertexStagingBuffer.bufferHandle, vertexStagingBuffer.allocation);
     vmaDestroyBuffer(vmaAllocator, indexStagingBuffer.bufferHandle, indexStagingBuffer.allocation);
-
 }
 
 void Application::CreateDescriptor()
@@ -1794,7 +1802,6 @@ void Application::LoadTextureData(unsigned char *source, int width, int height)
     vkDestroyCommandPool(device, cmdPool, nullptr);
 
     vmaDestroyBuffer(vmaAllocator, stagingBuffer.bufferHandle, stagingBuffer.allocation);
-
 }
 
 VkShaderModule Application::CreateShaderModule(std::string fileName, shaderc_shader_kind kind)

@@ -27,13 +27,14 @@ find_package(
     shaderc_combined
 )
 
+#[[
 if(TARGET Vulkan::shaderc_combined)
     set_target_properties(Vulkan::shaderc_combined PROPERTIES MAP_IMPORTED_CONFIG_DEBUG Release)
 endif()
 
 if(TARGET Vulkan::volk)
     set_target_properties(Vulkan::volk PROPERTIES MAP_IMPORTED_CONFIG_DEBUG Release)
-endif()
+endif()]]
 
 add_executable(Eve
     main.cpp
@@ -47,7 +48,7 @@ add_executable(Eve
 )
 
 target_compile_features(Eve PRIVATE cxx_std_20)
-
+#[[
 set_property(TARGET Eve PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     # Flag per GCC e Clang
@@ -64,7 +65,7 @@ elseif(MSVC)
     # Flag per MSVC (Visual Studio)
     target_compile_options(Eve PRIVATE /fsanitize=address)
     target_link_options(Eve PRIVATE /fsanitize=address)
-endif()
+endif() ]]
 
 target_link_libraries(Eve PRIVATE
     SDL3::SDL3

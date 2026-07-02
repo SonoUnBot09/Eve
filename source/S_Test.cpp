@@ -1,6 +1,3 @@
-#include "SDL3/SDL_mouse.h"
-#include "SDL3/SDL_scancode.h"
-#include "glm/geometric.hpp"
 #include <components/Camera.hpp>
 #include <Eve/SystemDispatcher.hpp>
 #include <Eve/Debug.hpp>
@@ -28,11 +25,11 @@ void Start()
     EntityCommandPool& commandPool = EntityManager::GetEntityCommandPool(commandPoolId);
 
     uint32_t id = 0;
-    for(int32_t x = 0; x < 10; x++)
+    for(int32_t x = 0; x < 46; x++)
     {
-        for(int32_t y = 0; y < 10; y++)
+        for(int32_t y = 0; y < 46; y++)
         {
-            for (int32_t z = 0; z < 10; z++)
+            for (int32_t z = 0; z < 46; z++)
             {
                 Entity entity = {id, 0};
                 Transform transform = 
@@ -63,22 +60,19 @@ void Start()
         glm::vec3(0,0,1),
         glm::vec3(0,1,0),
         4,
-        10
+        0.3f
     };
 
     entityCommandInfo.AddComponent<Transform>(transform, transformComponentType);
     entityCommandInfo.AddComponent<Camera>(camera, cameraComponentType);
     commandPool.ScheduleCreationCommand(cameraEntity, &entityCommandInfo);
 
-    QueryInfo* queryInfo = new QueryInfo(transformComponentType, true);
-    uint32_t queryTicket = EntityManager::RegisterQuery(*queryInfo);
-    QueryInfo* queryInfo2 = new QueryInfo(transformComponentType | cameraComponentType, true);
-    uint32_t queryTicket2 = EntityManager::RegisterQuery(*queryInfo2);
+    QueryInfo queryInfo(transformComponentType, true);
+    uint32_t queryTicket = EntityManager::RegisterQuery(queryInfo);
+    QueryInfo queryInfo2(transformComponentType | cameraComponentType, true);
+    uint32_t queryTicket2 = EntityManager::RegisterQuery(queryInfo2);
 
     EntityManager::ExecuteEntityCommands();
-    Debug::print("AAAAAAAAAAAA" + std::to_string(queryTicket2) + "   " + std::to_string(queryTicket));
-    delete queryInfo;
-    delete queryInfo2;
 }
 
 void Update(const float deltaTime)
@@ -100,8 +94,8 @@ void Update(const float deltaTime)
     float mouseDeltaY = 0;
     SDL_GetRelativeMouseState(&mouseDeltaX, &mouseDeltaY);
     
-    camera.yaw += (float)mouseDeltaX * camera.sensitivity * deltaTime;
-    camera.pitch = glm::clamp(camera.pitch - (float)mouseDeltaY * camera.sensitivity * deltaTime, -89.0f, 89.0f);
+    camera.yaw += (float)mouseDeltaX * camera.sensitivity;
+    camera.pitch = glm::clamp(camera.pitch - (float)mouseDeltaY * camera.sensitivity, -89.0f, 89.0f);
     
     float radYaw = glm::radians(camera.yaw);
     float radPitch = glm::radians(camera.pitch);
@@ -136,30 +130,31 @@ void Update(const float deltaTime)
         transform.Position += movement * deltaTime * camera.speed;
     }
     #pragma endregion
-
+    
     uint64_t tick = static_cast<uint64_t>(SDL_GetTicks());
     Table& table = EntityManager::GetTablesFromQuery(0)[0];
-        uint32_t batchesCount = table.GetBatchesCount();
-        const MemoryInfo memoryInfo = table.GetMemoryInfo(transformComponentType);
-        
-        for(uint32_t i = 0; i < batchesCount; i++)
+    uint32_t batchesCount = table.GetBatchesCount();
+    const MemoryInfo memoryInfo = table.GetMemoryInfo(transformComponentType);
+    
+    for(uint32_t i = 0; i < batchesCount; i++)
+    {
+        std::byte& batch = table.GetComponentsBatch(i);
+        uint32_t componentsCount = table.GetComponentsCountPerBatch(i);
+        Transform& transformArray = table.GetComponentArray<Transform>(batch, memoryInfo);
+
+        for (uint32_t j = 0; j < componentsCount; j++)
         {
-            std::byte& batch = table.GetComponentsBatch(i);
-            uint32_t componentsCount = table.GetComponentsCountPerBatch(i);
+            Transform& transform = table.GetComponent<Transform>(transformArray, j, memoryInfo);
 
-            for (uint32_t j = 0; j < componentsCount; j++)
-            {
-                Transform& transform = table.GetComponent<Transform>(batch, j, memoryInfo);
-
-                transform.Rotation = glm::vec3(
-                    accumulator + transform.Position.x,
-                    accumulator + transform.Position.x * 3 / transform.Position.z,
-                    accumulator + transform.Position.y / 3
-                );
-            }
+            transform.Rotation = glm::vec3(
+                accumulator + transform.Position.x,
+                accumulator + transform.Position.x * 3 / transform.Position.z,
+                accumulator + transform.Position.y / 3
+            );
         }
+    }
 
-        accumulator += deltaTime;
+    accumulator += deltaTime;
 }
 
 static SystemRegistrar start(Start, SystemStage::Start);

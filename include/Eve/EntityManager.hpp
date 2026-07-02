@@ -20,7 +20,7 @@ namespace Eve::Entities
     {
         public:
             //10000, 500
-            static void Initialize(const uint32_t maxEntityCount = 1001, const uint32_t maxEntityCommandsCount = 1);
+            static void Initialize(const uint32_t maxEntityCount = 100001, const uint32_t maxEntityCommandsCount = 1);
             static void Destroy();
 
             // Queries
