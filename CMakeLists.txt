@@ -38,7 +38,6 @@ endif()
 add_executable(Eve
     main.cpp
     source/Application.cpp
-    source/EntityCommandInfo.cpp
     source/EntityCommandPool.cpp
     source/EntityManager.cpp
     source/MemoryLayout.cpp

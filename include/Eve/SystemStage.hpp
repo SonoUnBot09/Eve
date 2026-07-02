@@ -2,6 +2,7 @@
 
 enum class SystemStage
 {
+    Awake,
     Start,
     Update
 };

@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
+#include <functional>
 
 #include <Eve/Type.hpp>
 #include <Eve/Entity.hpp>
@@ -24,7 +25,7 @@ namespace Eve::Entities
 
             // Queries
             static uint32_t RegisterQuery(const QueryInfo queryInfo);
-            static std::vector<Table*>& GetTablesFromQuery(const uint32_t queryTicket);
+            static std::vector<std::reference_wrapper<Table>>& GetTablesFromQuery(const uint32_t queryTicket);
 
             // Entity Command Pools
             static uint32_t CreateCommandPool(const uint32_t creationCommandBufferInitialSize = 0, const uint32_t destructionCommandBufferInitialSize = 0, 
@@ -61,7 +62,7 @@ namespace Eve::Entities
 
             inline static bool updateQueries = true; 
             inline static std::vector<QueryInfo> queryInfos;
-            inline static std::vector<std::vector<Table*>> queryResults;
+            inline static std::vector<std::vector<std::reference_wrapper<Table>>> queryResults;
 
             // Internal data
             inline static std::vector<Eve::Internal::SlotInfo> pendingDestructionEntities;

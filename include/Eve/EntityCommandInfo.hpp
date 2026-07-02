@@ -27,7 +27,7 @@ namespace Eve::Entities
         public:
 
             template<typename T>
-            void AddComponent(const T& component, const Type componentType)
+            inline void AddComponent(const T& component, const Type componentType)
             {
                 uint32_t size = sizeof(component);
                 uint32_t availableSpace = creationComponents.size() - creationComponentsOffset;
@@ -45,21 +45,34 @@ namespace Eve::Entities
                 createComponentsArchtype = (createComponentsArchtype | componentType);
 
             }
-            void RemoveComponent(const Type componentType);
+            inline void RemoveComponent(const Type componentType) { destroyComponentsArchtype = (destroyComponentsArchtype | componentType); }
 
-            const Type GetCreateComponentsArchtype();
-            const Type GetDestroyComponentsArchtype();
-            const size_t GetComponentsArraySize();
-            const std::vector<std::byte>& GetCreationComponents();
-            const std::vector<Type>& GetCreationComponentsType();
-            void Clean();
+            inline const Type GetCreateComponentsArchtype() { return createComponentsArchtype; }
+            inline const Type GetDestroyComponentsArchtype() { return destroyComponentsArchtype; }
+            inline const size_t GetComponentsArraySize() { return creationComponentsOffset; }
+            inline void Clean() 
+            { 
+                creationComponentsOffset = 0;
+
+                createComponentsArchtype = 0;
+                destroyComponentsArchtype = 0;
+
+                creationComponents.clear();
+                creationComponentsType.clear();
+            }
 
         private:
+
+            inline const std::vector<std::byte>& GetCreationComponents() { return creationComponents; }
+            inline const std::vector<Type>& GetCreationComponentsType() { return creationComponentsType; }
+
             uint32_t creationComponentsOffset = 0;
 
             Type createComponentsArchtype = 0;
             Type destroyComponentsArchtype = 0;
             std::vector<std::byte> creationComponents;
             std::vector<Type> creationComponentsType;
+
+            friend class EntityCommandPool;
     };
 }

@@ -1,19 +1,28 @@
 #pragma once
 
 #include <vector>
-
 #include <Eve/SystemStage.hpp>
 
 class Application;
 
 namespace Eve::Entities
 {
+    using AwakeStage = void(*)();
     using StartStage = void(*)();
     using UpdateStage = void(*)(float);
 
     class SystemDispatcher
     {
-        private:    
+        private:
+
+            static inline std::vector<AwakeStage>& GetAwakeStage()
+            {
+                static std::vector<AwakeStage> awakeStages;
+
+                return awakeStages;
+            }
+
+        
             static inline std::vector<StartStage>& GetStartStage()
             {
                 static std::vector<StartStage> startStages;
@@ -39,14 +48,31 @@ namespace Eve::Entities
     {
         public:
 
-            SystemRegistrar(StartStage function, SystemStage stage)
+            SystemRegistrar(void(* function)(), SystemStage stage)
             {
-                SystemDispatcher::GetStartStage().push_back(function);
+                switch (stage)
+                {
+                    case SystemStage::Start:
+                        SystemDispatcher::GetStartStage().push_back(function);
+                        break;
+                    case SystemStage::Awake:
+                        SystemDispatcher::GetAwakeStage().push_back(function);
+                        break;
+                    default:
+                        break;
+                }
             }
 
-            SystemRegistrar(UpdateStage function, SystemStage stage)
+            SystemRegistrar(void(* function)(float), SystemStage stage)
             {
-                SystemDispatcher::GetUpdateStage().push_back(function);
+                switch (stage)
+                {
+                    case SystemStage::Update:
+                        SystemDispatcher::GetUpdateStage().push_back(function);
+                        break;
+                    default:
+                        break;
+                }
             }
     };
 }

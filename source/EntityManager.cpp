@@ -1,4 +1,3 @@
-#include "Eve/EntityCommandPool.hpp"
 #include <Eve/EntityManager.hpp>
 using namespace Eve::Internal;
 
@@ -40,7 +39,7 @@ void EntityManager::Destroy()
 
 }
 
-std::vector<Table*>& EntityManager::GetTablesFromQuery(const uint32_t queryTicket)
+std::vector<std::reference_wrapper<Table>>& EntityManager::GetTablesFromQuery(const uint32_t queryTicket)
 {
     return queryResults[queryTicket];
 }
@@ -73,13 +72,13 @@ void EntityManager::UpdateQueries()
 
                 if(!isTableValid) { continue; }
 
-                queryResults[i].push_back(table);
+                queryResults[i].push_back(*table);
             }
             else 
             {
                 if(queryInfo.ComponentsRequired == archtype)
                 {
-                    queryResults[i].push_back(table);
+                    queryResults[i].push_back(*table);
                 }
             }
         }
@@ -270,10 +269,10 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
         Table* oldTable = oldSlot.Table;
         Table* newTable = nullptr;
 
-        std::byte* oldBatch = oldTable->GetComponentsBatch(oldSlot.BatchIndex);
+        std::byte* oldBatch = &oldTable->GetComponentsBatch(oldSlot.BatchIndex);
 
         uint32_t newBatchIndex = 0;
-        std::byte* newBatch = nullptr;
+        std::byte* newBatch;
         uint32_t newRowIndex = 0;
 
         if(newSlotIndex == -1)
@@ -282,10 +281,9 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
             newTable = GetTable(newArchtype);
 
             std::tuple<uint32_t, uint32_t> slotInfo = newTable->GetNewEntitySlot();
-
             newBatchIndex = std::get<0>(slotInfo);
             newRowIndex = std::get<1>(slotInfo);
-            newBatch = newTable->GetComponentsBatch(newBatchIndex);
+            newBatch = &newTable->GetComponentsBatch(newBatchIndex);
         }
         else 
         {
@@ -295,18 +293,18 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
 
             newBatchIndex = newSlot.BatchIndex;
             newRowIndex = newSlot.RowIndex;
-            newBatch = newTable->GetComponentsBatch(newBatchIndex);
+            newBatch = &newTable->GetComponentsBatch(newBatchIndex);
         }
 
         for (uint32_t j = 0; j < oldComponentsType.size(); j++)
         {
             Type componentType = oldComponentsType[j];
-            const MemoryInfo* oldMemoryInfo = oldTable->GetMemoryInfo(componentType);
-            const MemoryInfo* newMemoryInfo = newTable->GetMemoryInfo(componentType);
+            const MemoryInfo oldMemoryInfo = oldTable->GetMemoryInfo(componentType);
+            const MemoryInfo newMemoryInfo = newTable->GetMemoryInfo(componentType);
 
             std::memcpy(
-                newBatch + newMemoryInfo->offset + newMemoryInfo->stride * newRowIndex,
-                oldBatch + oldMemoryInfo->offset + oldMemoryInfo->stride * oldSlot.RowIndex,
+                newBatch + newMemoryInfo.offset + newMemoryInfo.stride * newRowIndex,
+                oldBatch + oldMemoryInfo.offset + oldMemoryInfo.stride * oldSlot.RowIndex,
                 ComponentsRegistry::GetComponentSizeFromBit(componentType)
             );
         }
@@ -315,13 +313,13 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
         for (uint32_t j = 0; j < newComponentsType.size(); j++)
         {
             Type componentType = newComponentsType[j];
-            const MemoryInfo* newMemoryInfo = newTable->GetMemoryInfo(componentType);
+            const MemoryInfo newMemoryInfo = newTable->GetMemoryInfo(componentType);
             
             uint32_t size = ComponentsRegistry::GetComponentSizeFromBit(componentType);
 
             std::memcpy
             (
-                newBatch + newMemoryInfo->offset + newMemoryInfo->stride * newRowIndex,
+                newBatch + newMemoryInfo.offset + newMemoryInfo.stride * newRowIndex,
                 creationComponentsData.data() + command.ComponentOffset + offset,
                 size
             );
@@ -393,7 +391,7 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
 
             newBatchIndex = std::get<0>(slotInfo);
             newRowIndex = std::get<1>(slotInfo);
-            newBatch = newTable->GetComponentsBatch(newBatchIndex);
+            newBatch = &newTable->GetComponentsBatch(newBatchIndex);
         }
         else 
         {
@@ -404,20 +402,20 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
             // Slot available
             newBatchIndex = newSlot.BatchIndex;
             newRowIndex = newSlot.RowIndex;
-            newBatch = newTable->GetComponentsBatch(newBatchIndex);
+            newBatch = &newTable->GetComponentsBatch(newBatchIndex);
         }
         
         uint32_t offset = 0;
         for (uint32_t j = 0; j < newComponentsType.size(); j++)
         {
             Type componentType = newComponentsType[j];
-            const MemoryInfo* memoryInfo = newTable->GetMemoryInfo(componentType);
+            const MemoryInfo memoryInfo = newTable->GetMemoryInfo(componentType);
 
             const uint32_t size = ComponentsRegistry::GetComponentSizeFromBit(componentType);
 
             std::memcpy
             (
-                newBatch + memoryInfo->offset + memoryInfo->stride * newRowIndex,
+                newBatch + memoryInfo.offset + memoryInfo.stride * newRowIndex,
                 creationComponentsData.data() + command.ComponentOffset + offset,
                 size
             );
@@ -480,19 +478,19 @@ void EntityManager::CompactBatches()
                 
                 skip = true;
 
-                std::byte* srcBatch = table->GetComponentsBatch(batchIndex);
-                std::byte* dstBatch = table->GetComponentsBatch(holeSlot.BatchIndex);
+                std::byte* srcBatch = &table->GetComponentsBatch(batchIndex);
+                std::byte* dstBatch = &table->GetComponentsBatch(holeSlot.BatchIndex);
                 for (uint32_t w = 0; w < newComponentsType.size(); w++)
                 {
                     Type componentType = newComponentsType[w];
 
-                    const MemoryInfo* memoryInfo = table->GetMemoryInfo(componentType);
+                    const MemoryInfo memoryInfo = table->GetMemoryInfo(componentType);
 
                     uint32_t size = ComponentsRegistry::GetComponentSizeFromBit(componentType);
                     std::memcpy
                     (
-                        dstBatch + memoryInfo->offset + memoryInfo->stride * holeSlot.RowIndex,
-                        srcBatch + memoryInfo->offset + memoryInfo->stride * j,
+                        dstBatch + memoryInfo.offset + memoryInfo.stride * holeSlot.RowIndex,
+                        srcBatch + memoryInfo.offset + memoryInfo.stride * j,
                         size
                     );
                 }

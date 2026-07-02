@@ -1,5 +1,4 @@
 #include <Eve/EntityCommandPool.hpp>
-#include <string>
 
 
 void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo)

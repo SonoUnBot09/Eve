@@ -372,12 +372,12 @@ void Application::Render()
         componentType.set(0);
         Type cameraComponentType = 0;
         cameraComponentType.set(1);
-        Table* cameraTable = EntityManager::GetTablesFromQuery(1)[0];
-        std::byte* cameraBatch = cameraTable->GetComponentsBatch(0);
-        const MemoryInfo* transformMemoryInfo = cameraTable->GetMemoryInfo(componentType);
-        const MemoryInfo* cameraMemoryInfo = cameraTable->GetMemoryInfo(cameraComponentType);
-        Transform& transform = cameraTable->GetComponent<Transform>(cameraBatch, 0, *transformMemoryInfo);
-        Camera& camera = cameraTable->GetComponent<Camera>(cameraBatch, 0, *cameraMemoryInfo);
+        Table& cameraTable = EntityManager::GetTablesFromQuery(1)[0];
+        std::byte& cameraBatch = cameraTable.GetComponentsBatch(0);
+        const MemoryInfo transformMemoryInfo = cameraTable.GetMemoryInfo(componentType);
+        const MemoryInfo cameraMemoryInfo = cameraTable.GetMemoryInfo(cameraComponentType);
+        Transform& transform = cameraTable.GetComponent<Transform>(cameraBatch, 0, transformMemoryInfo);
+        Camera& camera = cameraTable.GetComponent<Camera>(cameraBatch, 0, cameraMemoryInfo);
 
         glm::mat4 view = glm::lookAt(
             transform.Position,
@@ -389,18 +389,18 @@ void Application::Render()
         glm::mat4 mvp;
         PushConstant pushConstantData;
 
-        Table* table = EntityManager::GetTablesFromQuery(0)[0];
-        uint32_t batchesCount = table->GetBatchesCount();
-        const MemoryInfo* memoryInfo = table->GetMemoryInfo(componentType);
+        Table& table = EntityManager::GetTablesFromQuery(0)[0];
+        uint32_t batchesCount = table.GetBatchesCount();
+        const MemoryInfo memoryInfo = table.GetMemoryInfo(componentType);
         
         for(uint32_t i = 0; i < batchesCount; i++)
         {
-            std::byte* batch = table->GetComponentsBatch(i);
-            uint32_t componentsCount = table->GetComponentsCountPerBatch(i);
+            std::byte& batch = table.GetComponentsBatch(i);
+            uint32_t componentsCount = table.GetComponentsCountPerBatch(i);
 
             for (uint32_t j = 0; j < componentsCount; j++)
             {
-                Transform& component = table->GetComponent<Transform>(batch, j, *memoryInfo);
+                Transform& component = table.GetComponent<Transform>(batch, j, memoryInfo);
 
                 glm::mat4 model = glm::translate(glm::mat4(1), component.Position);
                 model = glm::rotate(model, component.Rotation.x, glm::vec3(1, 0, 0));

@@ -42,31 +42,15 @@ namespace Eve::Entities
             void ScheduleDestructionCommand(const Entity entity);
             void ScheduleTransitionCommand(const Entity entity, EntityCommandInfo& commandInfo);
 
-            inline std::vector<EntityCreationCommand>& GetCreationCommands()
-            {
-                return creationCommands;
-            }
-            inline std::vector<EntityDestructionCommand>& GetDestructionCommands()
-            {
-                return destructionCommands;
-            }
-            inline std::vector<EntityTransitionCommand>& GetTransitionCommands()
-            {
-                return transitionCommands;
-            }
-
-            inline std::vector<std::byte>& GetCreationComponentsData()
-            {
-                return creationComponentsData; 
-            }
-            inline std::vector<std::byte>& GetTransitionComponentsData()
-            {
-                return transitionComponentsData;
-            }
-
             void Clear();
 
         private:
+
+            inline std::vector<EntityCreationCommand>& GetCreationCommands() { return creationCommands; }
+            inline std::vector<EntityDestructionCommand>& GetDestructionCommands() { return destructionCommands; }
+            inline std::vector<EntityTransitionCommand>& GetTransitionCommands() { return transitionCommands; }
+            inline std::vector<std::byte>& GetCreationComponentsData() { return creationComponentsData; }
+            inline std::vector<std::byte>& GetTransitionComponentsData() { return transitionComponentsData;}
 
             std::vector<EntityCreationCommand> creationCommands;
             std::vector<EntityDestructionCommand> destructionCommands;
@@ -84,5 +68,7 @@ namespace Eve::Entities
 
             uint64_t activeBits = 0;
             std::array<uint32_t, 64> componentsIndices = {0};
+
+            friend class EntityManager;
     };
 }

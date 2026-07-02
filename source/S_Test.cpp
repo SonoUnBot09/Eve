@@ -86,14 +86,14 @@ void Update(const float deltaTime)
     #pragma region Camera
     const bool* keyboard = SDL_GetKeyboardState(NULL);
 
-    Table* cameraTable = EntityManager::GetTablesFromQuery(1)[0];
+    Table& cameraTable = EntityManager::GetTablesFromQuery(1)[0];
 
-    std::byte* batch = cameraTable->GetComponentsBatch(0);
-    const MemoryInfo* cameraMemInfo = cameraTable->GetMemoryInfo(cameraComponentType);
-    const MemoryInfo* transformMemInfo = cameraTable->GetMemoryInfo(transformComponentType);
+    std::byte& batch = cameraTable.GetComponentsBatch(0);
+    const MemoryInfo cameraMemInfo = cameraTable.GetMemoryInfo(cameraComponentType);
+    const MemoryInfo transformMemInfo = cameraTable.GetMemoryInfo(transformComponentType);
 
-    Camera& camera = cameraTable->GetComponent<Camera>(batch, 0, *cameraMemInfo);
-    Transform& transform = cameraTable->GetComponent<Transform>(batch, 0, *transformMemInfo);
+    Camera& camera = cameraTable.GetComponent<Camera>(batch, 0, cameraMemInfo);
+    Transform& transform = cameraTable.GetComponent<Transform>(batch, 0, transformMemInfo);
 
     
     float mouseDeltaX = 0;
@@ -138,18 +138,18 @@ void Update(const float deltaTime)
     #pragma endregion
 
     uint64_t tick = static_cast<uint64_t>(SDL_GetTicks());
-    Table* table = EntityManager::GetTablesFromQuery(0)[0];
-        uint32_t batchesCount = table->GetBatchesCount();
-        const MemoryInfo* memoryInfo = table->GetMemoryInfo(transformComponentType);
+    Table& table = EntityManager::GetTablesFromQuery(0)[0];
+        uint32_t batchesCount = table.GetBatchesCount();
+        const MemoryInfo memoryInfo = table.GetMemoryInfo(transformComponentType);
         
         for(uint32_t i = 0; i < batchesCount; i++)
         {
-            std::byte* batch = table->GetComponentsBatch(i);
-            uint32_t componentsCount = table->GetComponentsCountPerBatch(i);
+            std::byte& batch = table.GetComponentsBatch(i);
+            uint32_t componentsCount = table.GetComponentsCountPerBatch(i);
 
             for (uint32_t j = 0; j < componentsCount; j++)
             {
-                Transform& transform = table->GetComponent<Transform>(batch, j, *memoryInfo);
+                Transform& transform = table.GetComponent<Transform>(batch, j, memoryInfo);
 
                 transform.Rotation = glm::vec3(
                     accumulator + transform.Position.x,
