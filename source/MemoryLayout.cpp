@@ -38,7 +38,7 @@ const std::vector<size_t> MemoryLayout::CalculateComponentsSize(const std::vecto
     {
         Type componentType = components[i];
 
-        size_t size = ComponentsRegistry::GetComponentSizeFromBit(componentType);
+        size_t size = ComponentsRegistry::GetComponentSize(componentType);
 
         componentsStride.push_back(size);
         *totalComponentsSize += size;

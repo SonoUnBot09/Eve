@@ -305,7 +305,7 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
             std::memcpy(
                 newBatch + newMemoryInfo.offset + newMemoryInfo.stride * newRowIndex,
                 oldBatch + oldMemoryInfo.offset + oldMemoryInfo.stride * oldSlot.RowIndex,
-                ComponentsRegistry::GetComponentSizeFromBit(componentType)
+                ComponentsRegistry::GetComponentSize(componentType)
             );
         }
 
@@ -315,7 +315,7 @@ void EntityManager::ExecuteTransitionCommands(EntityCommandPool* entityCommandPo
             Type componentType = newComponentsType[j];
             const MemoryInfo newMemoryInfo = newTable->GetMemoryInfo(componentType);
             
-            uint32_t size = ComponentsRegistry::GetComponentSizeFromBit(componentType);
+            uint32_t size = ComponentsRegistry::GetComponentSize(componentType);
 
             std::memcpy
             (
@@ -411,7 +411,7 @@ void EntityManager::ExecuteCreationCommands(EntityCommandPool* entityCommandPool
             Type componentType = newComponentsType[j];
             const MemoryInfo memoryInfo = newTable->GetMemoryInfo(componentType);
 
-            const uint32_t size = ComponentsRegistry::GetComponentSizeFromBit(componentType);
+            const uint32_t size = ComponentsRegistry::GetComponentSize(componentType);
 
             std::memcpy
             (
@@ -486,7 +486,7 @@ void EntityManager::CompactBatches()
 
                     const MemoryInfo memoryInfo = table->GetMemoryInfo(componentType);
 
-                    uint32_t size = ComponentsRegistry::GetComponentSizeFromBit(componentType);
+                    uint32_t size = ComponentsRegistry::GetComponentSize(componentType);
                     std::memcpy
                     (
                         dstBatch + memoryInfo.offset + memoryInfo.stride * holeSlot.RowIndex,

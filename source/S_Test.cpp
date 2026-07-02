@@ -19,8 +19,8 @@ void Start()
     // register components
     transformComponentType.set(0);
     cameraComponentType.set(1);
-    ComponentsRegistry::RegisterComponent<Transform>(transformComponentType);
-    ComponentsRegistry::RegisterComponent<Camera>(cameraComponentType);
+    uint32_t transformComponentTicket = ComponentsRegistry::RegisterComponent<Transform>();
+    uint32_t cameraComponentTicket = ComponentsRegistry::RegisterComponent<Camera>();
 
     EntityCommandInfo entityCommandInfo(0, 0);
 

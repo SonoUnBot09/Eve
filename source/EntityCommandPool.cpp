@@ -23,7 +23,7 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
         uint32_t offset = 0;
         for (uint32_t i = 0; i < componentsCount; i++)
         {
-            const size_t size = ComponentsRegistry::GetComponentSizeFromBit(componentsType[i]);
+            const size_t size = ComponentsRegistry::GetComponentSize(componentsType[i]);
 
             componentsSize.push_back(size);
             componentsOffset.push_back(offset);
@@ -113,7 +113,7 @@ void EntityCommandPool::ScheduleTransitionCommand(const Entity entity, EntityCom
     uint32_t offset = 0;
     for (uint32_t i = 0; i < componentsCount; i++)
     {
-        const size_t size = ComponentsRegistry::GetComponentSizeFromBit(creationComponentsType[i]);
+        const size_t size = ComponentsRegistry::GetComponentSize(creationComponentsType[i]);
 
         componentsSize.push_back(size);
         componentsOffset.push_back(offset);
