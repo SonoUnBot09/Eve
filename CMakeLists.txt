@@ -39,11 +39,11 @@ endif()]]
 add_executable(Eve
     main.cpp
     source/Application.cpp
-    source/EntityCommandPool.cpp
-    source/EntityManager.cpp
-    source/MemoryLayout.cpp
-    source/Table.cpp
-    source/SystemDispatcher.cpp
+    source/entities/EntityCommandPool.cpp
+    source/entities/EntityManager.cpp
+    source/entities/MemoryLayout.cpp
+    source/entities/Table.cpp
+    source/entities/SystemDispatcher.cpp
     source/S_Test.cpp
 )
 

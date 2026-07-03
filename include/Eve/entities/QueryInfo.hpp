@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Eve/Type.hpp>
+#include <Eve/Entities/Type.hpp>
 
 namespace Eve::Entities
 {

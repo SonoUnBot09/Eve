@@ -1,7 +1,7 @@
 #include <components/Camera.hpp>
-#include <Eve/SystemDispatcher.hpp>
+#include <Eve/Entities/SystemDispatcher.hpp>
 #include <Eve/Debug.hpp>
-#include <Eve/EntityManager.hpp>
+#include <Eve/Entities/EntityManager.hpp>
 #include <components/Transform.hpp>
 #include <SDL3/SDL.h>
 

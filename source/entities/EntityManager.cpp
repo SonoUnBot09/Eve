@@ -1,5 +1,5 @@
-#include <Eve/EntityManager.hpp>
-using namespace Eve::Internal;
+#include <Eve/Entities/EntityManager.hpp>
+using namespace Eve::Entities;
 
 void EntityManager::Initialize( const uint32_t maxEntitiesCount, const uint32_t maxDestroyEntityCommands)
 {

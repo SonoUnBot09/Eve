@@ -4,10 +4,10 @@
 #include <array>
 #include <algorithm>
 
-#include <Eve/EntityCommands.hpp>
-#include <Eve/EntityCommandInfo.hpp>
-#include <Eve/ComponentsRegistry.hpp>
-#include <Eve/Entity.hpp>
+#include <Eve/Entities/EntityCommands.hpp>
+#include <Eve/Entities/EntityCommandInfo.hpp>
+#include <Eve/Entities/ComponentsRegistry.hpp>
+#include <Eve/Entities/Entity.hpp>
 
 #include <Eve/Debug.hpp>
 

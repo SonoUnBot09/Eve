@@ -7,7 +7,7 @@
 #include <array>
 #include <optional>
 
-#include <Eve/Type.hpp>
+#include <Eve/Entities/Type.hpp>
 
 namespace Eve::Entities
 {

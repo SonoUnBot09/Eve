@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include <Eve/Type.hpp>
+#include <Eve/Entities/Type.hpp>
 
 namespace Eve::Entities
 {

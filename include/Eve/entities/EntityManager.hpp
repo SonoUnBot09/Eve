@@ -5,14 +5,14 @@
 #include <algorithm>
 #include <functional>
 
-#include <Eve/Type.hpp>
-#include <Eve/Entity.hpp>
-#include <Eve/ComponentsRegistry.hpp>
-#include <Eve/Table.hpp>
-#include <Eve/EntityCommandPool.hpp>
-#include <Eve/EntityCommands.hpp>
-#include <Eve/QueryInfo.hpp>
-#include <Eve/internal/SlotInfo.hpp>
+#include <Eve/Entities/Type.hpp>
+#include <Eve/Entities/Entity.hpp>
+#include <Eve/Entities/ComponentsRegistry.hpp>
+#include <Eve/Entities/Table.hpp>
+#include <Eve/Entities/EntityCommandPool.hpp>
+#include <Eve/Entities/EntityCommands.hpp>
+#include <Eve/Entities/QueryInfo.hpp>
+#include <Eve/Entities/SlotInfo.hpp>
 
 namespace Eve::Entities
 {
@@ -40,11 +40,10 @@ namespace Eve::Entities
 
         private:
 
-
             static Table* GetTable(const Type archtype);
             static void SetEntityInfos(const uint32_t id, Table* table, const uint32_t batchIndex, const uint32_t rowIndex, const Type archtype);
 
-            static void SortEntitiesToDestroy(std::vector<Eve::Internal::SlotInfo>& vector);
+            static void SortEntitiesToDestroy(std::vector<SlotInfo>& vector);
             
             static void ExecuteTransitionCommands(EntityCommandPool* entityCommandPool);
             static void ExecuteCreationCommands(EntityCommandPool* entityCommandPool);
@@ -65,8 +64,8 @@ namespace Eve::Entities
             inline static std::vector<std::vector<std::reference_wrapper<Table>>> queryResults;
 
             // Internal data
-            inline static std::vector<Eve::Internal::SlotInfo> pendingDestructionEntities;
-            inline static std::vector<Eve::Internal::SlotInfo> afterTransitionInvalidSlots;
+            inline static std::vector<SlotInfo> pendingDestructionEntities;
+            inline static std::vector<SlotInfo> afterTransitionInvalidSlots;
 
             inline static std::vector<Type> newComponentsType;
             inline static std::vector<Type> oldComponentsType;

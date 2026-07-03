@@ -1,5 +1,6 @@
-#include <Eve/EntityCommandPool.hpp>
+#include <Eve/Entities/EntityCommandPool.hpp>
 
+using namespace Eve::Entities;
 
 void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo)
 {

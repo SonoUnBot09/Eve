@@ -19,11 +19,11 @@
 
 #include <components/Transform.hpp>
 #include <components/Camera.hpp>
-#include <Eve/EntityManager.hpp>
-#include <Eve/SystemDispatcher.hpp>
-#include <Eve/EntityCommandInfo.hpp>
-#include <Eve/EntityManager.hpp>
-#include <Eve/QueryInfo.hpp>
+#include <Eve/Entities/EntityManager.hpp>
+#include <Eve/Entities/SystemDispatcher.hpp>
+#include <Eve/Entities/EntityCommandInfo.hpp>
+#include <Eve/Entities/EntityManager.hpp>
+#include <Eve/Entities/QueryInfo.hpp>
 
 #include <Eve/Debug.hpp>
 #include <Eve/Utils.hpp>

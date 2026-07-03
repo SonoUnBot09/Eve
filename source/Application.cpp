@@ -3,6 +3,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <Application.hpp>
 
+using namespace Eve::Entities;
+
 bool Application::Initialize()
 {
     

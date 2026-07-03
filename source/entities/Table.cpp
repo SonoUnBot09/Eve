@@ -1,4 +1,23 @@
-#include <Eve/Table.hpp>
+#include <Eve/Entities/Table.hpp>
+#include <Entities/MemoryLayout.hpp>
+
+Table::Table(Type archtype, uint32_t batchSizeInByte) :
+archtype(archtype), 
+batchSize(batchSizeInByte),
+memoryLayout(std::make_unique<MemoryLayout>(archtype, batchSizeInByte))
+{
+    maxSingleComponentPerBatch = memoryLayout->GetMaxSingleComponentsCountPerBatch();
+}
+
+Table::~Table()
+{
+    DeallocateAllBatches();
+}
+
+const MemoryInfo Table::GetMemoryInfo(const Type componentType)
+{
+    return memoryLayout->GetMemoryInfo(componentType);
+}
 
 std::tuple<uint32_t, uint32_t> Table::GetNewEntitySlot()
 {   

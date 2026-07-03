@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <Eve/SystemStage.hpp>
+#include <Eve/Entities/SystemStage.hpp>
 
 class Application;
 

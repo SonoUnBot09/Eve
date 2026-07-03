@@ -2,10 +2,12 @@
 
 #include <vector>
 #include <cstdint>
+#include <memory>
 
-#include <Eve/MemoryInfo.hpp>
-#include <Eve/Type.hpp>
-#include <Eve/internal/MemoryLayout.hpp>
+#include <Eve/Entities/MemoryInfo.hpp>
+#include <Eve/Entities/Type.hpp>
+
+class MemoryLayout;
 
 namespace Eve::Entities
 {
@@ -13,17 +15,11 @@ namespace Eve::Entities
     {
         public:
 
-            Table(Type archtype, uint32_t batchSizeInByte) : 
-            archtype(archtype), 
-            batchSize(batchSizeInByte), 
-            memoryLayout(archtype, batchSizeInByte)
-            {
-                maxSingleComponentPerBatch = memoryLayout.GetMaxSingleComponentsCountPerBatch();
-            };
-
+            Table(Type archtype, uint32_t batchSizeInByte);
+            ~Table();
 
             inline std::byte& GetComponentsBatch(const uint32_t index) { return *batches[index]; }
-            inline const MemoryInfo GetMemoryInfo(const Type componentType) { return memoryLayout.GetMemoryInfo(componentType); }
+            const MemoryInfo GetMemoryInfo(const Type componentType);
 
             template<typename T>
             inline T& GetComponentArray(std::byte& batch, const MemoryInfo memoryInfo)
@@ -41,18 +37,13 @@ namespace Eve::Entities
             inline T& GetComponent(T& firstComponent, const uint32_t rowIndex, const MemoryInfo memoryInfo)
             { return *(&firstComponent + rowIndex); }
 
-            ~Table()
-            {
-                DeallocateAllBatches();
-            }
-
         private:
 
             Type archtype;
             uint32_t batchSize;
 
             uint32_t maxSingleComponentPerBatch;
-            Eve::Internal::MemoryLayout memoryLayout;
+            std::unique_ptr<MemoryLayout> memoryLayout;
 
             std::vector<uint32_t*> entitiesIndices;
             std::vector<std::vector<bool>> holesBit;

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <Eve/Type.hpp>
-#include <Eve/Table.hpp>
+#include <Eve/Entities/Type.hpp>
+#include <Eve/Entities/Table.hpp>
 
 namespace Eve::Entities
 {
