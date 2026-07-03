@@ -23,7 +23,7 @@ namespace Eve::Entities
 
 
             inline std::byte& GetComponentsBatch(const uint32_t index) { return *batches[index]; }
-            inline const MemoryInfo GetMemoryInfo(const Type componentType) { return *memoryLayout.GetMemoryInfo(componentType); }
+            inline const MemoryInfo GetMemoryInfo(const Type componentType) { return memoryLayout.GetMemoryInfo(componentType); }
 
             template<typename T>
             inline T& GetComponentArray(std::byte& batch, const MemoryInfo memoryInfo)

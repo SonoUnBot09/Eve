@@ -9,6 +9,7 @@ namespace Eve::Entities
         uint32_t stride;
         uint32_t offset;
 
+        MemoryInfo() = default;
         MemoryInfo(uint32_t stride, uint32_t offset) : stride(stride), offset(offset) {};
     };
 }

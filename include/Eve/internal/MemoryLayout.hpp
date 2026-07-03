@@ -1,8 +1,7 @@
 #pragma once
 
 #include <cmath>
-#include <iterator>
-#include <unordered_map>
+#include <array>
 
 #include <Eve/Type.hpp>
 #include <Eve/ComponentsRegistry.hpp>
@@ -39,7 +38,9 @@ namespace Eve::Internal
                     MemoryInfo memoryInfo(componentSize, componentOffset);
                 
                     //componentsLayout[componentType] = memoryInfo;
-                    componentsLayout.emplace(componentType, memoryInfo);
+                    uint32_t index = std::countr_zero(componentType.to_ullong());
+                    componentsLayout[index] = memoryInfo;
+                    //componentsLayout.emplace(componentType, memoryInfo);
                     //componentsLayout.e
 
                     offset = componentOffset + componentSize * maxSingleComponentCount;
@@ -49,14 +50,14 @@ namespace Eve::Internal
                 this->maxSingleComponentCount = maxSingleComponentCount;
             }
 
-            MemoryInfo* GetMemoryInfo(const Type componentType);
+            MemoryInfo GetMemoryInfo(const Type componentType);
             const uint32_t GetMaxSingleComponentsCountPerBatch();
 
         private:
 
             uint32_t maxSingleComponentCount;
 
-            std::unordered_map<Type, MemoryInfo> componentsLayout;
+            std::array<MemoryInfo, 64> componentsLayout;
 
             const std::vector<Type> GetActiveComponentsType(Type archtype);
             const std::vector<size_t> CalculateComponentsSize(const std::vector<Type>& components, uint32_t* totalComponentsSize);

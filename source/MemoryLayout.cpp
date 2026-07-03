@@ -1,13 +1,10 @@
 #include <Eve/internal/MemoryLayout.hpp>
 using namespace Eve::Internal;
 
-MemoryInfo* MemoryLayout::GetMemoryInfo(const Type componentType)
+MemoryInfo MemoryLayout::GetMemoryInfo(const Type componentType)
 {
-    auto tuple = componentsLayout.find(componentType);
-
-    if(tuple == componentsLayout.end()) { return nullptr; }
-
-    return &tuple->second;
+    uint32_t index = std::countr_zero(componentType.to_ullong());
+    return componentsLayout[index];
 }
 
 const uint32_t MemoryLayout::GetMaxSingleComponentsCountPerBatch()
