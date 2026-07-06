@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdint>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
+
 #include <Eve/graphics/Types.hpp>
 
 namespace Eve::Graphics

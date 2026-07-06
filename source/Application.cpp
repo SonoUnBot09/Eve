@@ -7,7 +7,6 @@ using namespace Eve::Entities;
 
 bool Application::Initialize()
 {
-    
     if(!SDL_Init(SDL_INIT_VIDEO))
     {
         printError("Unable to initialize SDL");
