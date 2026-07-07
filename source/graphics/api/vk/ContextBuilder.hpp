@@ -17,12 +17,12 @@
 
 using namespace Eve::Graphics;
 
-class VkContextBuilder
+class ContextBuilder
 {
     public:
 
-        bool Build(Window& window, Context& context, Swapchain& swapchain);
-        ~VkContextBuilder();
+        bool useValidationLayers = false;
+        Context& Build(Window _window, bool& success);
         
     private:
 
@@ -36,18 +36,13 @@ class VkContextBuilder
 
         Window window;
         Context context;
-        Swapchain swapchain;
 
-        bool CreateWindow();
         bool CreateInstance();
         bool ChoosePhysicalDevice();
         bool GetSurface();
         bool GetGraphicsQueue();
         bool CreateDevice();
         bool InitializeVMA();
-        bool CreateSwapchain();
-
-        void DestroySwapchain();
 
         // Vulkan dedicated func to print out errors
         static inline VKAPI_ATTR VkBool32 VKAPI_CALL PrintVulkanMessages( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

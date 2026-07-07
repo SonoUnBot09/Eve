@@ -1,88 +1,73 @@
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 
-#include <graphics/api/vk/VkContextBuilder.hpp>
+#include <graphics/api/vk/ContextBuilder.hpp>
 #include <Eve/Debug.hpp>
 
 using namespace Debug;
 
-bool VkContextBuilder::Build(Window& _window, Context& _context, Swapchain& _swapchain)
+Context& ContextBuilder::Build(Window _window, bool& success)
 {
+
     if(isInitialized)
     {
         printError("Vulkan context already initialized, unable to initialize it again");
-        return false;
+        success = false;
+        return context;
     }
+
+    window = _window;
 
     if(!CreateInstance())
     {
         printError("Unable to create a graphic instance");
-        return false;
+        success = false;
+        return context;
     }
 
     if(!ChoosePhysicalDevice())
     {
         printError("Unable to choose a GPU");
-        return false;
+        success = false;
+        return context;
     }
 
     if(!GetSurface())
     {
         printError("Unable to get the monitor surface");
-        return false;
+        success = false;
+        return context;
     }
 
     if(!GetGraphicsQueue())
     {
         printError("Unable to get a graphics queue");
-        return false;
+        success = false;
+        return context;
     }
 
     if(!CreateDevice())
     {
         printError("Unable to create a logical device");
-        return false;
+        success = false;
+        return context;
     }
 
     if(!InitializeVMA())
     {
         printError("Unable to initialize VMA");
-        return false;
+        success = false;
+        return context;
     }
 
-    if(!CreateSwapchain())
-    {
-        printError("Unable to create the swapchain");
-        return false;
-    }
-
-    _window = window;
-    _context = context;
-    _swapchain = swapchain; 
 
     isInitialized = true;
+    success = true;
 
-    return true;
+    return context;
 }
 
-bool VkContextBuilder::CreateWindow()
-{
-    if(!SDL_Init(SDL_INIT_VIDEO))
-    {
-        printError("Unable to initialize SDL");
-        return false;
-    }
-
-    window.Window = SDL_CreateWindow("Eve", window.Width, window.Height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
-
-    if(!window.Window)
-    {
-        printError("Unable to create the window");
-        return false;
-    }
-}
-
-bool VkContextBuilder::CreateInstance()
+bool ContextBuilder::CreateInstance()
 {
     // initialize volk
     if(volkInitialize() != VK_SUCCESS)
@@ -103,19 +88,22 @@ bool VkContextBuilder::CreateInstance()
     uint32_t extensionsCount = 0;
     const char* const* extensions = SDL_Vulkan_GetInstanceExtensions(&extensionsCount);
 
-    std::vector<const char *> requestedExtensions
+    std::vector<const char *> requestedExtensions;
+    if(useValidationLayers)
     {
-        //VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-    };
+        requestedExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+    
     for (int i = 0; i < extensionsCount; i++)
     {
         requestedExtensions.push_back(extensions[i]);
     }
 
-    std::vector<const char*> requestedLayers
+    std::vector<const char*> requestedLayers;
+    if(useValidationLayers)
     {
-        //"VK_LAYER_KHRONOS_validation"
-    };
+        requestedLayers.push_back("VK_LAYER_KHRONOS_validation");
+    }
 
     VkDebugUtilsMessengerCreateInfoEXT debugInfo
     {
@@ -140,6 +128,11 @@ bool VkContextBuilder::CreateInstance()
         .ppEnabledExtensionNames = requestedExtensions.data()
     };
 
+    if(useValidationLayers)
+    {
+        instanceCI.pNext = &debugInfo;
+    }
+
     if(vkCreateInstance(&instanceCI, nullptr, &context.Instance) != VK_SUCCESS)
     {
         printError("Unable to create the vulkan instance");
@@ -151,7 +144,7 @@ bool VkContextBuilder::CreateInstance()
     return true;
 }
 
-bool VkContextBuilder::ChoosePhysicalDevice()
+bool ContextBuilder::ChoosePhysicalDevice()
 {
     uint32_t count = 0;
     vkEnumeratePhysicalDevices(context.Instance, &count, nullptr);
@@ -183,7 +176,7 @@ bool VkContextBuilder::ChoosePhysicalDevice()
     return true;
 }
 
-bool VkContextBuilder::GetSurface()
+bool ContextBuilder::GetSurface()
 {
     if(!SDL_Vulkan_CreateSurface(window.Window, context.Instance, nullptr, &context.Surface))
     {
@@ -194,7 +187,7 @@ bool VkContextBuilder::GetSurface()
     return true;
 }
 
-bool VkContextBuilder::GetGraphicsQueue()
+bool ContextBuilder::GetGraphicsQueue()
 {
     uint32_t count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties2(context.PhysicalDevice, &count, nullptr);
@@ -218,7 +211,7 @@ bool VkContextBuilder::GetGraphicsQueue()
     return false;
 }
 
-bool VkContextBuilder::CreateDevice()
+bool ContextBuilder::CreateDevice()
 {
     #pragma region Features
 
@@ -313,7 +306,7 @@ bool VkContextBuilder::CreateDevice()
     return true;
 }
 
-bool VkContextBuilder::InitializeVMA()
+bool ContextBuilder::InitializeVMA()
 {
     VmaVulkanFunctions vmaFunctionsInfo {};
     VmaAllocatorCreateInfo allocatorCI
@@ -339,161 +332,4 @@ bool VkContextBuilder::InitializeVMA()
     }
 
     return true;
-}
-
-bool VkContextBuilder::CreateSwapchain()
-{
-    swapchain.Width = window.Width;
-    swapchain.Height = window.Height;
-
-    VkSurfaceCapabilitiesKHR surfaceCaps;
-    if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context.PhysicalDevice, context.Surface, &surfaceCaps) != VK_SUCCESS)
-    {
-        printError("Unable to get surface capabilities");
-        return false;
-    }
-
-    uint32_t swapchainImagesCount = std::max(2u, surfaceCaps.minImageCount);
-    if(surfaceCaps.maxImageCount == 0)
-    {
-        swapchainImagesCount = std::min(swapchainImagesCount, surfaceCaps.maxImageCount);
-    }
-
-    uint32_t supportedFormatsCount = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(context.PhysicalDevice, context.Surface, &supportedFormatsCount, nullptr);
-    std::vector<VkSurfaceFormatKHR> supportedFormats(supportedFormatsCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(context.PhysicalDevice, context.Surface, &supportedFormatsCount, supportedFormats.data());
-
-    bool isRequiredFormatSupported = false;
-    VkFormat chooseFormat = VK_FORMAT_UNDEFINED;
-
-    // Fallback for any format supported
-    if(supportedFormats[0].format == VK_FORMAT_UNDEFINED)
-    {
-        isRequiredFormatSupported = true;
-        chooseFormat = swapchainFormats[0];
-    }
-
-    for (const VkFormat proposedFormat : swapchainFormats)
-    {
-        for (const VkSurfaceFormatKHR validFormat : supportedFormats)
-        {
-            if(proposedFormat == validFormat.format)
-            {
-                isRequiredFormatSupported = true;
-                chooseFormat = proposedFormat;
-                break;
-            }
-        }
-    }
-
-    if(!isRequiredFormatSupported)
-    {
-        printError("The device does not support the required swapchain format");
-    }
-
-    VkSwapchainCreateInfoKHR swapchainCI
-    {
-        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .surface = context.Surface,
-        .minImageCount = swapchainImagesCount,
-        .imageFormat = chooseFormat,
-        .imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
-        .imageExtent {.width = swapchain.Width, .height = swapchain.Height},
-        .imageArrayLayers = 1,
-        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        .preTransform = surfaceCaps.currentTransform,
-        .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR
-    };
-
-    if(vkCreateSwapchainKHR(context.Device, &swapchainCI, nullptr, &swapchain.Swapchain) != VK_SUCCESS)
-    {
-        printError("Unable to create the swapchain");
-        return false;
-    }
-
-    // Swapchain images
-    uint32_t imagesCount = 0;
-    vkGetSwapchainImagesKHR(context.Device, swapchain.Swapchain, &imagesCount, nullptr);
-    swapchain.SwapchainImages.resize(imagesCount);
-    vkGetSwapchainImagesKHR(context.Device, swapchain.Swapchain, &imagesCount, swapchain.SwapchainImages.data());
-
-    swapchain.SwapchainImageViews.resize(imagesCount);
-    for(int i = 0; i < imagesCount; i++)
-    {
-        VkImageViewCreateInfo imageViewCI
-        {
-            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image = swapchain.SwapchainImages[i],
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = chooseFormat,
-            .subresourceRange
-            {
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                .baseMipLevel = 0,
-                .levelCount = 1,
-                .baseArrayLayer = 0,
-                .layerCount = 1
-            }
-        };
-
-        if(vkCreateImageView(context.Device, &imageViewCI, nullptr, &swapchain.SwapchainImageViews[i]) != VK_SUCCESS)
-        {
-            printError("Unable to create swapchain image views");
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void VkContextBuilder::DestroySwapchain()
-{
-    for(uint32_t i = 0; i < swapchain.SwapchainImageViews.size(); i++)
-    {
-        vkDestroyImageView(context.Device, swapchain.SwapchainImageViews[i], nullptr);
-    }
-    swapchain.SwapchainImageViews.clear();
-
-    if(swapchain.Swapchain)
-    {
-        vkDestroySwapchainKHR(context.Device, swapchain.Swapchain, nullptr);
-    }
-    swapchain.SwapchainImages.clear();
-    swapchain.Swapchain = nullptr;
-}
-
-VkContextBuilder::~VkContextBuilder()
-{
-    DestroySwapchain();
-
-    if(context.Allocator)
-    {
-        vmaDestroyAllocator(context.Allocator);
-    }
-
-    if(context.Surface)
-    {
-        vkDestroySurfaceKHR(context.Instance, context.Surface, nullptr);
-    }
-
-    if(context.Device)
-    {
-        vkDestroyDevice(context.Device, nullptr);
-    }
-
-    if(context.Instance)
-    {
-        vkDestroyInstance(context.Instance, nullptr);
-    }
-
-    volkFinalize();
-
-    if(window.Window)
-    {
-        SDL_DestroyWindow(window.Window);
-    }
-
-    SDL_Quit();
 }
