@@ -6,6 +6,7 @@
 #include <Eve/Debug.hpp>
 
 using namespace Debug;
+using namespace Eve::Graphics;
 
 Context& ContextBuilder::Build(Window _window, bool& success)
 {

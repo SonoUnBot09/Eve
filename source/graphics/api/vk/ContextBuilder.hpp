@@ -16,8 +16,6 @@
 
 #include <iostream>
 
-using namespace Eve::Graphics;
-
 namespace Eve::Graphics
 {
     class ContextBuilder
@@ -30,11 +28,6 @@ namespace Eve::Graphics
         private:
 
             inline static bool isInitialized = false;
-            static constexpr VkFormat swapchainFormats[] 
-            {
-                VK_FORMAT_R8G8B8A8_SRGB,
-                VK_FORMAT_B8G8R8A8_SRGB
-            };
 
             inline static Window window;
 

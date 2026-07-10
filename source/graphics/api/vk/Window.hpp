@@ -2,8 +2,11 @@
 
 #include <SDL3/SDL.h>
 
-struct Window
+namespace Eve::Graphics
 {
-    SDL_Window* Window;
-    uint32_t Width, Height;
-};
+    struct Window
+    {
+        SDL_Window* Window;
+        uint32_t Width, Height;
+    };
+}

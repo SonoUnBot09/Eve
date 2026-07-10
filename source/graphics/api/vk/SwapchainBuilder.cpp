@@ -2,8 +2,11 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <EveSettings.hpp>
 #include <Eve/Debug.hpp>
+
 using namespace Debug;
+using namespace Eve::Graphics;
 
 Swapchain SwapchainBuilder::Build(Context& context, Window& window, bool& success)
 {
@@ -58,10 +61,10 @@ Swapchain SwapchainBuilder::Build(Context& context, Window& window, bool& succes
     if(supportedFormats[0].format == VK_FORMAT_UNDEFINED)
     {
         isRequiredFormatSupported = true;
-        chooseFormat = swapchainFormats[0];
+        chooseFormat = Eve::Settings::swapchainFormats[0];
     }
 
-    for (const VkFormat proposedFormat : swapchainFormats)
+    for (const VkFormat proposedFormat : Eve::Settings::swapchainFormats)
     {
         for (const VkSurfaceFormatKHR validFormat : supportedFormats)
         {

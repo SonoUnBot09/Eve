@@ -2,11 +2,14 @@
 
 #include <vulkan/vulkan.hpp>
 
-struct Swapchain
+namespace Eve::Graphics
 {
-    uint32_t Width, Height;
-    VkSwapchainKHR Swapchain;
-    VkFormat Format;
-    std::vector<VkImage> SwapchainImages;
-    std::vector<VkImageView> SwapchainImageViews;
-};
+    struct Swapchain
+    {
+        uint32_t Width, Height;
+        VkSwapchainKHR Swapchain;
+        VkFormat Format;
+        std::vector<VkImage> SwapchainImages;
+        std::vector<VkImageView> SwapchainImageViews;
+    };
+}

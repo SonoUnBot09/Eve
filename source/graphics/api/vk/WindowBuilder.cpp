@@ -4,6 +4,7 @@
 #include <Eve/Debug.hpp>
 
 using namespace Debug;
+using namespace Eve::Graphics;
 
 Window WindowBuilder::Build(bool& success)
 {

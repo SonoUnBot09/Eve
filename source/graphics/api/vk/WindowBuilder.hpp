@@ -2,17 +2,20 @@
 
 #include <graphics/api/vk/Window.hpp>
 
-class WindowBuilder
+namespace Eve::Graphics
 {
-    public:
-        static Window Build(bool& success);
-        
-    private:
+    class WindowBuilder
+    {
+        public:
+            static Window Build(bool& success);
+            
+        private:
 
-        static bool InitializeSDLSubsystems();
+            static bool InitializeSDLSubsystems();
 
-        static bool CreateWindow();
+            static bool CreateWindow();
 
-        inline static bool isInitialized = false;
-        inline static Window window;
-};
+            inline static bool isInitialized = false;
+            inline static Window window;
+    };
+}
