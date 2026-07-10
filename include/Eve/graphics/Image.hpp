@@ -4,21 +4,8 @@
 
 namespace Eve::Graphics
 {
+    #pragma region
 
-    #pragma region Tables
-
-        // Buffers
-        enum class BufferType : uint16_t
-        {
-            BUFFER_TYPE_VERTEX       = 1 << 0,
-            BUFFER_TYPE_INDEX        = 1 << 1,
-            BUFFER_TYPE_UNIFORM      = 1 << 2,
-            BUFFER_TYPE_TRANSFER_SRC = 1 << 3,
-            BUFFER_TYPE_TRANSFER_DST = 1 << 4,
-            BUFFER_TYPE_STORAGE = 1 << 5
-        };
-
-        // Images
         enum class ImageType : uint16_t
         {
             TEXTURE_1D,
@@ -144,17 +131,6 @@ namespace Eve::Graphics
             SAMPLE_8 = 8
         };
 
-        // Buffers
-        inline BufferType operator|(BufferType a, BufferType b)
-        {
-            return static_cast<BufferType>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
-        }
-        inline BufferType operator& (BufferType a, BufferType b)
-        {
-            return static_cast<BufferType>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
-        }
-
-        // Images
         inline ImageUsage operator|(ImageUsage a, ImageUsage b)
         {
             return static_cast<ImageUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
@@ -166,45 +142,24 @@ namespace Eve::Graphics
 
     #pragma endregion
 
-    #pragma region Handle
+    struct ImageHandle
+    {
+        ImageHandle(uint32_t id, uint32_t generationId) : Id(id), GenerationId(generationId) {}; 
+        uint32_t Id;
+        uint32_t GenerationId;
+    };
 
-        struct BufferHandle
-        {
-            BufferHandle(uint32_t id, uint32_t generationId) : Id(id), GenerationId(generationId) {}; 
-            uint32_t Id;
-            uint32_t GenerationId;
-        };
+    struct ImageInfo
+    {
+        uint32_t Height, Width, Depth;
+        uint32_t ArrayLayers;
+        uint32_t MipLevels;
 
-        struct TextureHandle
-        {
-            TextureHandle(uint32_t id, uint32_t generationId) : Id(id), GenerationId(generationId) {}; 
-            uint32_t Id;
-            uint32_t GenerationId;
-        };
-
-    #pragma endregion
-
-    #pragma region Info
-
-        struct BufferInfo
-        {
-            uint64_t Size;
-            BufferType Type;
-        };
-
-        struct TextureInfo
-        {
-            uint32_t Height, Width, Depth;
-            uint32_t ArrayLayers;
-            uint32_t MipLevels;
-
-            ImageType Type;
-            ImageViewType ViewType;
-            ImageUsage Usage;
-            ImageLayout Layuot;
-            ImageFormat Format;
-            ImageSample SampleCount;
-        };
-    
-    #pragma endregion
+        ImageType Type;
+        ImageViewType ViewType;
+        ImageUsage Usage;
+        ImageLayout Layuot;
+        ImageFormat Format;
+        ImageSample SampleCount;
+    };
 }

@@ -1,5 +1,6 @@
 #include <graphics/api/vk/MemoryBinder.hpp>
 #include <graphics/api/vk/VulkanMapping.hpp>
+#include <EveSettings.hpp>
 #include <vector>
 
 void MemoryBinder::CreateGlobalDescriptor(uint32_t imagesCount, uint32_t samplersCount, uint32_t buffersCount)
@@ -90,11 +91,11 @@ void MemoryBinder::CreateGlobalDescriptor(uint32_t imagesCount, uint32_t sampler
         {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .descriptorPool = pool,
-            .descriptorSetCount = 1,
+            .descriptorSetCount = Eve::Settings::MAX_FRAMES_IN_FLIGHT,
             .pSetLayouts = &layout
         };
 
-        vkAllocateDescriptorSets(ContextBuilder::context.Device, &setAllocInfo, &set);
+        vkAllocateDescriptorSets(ContextBuilder::context.Device, &setAllocInfo, sets.data());
 
     #pragma endregion
 }

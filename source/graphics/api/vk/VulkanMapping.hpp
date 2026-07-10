@@ -2,7 +2,8 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include <Eve/graphics/Types.hpp>
+#include <Eve/graphics/Buffer.hpp>
+#include <Eve/graphics/Image.hpp>
 #include <Eve/graphics/ShaderStages.hpp>
 
 namespace Eve::Graphics

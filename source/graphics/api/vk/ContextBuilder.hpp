@@ -8,7 +8,8 @@
 #include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
 
-#include <Eve/graphics/Types.hpp>
+#include <Eve/graphics/Buffer.hpp>
+#include <Eve/graphics/Image.hpp>
 #include <graphics/api/vk/Context.hpp>
 #include <graphics/api/vk/Swapchain.hpp>
 #include <graphics/api/vk/Window.hpp>
@@ -17,44 +18,45 @@
 
 using namespace Eve::Graphics;
 
-class ContextBuilder
+namespace Eve::Graphics
 {
-    public:
+    class ContextBuilder
+    {
+        public:
 
-        inline static bool useValidationLayers = false;
-        static Context& Build(Window _window, bool& success);
-        
-        inline static Context context;
-    private:
+            static Context& Build(Window _window, bool& success);
+            
+            inline static Context context;
+        private:
 
-        inline static bool isInitialized = false;
-        static constexpr uint32_t vulkanVersion {VK_API_VERSION_1_4};
-        static constexpr VkFormat swapchainFormats[] 
-        {
-            VK_FORMAT_R8G8B8A8_SRGB,
-            VK_FORMAT_B8G8R8A8_SRGB
-        };
-
-        inline static Window window;
-
-        static bool CreateInstance();
-        static bool ChoosePhysicalDevice();
-        static bool GetSurface();
-        static bool GetGraphicsQueue();
-        static bool CreateDevice();
-        static bool InitializeVMA();
-
-        // Vulkan dedicated func to print out errors
-        static inline VKAPI_ATTR VkBool32 VKAPI_CALL PrintVulkanMessages( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                            VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                            const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                                                            void *pUserData)
-        {
-            if(messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+            inline static bool isInitialized = false;
+            static constexpr VkFormat swapchainFormats[] 
             {
-               std::cerr << pCallbackData->pMessage << std::endl;
+                VK_FORMAT_R8G8B8A8_SRGB,
+                VK_FORMAT_B8G8R8A8_SRGB
+            };
+
+            inline static Window window;
+
+            static bool CreateInstance();
+            static bool ChoosePhysicalDevice();
+            static bool GetSurface();
+            static bool GetGraphicsQueue();
+            static bool CreateDevice();
+            static bool InitializeVMA();
+
+            // Vulkan dedicated func to print out errors
+            static inline VKAPI_ATTR VkBool32 VKAPI_CALL PrintVulkanMessages( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                                VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                                const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+                                                                void *pUserData)
+            {
+                if(messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+                {
+                std::cerr << pCallbackData->pMessage << std::endl;
+                }
+                                                                    
+                return VK_FALSE;
             }
-                                                                
-            return VK_FALSE;
-        }
-};
+    };
+}

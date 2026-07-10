@@ -2,6 +2,7 @@
 #define VMA_IMPLEMENTATION
 
 #include <graphics/api/vk/ContextBuilder.hpp>
+#include <EveSettings.hpp>
 #include <Eve/Debug.hpp>
 
 using namespace Debug;
@@ -81,7 +82,7 @@ bool ContextBuilder::CreateInstance()
     {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pApplicationName = "Eve",
-        .apiVersion = vulkanVersion
+        .apiVersion = Eve::Settings::vulkanVersion
     };
 
     #pragma region Extensions and layers
@@ -92,7 +93,7 @@ bool ContextBuilder::CreateInstance()
     {
         "VK_EXT_descriptor_indexing"
     };
-    if(useValidationLayers)
+    if(Eve::Settings::useValidationLayers)
     {
         requestedExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
@@ -103,7 +104,7 @@ bool ContextBuilder::CreateInstance()
     }
 
     std::vector<const char*> requestedLayers;
-    if(useValidationLayers)
+    if(Eve::Settings::useValidationLayers)
     {
         requestedLayers.push_back("VK_LAYER_KHRONOS_validation");
     }
@@ -131,7 +132,7 @@ bool ContextBuilder::CreateInstance()
         .ppEnabledExtensionNames = requestedExtensions.data()
     };
 
-    if(useValidationLayers)
+    if(Eve::Settings::useValidationLayers)
     {
         instanceCI.pNext = &debugInfo;
     }
@@ -325,7 +326,7 @@ bool ContextBuilder::InitializeVMA()
         .device = context.Device,
         .pVulkanFunctions = &vmaFunctionsInfo,
         .instance = context.Instance,
-        .vulkanApiVersion = vulkanVersion
+        .vulkanApiVersion = Eve::Settings::vulkanVersion
     };
 
     if(vmaImportVulkanFunctionsFromVolk(&allocatorCI, &vmaFunctionsInfo) != VK_SUCCESS)
