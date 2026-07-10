@@ -7,8 +7,8 @@
 class SwapchainBuilder
 {
     public:
-        Swapchain Build(Context& context, Window& window, bool &success);
-        Swapchain Rebuild(Context& context, Window& window, bool &success);
+        static Swapchain Build(Context& context, Window& window, bool &success);
+        static Swapchain Rebuild(Context& context, Window& window, bool &success);
     private:
 
         static constexpr VkFormat swapchainFormats[] 
@@ -18,5 +18,5 @@ class SwapchainBuilder
         };
         inline static VkFormat chooseFormat = VK_FORMAT_UNDEFINED;
         inline static uint32_t swapchainImagesCount = 0;
-        Swapchain swapchain;
+        inline static Swapchain swapchain;
 };

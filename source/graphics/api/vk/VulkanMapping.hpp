@@ -3,15 +3,17 @@
 #include <vulkan/vulkan.hpp>
 
 #include <Eve/graphics/Types.hpp>
+#include <Eve/graphics/ShaderStages.hpp>
 
 namespace Eve::Graphics
 {
 
-    constexpr uint32_t bufferTypeConfigCount = 6;
-    constexpr uint32_t imageUsageConfigCount = 7;
+    inline static constexpr uint32_t bufferTypeConfigCount = 6;
+    inline static constexpr uint32_t imageUsageConfigCount = 7;
+    inline static constexpr uint32_t shaderStageConfigCount = 3;
 
     // Buffers
-    static constexpr VkBufferUsageFlags vkBufferTypeLut[]
+    static constexpr VkBufferUsageFlags bufferTypeLut[]
     {
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -22,14 +24,14 @@ namespace Eve::Graphics
     };
 
     // Images
-    static constexpr VkImageType vkImageTypeLUT[]
+    static constexpr VkImageType imageTypeLUT[]
     {
         VK_IMAGE_TYPE_1D,
         VK_IMAGE_TYPE_2D,
         VK_IMAGE_TYPE_3D
     };
 
-    static constexpr VkImageViewType vkImageViewTypeLUT[]
+    static constexpr VkImageViewType imageViewTypeLUT[]
     {
         VK_IMAGE_VIEW_TYPE_1D,
         VK_IMAGE_VIEW_TYPE_2D,
@@ -40,7 +42,7 @@ namespace Eve::Graphics
         VK_IMAGE_VIEW_TYPE_CUBE_ARRAY
     };
 
-    static constexpr VkImageUsageFlags vkImageUsageLUT[]
+    static constexpr VkImageUsageFlags imageUsageLUT[]
     {
         VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_IMAGE_USAGE_STORAGE_BIT,
@@ -51,7 +53,7 @@ namespace Eve::Graphics
         VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT
     };
 
-    static constexpr VkImageLayout vkImageLayoutLUT[]
+    static constexpr VkImageLayout imageLayoutLUT[]
     {
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_GENERAL,
@@ -66,7 +68,7 @@ namespace Eve::Graphics
         VK_IMAGE_LAYOUT_PREINITIALIZED
     };
 
-    static constexpr VkFormat vkImageFormatLUT[]
+    static constexpr VkFormat imageFormatLUT[]
     {
         VK_FORMAT_UNDEFINED,             // FORMAT_UNDEFINED
         VK_FORMAT_R8_UNORM,              // FORMAT_R8_UNORM
@@ -139,6 +141,12 @@ namespace Eve::Graphics
         VK_FORMAT_D32_SFLOAT_S8_UINT     // FORMAT_D32_SFLOAT_S8_UINT
     };
 
+    static constexpr VkShaderStageFlags shaderStageLUT[]
+    {
+        VK_SHADER_STAGE_VERTEX_BIT,
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        VK_SHADER_STAGE_COMPUTE_BIT
+    };
 
     // Buffers
     static inline VkBufferUsageFlags GetVkBufferType(BufferType type)
@@ -150,7 +158,7 @@ namespace Eve::Graphics
         {
             if(!(bits & (1u << i))) { continue; }
 
-            bufferType |= vkBufferTypeLut[i];
+            bufferType |= bufferTypeLut[i];
         }
 
         return bufferType;
@@ -159,11 +167,11 @@ namespace Eve::Graphics
     // Images
     static inline VkImageType GetVkImageType(ImageType type)
     {
-        return vkImageTypeLUT[static_cast<uint32_t>(type)];
+        return imageTypeLUT[static_cast<uint32_t>(type)];
     }
     static inline VkImageViewType GetVkImageViewType(ImageViewType type)
     {
-        return vkImageViewTypeLUT[static_cast<uint32_t>(type)];
+        return imageViewTypeLUT[static_cast<uint32_t>(type)];
     }
     static inline VkImageUsageFlags GetVkImageUsage(ImageUsage usage)
     {
@@ -174,17 +182,31 @@ namespace Eve::Graphics
         {
             if(!(bits & (1u << i))) { continue; }
 
-            imageUsageFlag |= vkImageUsageLUT[i];
+            imageUsageFlag |= imageUsageLUT[i];
         }
 
         return imageUsageFlag;
     }
     static inline VkImageLayout GetVkImageLayout(ImageLayout layout)
     {
-        return vkImageLayoutLUT[static_cast<uint32_t>(layout)];
+        return imageLayoutLUT[static_cast<uint32_t>(layout)];
     }
     static inline VkFormat GetVkImageFormat(ImageFormat format)
     {
-        return vkImageFormatLUT[static_cast<uint32_t>(format)];
+        return imageFormatLUT[static_cast<uint32_t>(format)];
+    }
+    static inline VkShaderStageFlags GetVkShaderStage(ShaderStage stage)
+    {
+        int32_t bits = static_cast<uint32_t>(stage);
+
+        VkShaderStageFlags shaderStageFlag = 0;
+        for(uint32_t i = 0; i < shaderStageConfigCount; i++)
+        {
+            if(!(bits & (1u << i))) { continue; }
+
+            shaderStageFlag |= shaderStageLUT[i];
+        }
+
+        return shaderStageFlag;
     }
 }

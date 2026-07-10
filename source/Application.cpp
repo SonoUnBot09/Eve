@@ -1510,7 +1510,7 @@ void Application::CreateDescriptor()
 {
 
     VkDescriptorSetLayoutBinding textureLayoutBinding
-    {
+    {   
         .binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         .descriptorCount = 1,

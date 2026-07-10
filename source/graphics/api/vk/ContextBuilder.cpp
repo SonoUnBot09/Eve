@@ -88,7 +88,10 @@ bool ContextBuilder::CreateInstance()
     uint32_t extensionsCount = 0;
     const char* const* extensions = SDL_Vulkan_GetInstanceExtensions(&extensionsCount);
 
-    std::vector<const char *> requestedExtensions;
+    std::vector<const char *> requestedExtensions
+    {
+        "VK_EXT_descriptor_indexing"
+    };
     if(useValidationLayers)
     {
         requestedExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -224,7 +227,9 @@ bool ContextBuilder::CreateDevice()
 
     // Check if all the required features are available on the machine 
     if(!availableFeatures13.dynamicRendering || !availableFeatures13.synchronization2 || !availableFeatures12.timelineSemaphore || 
-       !availableFeatures.features.fillModeNonSolid || !availableFeatures12.bufferDeviceAddress)
+       !availableFeatures.features.fillModeNonSolid || !availableFeatures12.bufferDeviceAddress || !availableFeatures12.descriptorBindingPartiallyBound ||
+       !availableFeatures12.descriptorBindingVariableDescriptorCount || !availableFeatures12.runtimeDescriptorArray || 
+       !availableFeatures12.shaderSampledImageArrayNonUniformIndexing)
     {
         printError("Available device features do not respect application features requirement");
     }
@@ -248,7 +253,11 @@ bool ContextBuilder::CreateDevice()
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
         .pNext = &features13,
         .timelineSemaphore = VK_TRUE,
-        .bufferDeviceAddress = VK_TRUE
+        .bufferDeviceAddress = VK_TRUE,
+        .descriptorBindingPartiallyBound = VK_TRUE,
+        .descriptorBindingVariableDescriptorCount = VK_TRUE,
+        .runtimeDescriptorArray = VK_TRUE,
+        .shaderSampledImageArrayNonUniformIndexing = VK_TRUE
     };
 
     VkPhysicalDeviceFeatures2 features

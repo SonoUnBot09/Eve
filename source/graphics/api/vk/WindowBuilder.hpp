@@ -5,14 +5,14 @@
 class WindowBuilder
 {
     public:
-        Window Build(bool& success);
+        static Window Build(bool& success);
         
     private:
 
-        bool InitializeSDLSubsystems();
+        static bool InitializeSDLSubsystems();
 
-        bool CreateWindow();
+        static bool CreateWindow();
 
         inline static bool isInitialized = false;
-        Window window;
+        inline static Window window;
 };

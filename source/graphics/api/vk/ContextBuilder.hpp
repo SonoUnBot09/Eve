@@ -21,9 +21,10 @@ class ContextBuilder
 {
     public:
 
-        bool useValidationLayers = false;
-        Context& Build(Window _window, bool& success);
+        inline static bool useValidationLayers = false;
+        static Context& Build(Window _window, bool& success);
         
+        inline static Context context;
     private:
 
         inline static bool isInitialized = false;
@@ -34,15 +35,14 @@ class ContextBuilder
             VK_FORMAT_B8G8R8A8_SRGB
         };
 
-        Window window;
-        Context context;
+        inline static Window window;
 
-        bool CreateInstance();
-        bool ChoosePhysicalDevice();
-        bool GetSurface();
-        bool GetGraphicsQueue();
-        bool CreateDevice();
-        bool InitializeVMA();
+        static bool CreateInstance();
+        static bool ChoosePhysicalDevice();
+        static bool GetSurface();
+        static bool GetGraphicsQueue();
+        static bool CreateDevice();
+        static bool InitializeVMA();
 
         // Vulkan dedicated func to print out errors
         static inline VKAPI_ATTR VkBool32 VKAPI_CALL PrintVulkanMessages( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
