@@ -1,7 +1,10 @@
+#include "graphics/api/vk/ContextBuilder.hpp"
 #include <graphics/api/vk/MemoryBinder.hpp>
 #include <graphics/api/vk/VulkanMapping.hpp>
 #include <EveSettings.hpp>
 #include <vector>
+
+using namespace Eve::Graphics;
 
 void MemoryBinder::CreateGlobalDescriptor(uint32_t imagesCount, uint32_t samplersCount, uint32_t buffersCount)
 {
@@ -97,5 +100,7 @@ void MemoryBinder::CreateGlobalDescriptor(uint32_t imagesCount, uint32_t sampler
 
         vkAllocateDescriptorSets(ContextBuilder::context.Device, &setAllocInfo, sets.data());
 
+
+        //vmaCreateBuffer(ContextBuilder::context.Allocator, const VkBufferCreateInfo * _Nonnull pBufferCreateInfo, const VmaAllocationCreateInfo * _Nonnull pAllocationCreateInfo, VkBuffer  _Nullable * _Nonnull pBuffer, VmaAllocation  _Nullable * _Nonnull pAllocation, VmaAllocationInfo * _Nullable pAllocationInfo)
     #pragma endregion
 }

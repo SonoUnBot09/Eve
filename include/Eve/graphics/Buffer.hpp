@@ -29,9 +29,9 @@ namespace Eve::Graphics
 
     struct BufferHandle
     {
-        BufferHandle(uint32_t id, uint32_t generationId) : Id(id), GenerationId(generationId) {}; 
+        BufferHandle() = default;
+        BufferHandle(uint32_t id, uint32_t generationId) : Id(id) {}; 
         uint32_t Id;
-        uint32_t GenerationId;
     };
 
     struct BufferInfo

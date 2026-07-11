@@ -4,6 +4,7 @@
 
 #include <Eve/graphics/Buffer.hpp>
 #include <Eve/graphics/Image.hpp>
+#include <Eve/graphics/Sampler.hpp>
 #include <Eve/graphics/ShaderStages.hpp>
 
 namespace Eve::Graphics
@@ -11,6 +12,7 @@ namespace Eve::Graphics
 
     inline static constexpr uint32_t bufferTypeConfigCount = 6;
     inline static constexpr uint32_t imageUsageConfigCount = 7;
+    inline static constexpr uint32_t imageAspectMaskConfigCount = 3;
     inline static constexpr uint32_t shaderStageConfigCount = 3;
 
     // Buffers
@@ -142,6 +144,35 @@ namespace Eve::Graphics
         VK_FORMAT_D32_SFLOAT_S8_UINT     // FORMAT_D32_SFLOAT_S8_UINT
     };
 
+    static constexpr VkSampleCountFlagBits imageSampleCountLUT[]
+    {
+        VK_SAMPLE_COUNT_1_BIT,
+        VK_SAMPLE_COUNT_2_BIT,
+        VK_SAMPLE_COUNT_4_BIT,
+        VK_SAMPLE_COUNT_8_BIT
+    };
+
+    static constexpr VkImageAspectFlags imageAspectMaskLUT[]
+    {
+        VK_IMAGE_ASPECT_COLOR_BIT,
+        VK_IMAGE_ASPECT_DEPTH_BIT,
+        VK_IMAGE_ASPECT_STENCIL_BIT
+    };
+
+    // Sampler
+    static constexpr VkFilter samplerFilterModeLUT[]
+    {
+        VK_FILTER_NEAREST,
+        VK_FILTER_LINEAR
+    };
+
+    static constexpr VkSamplerMipmapMode samplerMipmapModeLUT[]
+    {
+        VK_SAMPLER_MIPMAP_MODE_NEAREST,
+        VK_SAMPLER_MIPMAP_MODE_LINEAR
+    };
+
+    // Shaders Stage
     static constexpr VkShaderStageFlags shaderStageLUT[]
     {
         VK_SHADER_STAGE_VERTEX_BIT,
@@ -196,6 +227,36 @@ namespace Eve::Graphics
     {
         return imageFormatLUT[static_cast<uint32_t>(format)];
     }
+    static inline VkSampleCountFlagBits GetVkImageSamplesCount(ImageSample sample)
+    {
+        return imageSampleCountLUT[static_cast<uint32_t>(sample)];
+    }
+    static inline VkImageAspectFlags GetVkImageAspectMask(ImageAspectMask usage)
+    {
+        uint32_t bits = static_cast<uint32_t>(usage);
+
+        VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_NONE;
+        for(uint32_t i = 0; i < imageAspectMaskConfigCount; i++)
+        {
+            if(!(bits & (1u << i))) { continue; }
+
+            aspectMask |= imageAspectMaskLUT[i];
+        }
+
+        return aspectMask;
+    }
+
+    // Sampler
+    static inline VkFilter GetVkFilterMode(Filter filter)
+    {
+        return samplerFilterModeLUT[static_cast<uint32_t>(filter)];
+    }
+    static inline VkSamplerMipmapMode GetVkMipmapMode(MipmapMode mipmapMode)
+    {
+        return samplerMipmapModeLUT[static_cast<uint32_t>(mipmapMode)];
+    }
+
+    // Shader stages
     static inline VkShaderStageFlags GetVkShaderStage(ShaderStage stage)
     {
         int32_t bits = static_cast<uint32_t>(stage);

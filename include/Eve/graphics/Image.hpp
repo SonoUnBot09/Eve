@@ -131,6 +131,13 @@ namespace Eve::Graphics
             SAMPLE_8 = 8
         };
 
+        enum class ImageAspectMask : uint16_t
+        {
+            ASPECT_MASK_COLOR = 1 << 0,
+            ASPECT_MASK_DEPTH = 1 << 1,
+            ASPECT_MASK_STENCIL = 1 << 2
+        };
+
         inline ImageUsage operator|(ImageUsage a, ImageUsage b)
         {
             return static_cast<ImageUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
@@ -140,13 +147,22 @@ namespace Eve::Graphics
             return static_cast<ImageUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
         }
 
+        inline ImageAspectMask operator|(ImageAspectMask a, ImageAspectMask b)
+        {
+            return static_cast<ImageAspectMask>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+        }
+        inline ImageAspectMask operator&(ImageAspectMask a, ImageAspectMask b)
+        {
+            return static_cast<ImageAspectMask>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+        }
+
     #pragma endregion
 
     struct ImageHandle
     {
-        ImageHandle(uint32_t id, uint32_t generationId) : Id(id), GenerationId(generationId) {}; 
+        ImageHandle() = default;
+        ImageHandle(uint32_t id, uint32_t generationId) : Id(id) {}; 
         uint32_t Id;
-        uint32_t GenerationId;
     };
 
     struct ImageInfo
@@ -161,5 +177,6 @@ namespace Eve::Graphics
         ImageLayout Layuot;
         ImageFormat Format;
         ImageSample SampleCount;
+        ImageAspectMask AspectMask;
     };
 }
