@@ -1,4 +1,3 @@
-#include "Eve/graphics/Sampler.hpp"
 #include <graphics/api/vk/MemoryManager.hpp>
 
 using namespace Eve::Graphics;
@@ -117,6 +116,44 @@ BufferHandle MemoryManager::AllocateBuffer(BufferInfo bufferInfo)
     VmaAllocationCreateInfo bufferAllocInfo
     {
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+    };
+
+    vmaCreateBuffer(ContextBuilder::context.Allocator, &bufferCI, &bufferAllocInfo,
+         &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
+
+    BufferHandle handle;
+    if(bufferFreeSlots.empty()) 
+    {
+        handle.Id = images.size();
+
+        buffers.push_back(buffer);
+    }
+    else 
+    {
+        handle.Id = bufferFreeSlots.back();
+        bufferFreeSlots.pop_back();
+
+        buffers[handle.Id] = buffer;
+    }
+
+    return handle;
+}
+
+BufferHandle MemoryManager::AllocateHostBuffer(BufferInfo bufferInfo)
+{
+    Buffer buffer;
+
+    VkBufferCreateInfo bufferCI
+    {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = bufferInfo.Size,
+        .usage = GetVkBufferType(bufferInfo.Type),
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    VmaAllocationCreateInfo bufferAllocInfo
+    {
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST
     };
 
     vmaCreateBuffer(ContextBuilder::context.Allocator, &bufferCI, &bufferAllocInfo,

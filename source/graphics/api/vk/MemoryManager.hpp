@@ -36,6 +36,12 @@ namespace Eve::Graphics
             static ImageHandle AllocateImage(ImageInfo imageInfo);
             static SamplerHandle AllocateSampler(SamplerInfo samplerInfo);
             static BufferHandle AllocateBuffer(BufferInfo bufferInfo);
+
+            static BufferHandle AllocateHostBuffer(BufferInfo bufferInfo);
+
+            inline static Image& GetImage(ImageHandle handle) { return images[handle.Id]; }
+            inline static Sampler GetSampler(SamplerHandle handle) { return samplers[handle.Id]; }
+            inline static Buffer& GetBuffer(BufferHandle handle) { return buffers[handle.Id]; }
         private:
 
             inline static std::vector<Image> images;

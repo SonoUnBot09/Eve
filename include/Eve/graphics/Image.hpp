@@ -161,12 +161,19 @@ namespace Eve::Graphics
     struct ImageHandle
     {
         ImageHandle() = default;
-        ImageHandle(uint32_t id, uint32_t generationId) : Id(id) {}; 
+        ImageHandle(uint32_t id) : Id(id) {}; 
         uint32_t Id;
     };
 
     struct ImageInfo
     {
+        ImageInfo(uint32_t height, uint32_t width, uint32_t depth, uint32_t arrayLayers, uint32_t mipLevels, 
+            ImageType type, ImageViewType viewType, ImageUsage usage, ImageLayout layout, ImageFormat format, 
+            ImageSample sampleCount, ImageAspectMask aspectMask) :
+            Height(height), Width(width), Depth(depth), ArrayLayers(arrayLayers), MipLevels(mipLevels),
+            Type(type), ViewType(viewType), Usage(usage), Layuot(layout), Format(format), SampleCount(sampleCount),
+            AspectMask(aspectMask) {};
+
         uint32_t Height, Width, Depth;
         uint32_t ArrayLayers;
         uint32_t MipLevels;
