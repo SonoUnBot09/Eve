@@ -6,6 +6,7 @@
 #include <Eve/graphics/Image.hpp>
 #include <Eve/graphics/Sampler.hpp>
 #include <Eve/graphics/ShaderStages.hpp>
+#include <Eve/graphics/Geometry.hpp>
 
 namespace Eve::Graphics
 {
@@ -144,6 +145,79 @@ namespace Eve::Graphics
         VK_FORMAT_D32_SFLOAT_S8_UINT     // FORMAT_D32_SFLOAT_S8_UINT
     };
 
+    static constexpr uint32_t imageFormatSizeLUT[]
+    {
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        2,
+        2,
+        2,
+        2,
+        2,
+        4,
+        4,
+        4,
+        4,
+        4,
+        6,
+        6,
+        6,
+        6,
+        6,
+        8,
+        8,
+        8,
+        8,
+        8,
+        4,
+        4,
+        4,
+        8,
+        8,
+        8,
+        12,
+        12,
+        12,
+        16,
+        16,
+        16,
+        2,
+        4,
+        1,
+        4,
+        4,
+        8
+    };
+
     static constexpr VkSampleCountFlagBits imageSampleCountLUT[]
     {
         VK_SAMPLE_COUNT_1_BIT,
@@ -178,6 +252,39 @@ namespace Eve::Graphics
         VK_SHADER_STAGE_VERTEX_BIT,
         VK_SHADER_STAGE_FRAGMENT_BIT,
         VK_SHADER_STAGE_COMPUTE_BIT
+    };
+
+    // Geometry
+    static constexpr VkPrimitiveTopology topologyLUT[]
+    {
+        VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+        VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+        VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+    };
+
+    static constexpr VkPolygonMode polygonModeLUT[]
+    {
+        VK_POLYGON_MODE_FILL,
+        VK_POLYGON_MODE_LINE,
+        VK_POLYGON_MODE_POINT
+    };
+
+    static constexpr VkCullModeFlags cullModeLUT[]
+    {
+        VK_CULL_MODE_NONE,
+        VK_CULL_MODE_FRONT_BIT,
+        VK_CULL_MODE_BACK_BIT,
+        VK_CULL_MODE_FRONT_AND_BACK
+    };
+
+    static constexpr VkCompareOp compareOpLUT[]
+    {
+        VK_COMPARE_OP_ALWAYS,
+        VK_COMPARE_OP_LESS,
+        VK_COMPARE_OP_LESS_OR_EQUAL,
+        VK_COMPARE_OP_GREATER,
+        VK_COMPARE_OP_GREATER_OR_EQUAL
     };
 
     // Buffers
@@ -223,9 +330,13 @@ namespace Eve::Graphics
     {
         return imageLayoutLUT[static_cast<uint32_t>(layout)];
     }
-    static inline VkFormat GetVkImageFormat(ImageFormat format)
+    static inline VkFormat GetVkImageFormat(Format format)
     {
         return imageFormatLUT[static_cast<uint32_t>(format)];
+    }
+    static inline uint32_t GetVkImageFormatSize(Format format)
+    {
+        return imageFormatSizeLUT[static_cast<uint32_t>(format)];
     }
     static inline VkSampleCountFlagBits GetVkImageSamplesCount(ImageSample sample)
     {
@@ -270,5 +381,23 @@ namespace Eve::Graphics
         }
 
         return shaderStageFlag;
+    }
+
+    // Geometry
+    static inline VkPrimitiveTopology GetVkTopology(Topology topology)
+    {
+        return topologyLUT[static_cast<uint32_t>(topology)];
+    }
+    static inline VkPolygonMode GetVkPolygonMode(PolygonMode polygonMode)
+    {
+        return polygonModeLUT[static_cast<uint32_t>(polygonMode)];
+    }
+    static inline VkCullModeFlags GetVkCullMode(CullMode cullMode)
+    {
+        return cullModeLUT[static_cast<uint32_t>(cullMode)];
+    }
+    static inline VkCompareOp GetVkCompareOp(DepthTest compareOp)
+    {
+        return compareOpLUT[static_cast<uint32_t>(compareOp)];
     }
 }

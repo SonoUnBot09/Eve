@@ -25,6 +25,8 @@ namespace Eve::Graphics
             static void ScheduleBufferMapping(BufferHandle handle);
 
             static bool MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex);
+
+            static inline VkDescriptorSetLayout GetDescriptorSetLayout() { return layout; }
         private:
 
             inline static VkDescriptorSetLayout layout;

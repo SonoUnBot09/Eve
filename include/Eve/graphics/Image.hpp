@@ -50,7 +50,7 @@ namespace Eve::Graphics
             LAYOUT_PREINITIALIZED
         };
 
-        enum class ImageFormat : uint16_t
+        enum class Format : uint16_t
         {
             FORMAT_UNDEFINED = 0,
             FORMAT_R8_UNORM,
@@ -168,7 +168,7 @@ namespace Eve::Graphics
     struct ImageInfo
     {
         ImageInfo(uint32_t height, uint32_t width, uint32_t depth, uint32_t arrayLayers, uint32_t mipLevels, 
-            ImageType type, ImageViewType viewType, ImageUsage usage, ImageLayout layout, ImageFormat format, 
+            ImageType type, ImageViewType viewType, ImageUsage usage, ImageLayout layout, Format format, 
             ImageSample sampleCount, ImageAspectMask aspectMask) :
             Height(height), Width(width), Depth(depth), ArrayLayers(arrayLayers), MipLevels(mipLevels),
             Type(type), ViewType(viewType), Usage(usage), Layuot(layout), Format(format), SampleCount(sampleCount),
@@ -182,7 +182,7 @@ namespace Eve::Graphics
         ImageViewType ViewType;
         ImageUsage Usage;
         ImageLayout Layuot;
-        ImageFormat Format;
+        Format Format;
         ImageSample SampleCount;
         ImageAspectMask AspectMask;
     };
