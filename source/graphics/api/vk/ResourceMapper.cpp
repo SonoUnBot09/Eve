@@ -208,9 +208,9 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     }
 
     // Erase
-    imagesToMap.erase(imagesToMap.cend(), imagesToMap.cend() - imagesToErase);
-    samplersToMap.erase(samplersToMap.cend(), samplersToMap.cend() - samplersToErase);
-    buffersToMap.erase(buffersToMap.cend(), buffersToMap.cend() - buffersToErase);
+    imagesToMap.erase(imagesToMap.cend() - imagesToErase, imagesToMap.cend());
+    samplersToMap.erase(samplersToMap.cend() - samplersToErase, samplersToMap.cend());
+    buffersToMap.erase(buffersToMap.cend() - buffersToErase, buffersToMap.cend());
 
     // Images
     for(uint32_t i = 0; i < imagesToMap.size(); i++)
