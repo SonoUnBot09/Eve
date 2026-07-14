@@ -1,4 +1,5 @@
 #include <graphics/api/vk/MemoryManager.hpp>
+#include <graphics/api/vk/ResourceMapper.hpp>
 
 using namespace Eve::Graphics;
 
@@ -62,6 +63,8 @@ ImageHandle MemoryManager::AllocateImage(ImageInfo imageInfo)
         images[handle.Id] = image;
     }
 
+    ResourceMapper::ScheduleImageMapping(handle);
+
     return handle;
 }
 
@@ -97,6 +100,8 @@ SamplerHandle MemoryManager::AllocateSampler(SamplerInfo samplerInfo)
 
         samplers[handle.Id] = sampler;
     }
+
+    ResourceMapper::ScheduleSamplerMapping(handle);
 
     return handle;
 }
@@ -135,6 +140,8 @@ BufferHandle MemoryManager::AllocateBuffer(BufferInfo bufferInfo)
 
         buffers[handle.Id] = buffer;
     }
+
+    ResourceMapper::ScheduleBufferMapping(handle);
 
     return handle;
 }
