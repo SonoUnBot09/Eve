@@ -8,7 +8,7 @@
 using namespace Eve::Graphics;
 using namespace Debug;
 
-bool PipelineBuilder::BuildGraphicsPipeline(std::string vertexShaderPath, std::string fragShaderPath, PipelineHandle& handle)
+bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, PipelineHandle& handle)
 {
     std::vector<VkPushConstantRange> pushConstantRanges;
 
@@ -59,8 +59,8 @@ bool PipelineBuilder::BuildGraphicsPipeline(std::string vertexShaderPath, std::s
         return false;
     }
 
-    VkShaderModule vertexShader = CreateShaderModule(vertexShaderPath, shaderc_shader_kind::shaderc_glsl_vertex_shader);
-    VkShaderModule fragmentShader = CreateShaderModule(fragShaderPath, shaderc_shader_kind::shaderc_glsl_fragment_shader);
+    VkShaderModule vertexShader = CreateShaderModule(pipelineInfo.VertShaderPath, shaderc_shader_kind::shaderc_glsl_vertex_shader);
+    VkShaderModule fragmentShader = CreateShaderModule(pipelineInfo.FragShaderPath, shaderc_shader_kind::shaderc_glsl_fragment_shader);
 
     if(vertexShader == nullptr)
     {
@@ -136,10 +136,10 @@ bool PipelineBuilder::BuildGraphicsPipeline(std::string vertexShaderPath, std::s
     VkPipelineDepthStencilStateCreateInfo depthStencilInfo
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-        .depthTestEnable = pipelineInfo.DepthTest,
-        .depthWriteEnable = pipelineInfo.DepthWrite,
+        .depthTestEnable = static_cast<VkBool32>(pipelineInfo.DepthTest),
+        .depthWriteEnable = static_cast<VkBool32>(pipelineInfo.DepthWrite),
         .depthCompareOp = GetVkCompareOp(pipelineInfo.CompareOp),
-        .stencilTestEnable = pipelineInfo.StencilTest
+        .stencilTestEnable = static_cast<VkBool32>(pipelineInfo.StencilTest)
     };
 
     VkPipelineViewportStateCreateInfo viewportInfo
@@ -235,70 +235,6 @@ bool PipelineBuilder::BuildGraphicsPipeline(std::string vertexShaderPath, std::s
     pipelines.push_back(graphicsPipeline);
 
     return true;
-}
-
-void PipelineBuilder::SetVertexAttributes(std::vector<Format> formats)
-{ 
-    pipelineInfo.VerticesAttributes = formats; 
-}
-
-void PipelineBuilder::SetupPushConstantData(uint32_t vertOffset, uint32_t vertStride, uint32_t fragOffset, uint32_t fragStride)
-{
-    pipelineInfo.VertOffset = vertOffset;
-    pipelineInfo.VertStride = vertStride;
-    pipelineInfo.FragOffset = fragOffset;
-    pipelineInfo.FragStride = fragStride;
-}
-
-void PipelineBuilder::SetGeometryModes(Topology topology, PolygonMode polygonMode, CullMode cullMode, float lineWidth)
-{
-    pipelineInfo.Topology = topology;
-    pipelineInfo.PolygonMode = polygonMode;
-    pipelineInfo.CullMode = cullMode;
-    pipelineInfo.LineWidth = lineWidth;
-}
-
-void PipelineBuilder::SetDepthStencil(bool depthTest, bool depthWrite, DepthTest compareOp, bool stencilTest)
-{
-    if(depthTest)
-    {
-        pipelineInfo.DepthTest = VK_TRUE;
-    }
-    else 
-    {
-        pipelineInfo.DepthTest = VK_FALSE;
-    }
-
-    if(depthWrite)
-    {
-        pipelineInfo.DepthWrite = VK_TRUE;
-    }
-    else 
-    {
-        pipelineInfo.DepthWrite = VK_FALSE;
-    }
-
-    if(stencilTest)
-    {
-        pipelineInfo.StencilTest = VK_TRUE;
-    }
-    else 
-    {
-        pipelineInfo.StencilTest = VK_FALSE;
-    }
-
-    pipelineInfo.CompareOp = compareOp;
-}
-
-void PipelineBuilder::SetSamplesCount(ImageSample sample)
-{
-    pipelineInfo.samplesCount = sample;
-}
-
-void PipelineBuilder::SetFormats(Format colorFormat, Format depthFormat)
-{
-    pipelineInfo.ColorFormat = colorFormat;
-    pipelineInfo.DepthFormat = depthFormat;
 }
 
 VkShaderModule PipelineBuilder::CreateShaderModule(std::string path, shaderc_shader_kind kind)
