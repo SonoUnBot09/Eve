@@ -33,13 +33,13 @@ namespace Eve::Graphics
     class MemoryManager
     {
         public:
-            static TextureHandle AllocateImage(TextureInfo textureInfo);
+            static TextureHandle AllocateTexture(TextureInfo textureInfo);
             static SamplerHandle AllocateSampler(SamplerInfo samplerInfo);
             static BufferHandle AllocateBuffer(BufferInfo bufferInfo);
 
             static BufferHandle AllocateHostBuffer(BufferInfo bufferInfo);
 
-            inline static Texture& GetImage(TextureHandle handle) { return images[handle.Id]; }
+            inline static Texture& GetTexture(TextureHandle handle) { return images[handle.Id]; }
             inline static Sampler GetSampler(SamplerHandle handle) { return samplers[handle.Id]; }
             inline static Buffer& GetBuffer(BufferHandle handle) { return buffers[handle.Id]; }
         private:

@@ -3,7 +3,7 @@
 
 using namespace Eve::Graphics;
 
-TextureHandle MemoryManager::AllocateImage(TextureInfo textureInfo)
+TextureHandle MemoryManager::AllocateTexture(TextureInfo textureInfo)
 {
     Texture image;
 

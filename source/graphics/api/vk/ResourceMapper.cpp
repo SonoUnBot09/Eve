@@ -223,7 +223,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         TextureHandle handle = imagesToMap[i].first;
 
-        Texture& image = MemoryManager::GetImage(handle);
+        Texture& image = MemoryManager::GetTexture(handle);
 
         VkDescriptorImageInfo imageInfo
         {
