@@ -6,14 +6,14 @@ namespace Eve::Graphics
 {
     #pragma region
 
-        enum class ImageType : uint16_t
+        enum class TextureType : uint16_t
         {
             TEXTURE_1D,
             TEXTURE_2D,
             TEXTURE_3D  
         };
 
-        enum class ImageViewType : uint16_t
+        enum class TextureViewType : uint16_t
         {
             IMAGE_VIEW_TYPE_1D,
             IMAGE_VIEW_TYPE_2D,
@@ -24,7 +24,7 @@ namespace Eve::Graphics
             IMAGE_VIEW_TYPE_CUBE_ARRAY
         };
 
-        enum class ImageUsage : uint16_t
+        enum class TextureUsage : uint16_t
         {
             USAGE_SAMPLED                   = 1 << 0,
             USAGE_STORAGE                   = 1 << 1,
@@ -35,7 +35,7 @@ namespace Eve::Graphics
             USAGE_TRANSIENT_ATTACHMENT      = 1 << 6
         };
 
-        enum class ImageLayout : uint16_t
+        enum class TextureLayout : uint16_t
         {
             LAYOUT_UNDEFINED,
             LAYOUT_GENERAL,
@@ -123,7 +123,7 @@ namespace Eve::Graphics
             FORMAT_D32_SFLOAT_S8_UINT
         };
 
-        enum class ImageSample : uint16_t
+        enum class TextureSample : uint16_t
         {
             SAMPLE_1 = 1,
             SAMPLE_2 = 2,
@@ -131,45 +131,45 @@ namespace Eve::Graphics
             SAMPLE_8 = 8
         };
 
-        enum class ImageAspectMask : uint16_t
+        enum class TextureAspectMask : uint16_t
         {
             ASPECT_MASK_COLOR = 1 << 0,
             ASPECT_MASK_DEPTH = 1 << 1,
             ASPECT_MASK_STENCIL = 1 << 2
         };
 
-        inline ImageUsage operator|(ImageUsage a, ImageUsage b)
+        inline TextureUsage operator|(TextureUsage a, TextureUsage b)
         {
-            return static_cast<ImageUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+            return static_cast<TextureUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
         }
-        inline ImageUsage operator&(ImageUsage a, ImageUsage b)
+        inline TextureUsage operator&(TextureUsage a, TextureUsage b)
         {
-            return static_cast<ImageUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+            return static_cast<TextureUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
         }
 
-        inline ImageAspectMask operator|(ImageAspectMask a, ImageAspectMask b)
+        inline TextureAspectMask operator|(TextureAspectMask a, TextureAspectMask b)
         {
-            return static_cast<ImageAspectMask>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+            return static_cast<TextureAspectMask>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
         }
-        inline ImageAspectMask operator&(ImageAspectMask a, ImageAspectMask b)
+        inline TextureAspectMask operator&(TextureAspectMask a, TextureAspectMask b)
         {
-            return static_cast<ImageAspectMask>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+            return static_cast<TextureAspectMask>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
         }
 
     #pragma endregion
 
-    struct ImageHandle
+    struct TextureHandle
     {
-        ImageHandle() = default;
-        ImageHandle(uint32_t id) : Id(id) {}; 
+        TextureHandle() = default;
+        TextureHandle(uint32_t id) : Id(id) {}; 
         uint32_t Id;
     };
 
-    struct ImageInfo
+    struct TextureInfo
     {
-        ImageInfo(uint32_t height, uint32_t width, uint32_t depth, uint32_t arrayLayers, uint32_t mipLevels, 
-            ImageType type, ImageViewType viewType, ImageUsage usage, ImageLayout layout, Format format, 
-            ImageSample sampleCount, ImageAspectMask aspectMask) :
+        TextureInfo(uint32_t height, uint32_t width, uint32_t depth, uint32_t arrayLayers, uint32_t mipLevels, 
+            TextureType type, TextureViewType viewType, TextureUsage usage, TextureLayout layout, Format format, 
+            TextureSample sampleCount, TextureAspectMask aspectMask) :
             Height(height), Width(width), Depth(depth), ArrayLayers(arrayLayers), MipLevels(mipLevels),
             Type(type), ViewType(viewType), Usage(usage), Layuot(layout), Format(format), SampleCount(sampleCount),
             AspectMask(aspectMask) {};
@@ -178,12 +178,12 @@ namespace Eve::Graphics
         uint32_t ArrayLayers;
         uint32_t MipLevels;
 
-        ImageType Type;
-        ImageViewType ViewType;
-        ImageUsage Usage;
-        ImageLayout Layuot;
+        TextureType Type;
+        TextureViewType ViewType;
+        TextureUsage Usage;
+        TextureLayout Layuot;
         Format Format;
-        ImageSample SampleCount;
-        ImageAspectMask AspectMask;
+        TextureSample SampleCount;
+        TextureAspectMask AspectMask;
     };
 }

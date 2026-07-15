@@ -9,7 +9,7 @@
 #include <vma/vk_mem_alloc.h>
 
 #include <Eve/graphics/Buffer.hpp>
-#include <Eve/graphics/Image.hpp>
+#include <Eve/graphics/Texture.hpp>
 #include <graphics/api/vk/Context.hpp>
 #include <graphics/api/vk/Swapchain.hpp>
 #include <graphics/api/vk/Window.hpp>

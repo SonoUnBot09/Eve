@@ -221,9 +221,9 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         imagesToMap[i].second--;
 
-        ImageHandle handle = imagesToMap[i].first;
+        TextureHandle handle = imagesToMap[i].first;
 
-        Image& image = MemoryManager::GetImage(handle);
+        Texture& image = MemoryManager::GetImage(handle);
 
         VkDescriptorImageInfo imageInfo
         {
@@ -366,7 +366,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     return true;
 }
 
-void ResourceMapper::ScheduleImageMapping(ImageHandle handle)
+void ResourceMapper::ScheduleImageMapping(TextureHandle handle)
 {
     std::lock_guard<std::mutex> lock(imagesMutex);
 

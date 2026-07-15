@@ -2,7 +2,7 @@
 
 #include <graphics/api/vk/ContextBuilder.hpp>
 #include <graphics/api/vk/VulkanMapping.hpp>
-#include <Eve/graphics/Image.hpp>
+#include <Eve/graphics/Texture.hpp>
 #include <Eve/graphics/Sampler.hpp>
 #include <Eve/graphics/Buffer.hpp>
 
@@ -10,7 +10,7 @@
 
 namespace Eve::Graphics
 {
-    struct Image
+    struct Texture
     {
         VkImage Image;
         VkImageView ImageView;
@@ -33,18 +33,18 @@ namespace Eve::Graphics
     class MemoryManager
     {
         public:
-            static ImageHandle AllocateImage(ImageInfo imageInfo);
+            static TextureHandle AllocateImage(TextureInfo textureInfo);
             static SamplerHandle AllocateSampler(SamplerInfo samplerInfo);
             static BufferHandle AllocateBuffer(BufferInfo bufferInfo);
 
             static BufferHandle AllocateHostBuffer(BufferInfo bufferInfo);
 
-            inline static Image& GetImage(ImageHandle handle) { return images[handle.Id]; }
+            inline static Texture& GetImage(TextureHandle handle) { return images[handle.Id]; }
             inline static Sampler GetSampler(SamplerHandle handle) { return samplers[handle.Id]; }
             inline static Buffer& GetBuffer(BufferHandle handle) { return buffers[handle.Id]; }
         private:
 
-            inline static std::vector<Image> images;
+            inline static std::vector<Texture> images;
             inline static std::vector<Sampler> samplers;
             inline static std::vector<Buffer> buffers;
 

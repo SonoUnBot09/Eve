@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include <Eve/graphics/Buffer.hpp>
-#include <Eve/graphics/Image.hpp>
+#include <Eve/graphics/Texture.hpp>
 #include <Eve/graphics/Sampler.hpp>
 #include <Eve/graphics/ShaderStages.hpp>
 #include <Eve/graphics/Geometry.hpp>
@@ -304,15 +304,15 @@ namespace Eve::Graphics
     }
 
     // Images
-    static inline VkImageType GetVkImageType(ImageType type)
+    static inline VkImageType GetVkImageType(TextureType type)
     {
         return imageTypeLUT[static_cast<uint32_t>(type)];
     }
-    static inline VkImageViewType GetVkImageViewType(ImageViewType type)
+    static inline VkImageViewType GetVkImageViewType(TextureViewType type)
     {
         return imageViewTypeLUT[static_cast<uint32_t>(type)];
     }
-    static inline VkImageUsageFlags GetVkImageUsage(ImageUsage usage)
+    static inline VkImageUsageFlags GetVkImageUsage(TextureUsage usage)
     {
         uint32_t bits = static_cast<uint32_t>(usage);
 
@@ -326,7 +326,7 @@ namespace Eve::Graphics
 
         return imageUsageFlag;
     }
-    static inline VkImageLayout GetVkImageLayout(ImageLayout layout)
+    static inline VkImageLayout GetVkImageLayout(TextureLayout layout)
     {
         return imageLayoutLUT[static_cast<uint32_t>(layout)];
     }
@@ -338,11 +338,11 @@ namespace Eve::Graphics
     {
         return imageFormatSizeLUT[static_cast<uint32_t>(format)];
     }
-    static inline VkSampleCountFlagBits GetVkImageSamplesCount(ImageSample sample)
+    static inline VkSampleCountFlagBits GetVkImageSamplesCount(TextureSample sample)
     {
         return imageSampleCountLUT[static_cast<uint32_t>(sample)];
     }
-    static inline VkImageAspectFlags GetVkImageAspectMask(ImageAspectMask usage)
+    static inline VkImageAspectFlags GetVkImageAspectMask(TextureAspectMask usage)
     {
         uint32_t bits = static_cast<uint32_t>(usage);
 

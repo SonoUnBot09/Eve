@@ -3,21 +3,21 @@
 
 using namespace Eve::Graphics;
 
-ImageHandle MemoryManager::AllocateImage(ImageInfo imageInfo)
+TextureHandle MemoryManager::AllocateImage(TextureInfo textureInfo)
 {
-    Image image;
+    Texture image;
 
     VkImageCreateInfo imageCI
     {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .imageType = GetVkImageType(imageInfo.Type),
-        .format = GetVkImageFormat(imageInfo.Format),
-        .extent {.width = imageInfo.Width, .height = imageInfo.Height, .depth = imageInfo.Depth},
-        .mipLevels = imageInfo.MipLevels,
-        .arrayLayers = imageInfo.ArrayLayers,
-        .samples = GetVkImageSamplesCount(imageInfo.SampleCount),
+        .imageType = GetVkImageType(textureInfo.Type),
+        .format = GetVkImageFormat(textureInfo.Format),
+        .extent {.width = textureInfo.Width, .height = textureInfo.Height, .depth = textureInfo.Depth},
+        .mipLevels = textureInfo.MipLevels,
+        .arrayLayers = textureInfo.ArrayLayers,
+        .samples = GetVkImageSamplesCount(textureInfo.SampleCount),
         .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .usage = GetVkImageUsage(imageInfo.Usage),
+        .usage = GetVkImageUsage(textureInfo.Usage),
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
     };
@@ -34,21 +34,21 @@ ImageHandle MemoryManager::AllocateImage(ImageInfo imageInfo)
     {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .image = image.Image,
-        .viewType = GetVkImageViewType(imageInfo.ViewType),
-        .format = GetVkImageFormat(imageInfo.Format),
+        .viewType = GetVkImageViewType(textureInfo.ViewType),
+        .format = GetVkImageFormat(textureInfo.Format),
         .subresourceRange
         {
-            .aspectMask = GetVkImageAspectMask(imageInfo.AspectMask),
+            .aspectMask = GetVkImageAspectMask(textureInfo.AspectMask),
             .baseMipLevel = 0,
-            .levelCount = imageInfo.MipLevels,
+            .levelCount = textureInfo.MipLevels,
             .baseArrayLayer = 0,
-            .layerCount = imageInfo.ArrayLayers
+            .layerCount = textureInfo.ArrayLayers
         }
     };
 
     vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &image.ImageView);
 
-    ImageHandle handle;
+    TextureHandle handle;
     if(imageFreeSlots.empty()) 
     {
         handle.Id = images.size();

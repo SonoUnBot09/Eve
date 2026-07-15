@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include <Eve/graphics/Image.hpp>
+#include <Eve/graphics/Texture.hpp>
 #include <Eve/graphics/Geometry.hpp>
 
 namespace Eve::Graphics
@@ -36,7 +36,7 @@ namespace Eve::Graphics
         enum DepthTest CompareOp;
 
         // Multi Sampling
-        ImageSample samplesCount;
+        TextureSample samplesCount;
 
         // Color & Depth Formats
         Format ColorFormat, DepthFormat;
@@ -48,7 +48,7 @@ namespace Eve::Graphics
         Topology(Topology::TOPOLOGY_TRIANGLE_LIST), PolygonMode(PolygonMode::POLYGON_MODE_FILL),
         CullMode(CullMode::CULL_MODE_BACK), LineWidth(1.0f), 
         DepthTest(true), DepthWrite(true), StencilTest(true), CompareOp(DepthTest::DEPTH_COMPARE_LESS),
-        samplesCount(ImageSample::SAMPLE_1),
+        samplesCount(TextureSample::SAMPLE_1),
         ColorFormat(colorFormat), DepthFormat(depthFormat) {};
 
         

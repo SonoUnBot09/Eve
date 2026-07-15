@@ -9,7 +9,7 @@
 #include <graphics/api/vk/MemoryManager.hpp>
 #include <EveSettings.hpp>
 
-#include <Eve/graphics/Image.hpp>
+#include <Eve/graphics/Texture.hpp>
 #include <Eve/graphics/Sampler.hpp>
 #include <Eve/graphics/Buffer.hpp>
 
@@ -20,7 +20,7 @@ namespace Eve::Graphics
         public:
             static void CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t maxSamplersCount, uint32_t maxBuffersCount);        
             
-            static void ScheduleImageMapping(ImageHandle handle);
+            static void ScheduleImageMapping(TextureHandle handle);
             static void ScheduleSamplerMapping(SamplerHandle handle);
             static void ScheduleBufferMapping(BufferHandle handle);
 
@@ -44,7 +44,7 @@ namespace Eve::Graphics
             inline static std::mutex imagesMutex;
             inline static std::mutex samplersMutex;
             inline static std::mutex buffersMutex;
-            inline static std::vector<std::pair<ImageHandle, uint32_t>> imagesToMap;
+            inline static std::vector<std::pair<TextureHandle, uint32_t>> imagesToMap;
             inline static std::vector<std::pair<SamplerHandle, uint32_t>> samplersToMap;
             inline static std::vector<std::pair<BufferHandle, uint32_t>> buffersToMap;
 
