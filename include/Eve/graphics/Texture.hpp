@@ -146,6 +146,16 @@ namespace Eve::Graphics
         {
             return static_cast<TextureUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
         }
+        inline TextureUsage& operator|=(TextureUsage& a, TextureUsage b)
+        {
+            a = a | b;
+            return a;
+        }
+        inline TextureUsage& operator&=(TextureUsage& a, TextureUsage b)
+        {
+            a = a & b;
+            return a;
+        }
 
         inline TextureAspectMask operator|(TextureAspectMask a, TextureAspectMask b)
         {
@@ -154,6 +164,16 @@ namespace Eve::Graphics
         inline TextureAspectMask operator&(TextureAspectMask a, TextureAspectMask b)
         {
             return static_cast<TextureAspectMask>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+        }
+        inline TextureAspectMask& operator|=(TextureAspectMask& a, TextureAspectMask b)
+        {
+            a = a | b;
+            return a;
+        }
+        inline TextureAspectMask& operator&=(TextureAspectMask& a, TextureAspectMask b)
+        {
+            a = a & b;
+            return a;
         }
 
     #pragma endregion
@@ -165,25 +185,96 @@ namespace Eve::Graphics
         uint32_t Id;
     };
 
+    struct TransientTextureHandle
+    {
+        TransientTextureHandle() = default;
+        TransientTextureHandle(uint32_t id) : Id(id) {}; 
+        uint32_t Id;
+    };
+
+    struct TextureInfo1D
+    {
+        uint32_t Width;
+        uint32_t ArrayLayers = 1;
+        uint32_t MipLevels = 1;
+
+        Format Format;
+        TextureUsage Usage;
+        TextureSample Sample = TextureSample::SAMPLE_1;
+    };
+
+    struct TextureInfo2D
+    {
+        uint32_t Width, Height;
+        uint32_t ArrayLayers = 1;
+        uint32_t MipLevels = 1;
+
+        Format Format;
+        TextureUsage Usage;
+        TextureSample Sample = TextureSample::SAMPLE_1;
+    };
+
+    struct TextureInfo3D
+    {
+        uint32_t Height, Width, Depth;
+        uint32_t ArrayLayers = 1;
+        uint32_t MipLevels = 1;
+
+        Format Format;
+        TextureUsage Usage;
+        TextureSample Sample = TextureSample::SAMPLE_1;
+    };
+
+    struct TransientTextureInfo1D
+    {
+        uint32_t Width;
+        uint32_t ArrayLayers = 1;
+        uint32_t MipLevels = 1;
+
+        Format Format;
+        TextureSample Sample = TextureSample::SAMPLE_1;
+    };
+
+    struct TransientTextureInfo2D
+    {
+        uint32_t Width, Height;
+        uint32_t ArrayLayers = 1;
+        uint32_t MipLevels = 1;
+
+        Format Format;
+        TextureSample Sample = TextureSample::SAMPLE_1;
+    };
+
+    struct TransientTextureInfo3D
+    {
+        uint32_t Height, Width, Depth;
+        uint32_t ArrayLayers = 1;
+        uint32_t MipLevels = 1;
+
+        Format Format;
+        TextureSample Sample = TextureSample::SAMPLE_1;
+    };
+
+    #pragma pack(push, 1)
     struct TextureInfo
     {
-        TextureInfo(uint32_t height, uint32_t width, uint32_t depth, uint32_t arrayLayers, uint32_t mipLevels, 
-            TextureType type, TextureViewType viewType, TextureUsage usage, TextureLayout layout, Format format, 
-            TextureSample sampleCount, TextureAspectMask aspectMask) :
-            Height(height), Width(width), Depth(depth), ArrayLayers(arrayLayers), MipLevels(mipLevels),
-            Type(type), ViewType(viewType), Usage(usage), Layuot(layout), Format(format), SampleCount(sampleCount),
-            AspectMask(aspectMask) {};
-
-        uint32_t Height, Width, Depth;
+        uint32_t Width, Height, Depth;
         uint32_t ArrayLayers;
         uint32_t MipLevels;
 
-        TextureType Type;
-        TextureViewType ViewType;
-        TextureUsage Usage;
-        TextureLayout Layuot;
         Format Format;
-        TextureSample SampleCount;
-        TextureAspectMask AspectMask;
+        TextureUsage Usage;
+        TextureSample Sample;
     };
+    #pragma pack(pop)
+
+    /*
+    struct TransientTextureInfo2D
+    {
+        uint32_t Height, Width;
+        uint32_t ArrayLayers = 1;
+        uint32_t MipLevels = 1;
+
+        Format Format;
+    }*/
 }

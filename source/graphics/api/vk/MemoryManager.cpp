@@ -3,19 +3,20 @@
 
 using namespace Eve::Graphics;
 
-TextureHandle MemoryManager::AllocateTexture(TextureInfo textureInfo)
+TextureHandle MemoryManager::AllocateTexture1D(TextureInfo1D textureInfo)
 {
     Texture image;
 
+    VkFormat format = GetVkImageFormat(textureInfo.Format);
     VkImageCreateInfo imageCI
     {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .imageType = GetVkImageType(textureInfo.Type),
-        .format = GetVkImageFormat(textureInfo.Format),
-        .extent {.width = textureInfo.Width, .height = textureInfo.Height, .depth = textureInfo.Depth},
+        .imageType =VK_IMAGE_TYPE_1D,
+        .format = format,
+        .extent {.width = textureInfo.Width, .height = 1, .depth = 1},
         .mipLevels = textureInfo.MipLevels,
         .arrayLayers = textureInfo.ArrayLayers,
-        .samples = GetVkImageSamplesCount(textureInfo.SampleCount),
+        .samples = GetVkImageSamplesCount(textureInfo.Sample),
         .tiling = VK_IMAGE_TILING_OPTIMAL,
         .usage = GetVkImageUsage(textureInfo.Usage),
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
@@ -34,11 +35,11 @@ TextureHandle MemoryManager::AllocateTexture(TextureInfo textureInfo)
     {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .image = image.Image,
-        .viewType = GetVkImageViewType(textureInfo.ViewType),
-        .format = GetVkImageFormat(textureInfo.Format),
+        .viewType = VK_IMAGE_VIEW_TYPE_1D,
+        .format = format,
         .subresourceRange
         {
-            .aspectMask = GetVkImageAspectMask(textureInfo.AspectMask),
+            .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
             .baseMipLevel = 0,
             .levelCount = textureInfo.MipLevels,
             .baseArrayLayer = 0,
@@ -48,25 +49,113 @@ TextureHandle MemoryManager::AllocateTexture(TextureInfo textureInfo)
 
     vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &image.ImageView);
 
-    TextureHandle handle;
-    if(imageFreeSlots.empty()) 
-    {
-        handle.Id = images.size();
-
-        images.push_back(image);
-    }
-    else 
-    {
-        handle.Id = imageFreeSlots.back();
-        imageFreeSlots.pop_back();
-
-        images[handle.Id] = image;
-    }
-
-    ResourceMapper::ScheduleImageMapping(handle);
+    TextureHandle handle = ReserveTextureSlot(image);
 
     return handle;
 }
+
+TextureHandle MemoryManager::AllocateTexture2D(TextureInfo2D textureInfo)
+{
+    Texture image;
+
+    VkFormat format = GetVkImageFormat(textureInfo.Format);
+    VkImageCreateInfo imageCI
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = format,
+        .extent {.width = textureInfo.Width, .height = textureInfo.Width, .depth = 1},
+        .mipLevels = textureInfo.MipLevels,
+        .arrayLayers = textureInfo.ArrayLayers,
+        .samples = GetVkImageSamplesCount(textureInfo.Sample),
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = GetVkImageUsage(textureInfo.Usage),
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+    };
+
+    VmaAllocationCreateInfo imageAllocInfo
+    {
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+    };
+
+    vmaCreateImage(ContextBuilder::context.Allocator, &imageCI, &imageAllocInfo, 
+        &image.Image, &image.Allocation, &image.AllocationInfo);
+    
+    VkImageViewCreateInfo imageViewCI
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = image.Image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = format,
+        .subresourceRange
+        {
+            .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
+            .baseMipLevel = 0,
+            .levelCount = textureInfo.MipLevels,
+            .baseArrayLayer = 0,
+            .layerCount = textureInfo.ArrayLayers
+        }
+    };
+
+    vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &image.ImageView);
+
+    TextureHandle handle = ReserveTextureSlot(image);
+
+    return handle;
+}
+
+TextureHandle MemoryManager::AllocateTexture3D(TextureInfo3D textureInfo)
+{
+    Texture image;
+
+    VkFormat format = GetVkImageFormat(textureInfo.Format);
+    VkImageCreateInfo imageCI
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_3D,
+        .format = format,
+        .extent {.width = textureInfo.Width, .height = textureInfo.Width, .depth = textureInfo.Depth},
+        .mipLevels = textureInfo.MipLevels,
+        .arrayLayers = textureInfo.ArrayLayers,
+        .samples = GetVkImageSamplesCount(textureInfo.Sample),
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = GetVkImageUsage(textureInfo.Usage),
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+    };
+
+    VmaAllocationCreateInfo imageAllocInfo
+    {
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+    };
+
+    vmaCreateImage(ContextBuilder::context.Allocator, &imageCI, &imageAllocInfo, 
+        &image.Image, &image.Allocation, &image.AllocationInfo);
+    
+    VkImageViewCreateInfo imageViewCI
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = image.Image,
+        .viewType = VK_IMAGE_VIEW_TYPE_3D,
+        .format = format,
+        .subresourceRange
+        {
+            .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
+            .baseMipLevel = 0,
+            .levelCount = textureInfo.MipLevels,
+            .baseArrayLayer = 0,
+            .layerCount = textureInfo.ArrayLayers
+        }
+    };
+
+    vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &image.ImageView);
+
+    TextureHandle handle = ReserveTextureSlot(image);
+
+    return handle;
+}
+
 
 SamplerHandle MemoryManager::AllocateSampler(SamplerInfo samplerInfo)
 {
@@ -86,6 +175,114 @@ SamplerHandle MemoryManager::AllocateSampler(SamplerInfo samplerInfo)
 
     vkCreateSampler(ContextBuilder::context.Device, &samplerCI, nullptr, &sampler.Sampler);
 
+    SamplerHandle handle = ReserveSamplerSlot(sampler);
+
+    return handle;
+}
+
+BufferHandle MemoryManager::AllocateBuffer(BufferInfo bufferInfo)
+{
+    Buffer buffer;
+
+    VkBufferCreateInfo bufferCI
+    {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = bufferInfo.Size,
+        .usage = GetVkBufferUsage(bufferInfo.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    VmaAllocationCreateInfo bufferAllocInfo
+    {
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+    };
+
+    vmaCreateBuffer(ContextBuilder::context.Allocator, &bufferCI, &bufferAllocInfo,
+         &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
+
+    BufferHandle handle = ReserveBufferSlot(buffer);
+
+    return handle;
+}
+
+BufferHandle MemoryManager::AllocateHostBuffer(BufferInfo bufferInfo)
+{
+    Buffer buffer;
+
+    VkBufferCreateInfo bufferCI
+    {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = bufferInfo.Size,
+        .usage = GetVkBufferUsage(bufferInfo.Usage),
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    VmaAllocationCreateInfo bufferAllocInfo
+    {
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST
+    };
+
+    vmaCreateBuffer(ContextBuilder::context.Allocator, &bufferCI, &bufferAllocInfo,
+         &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
+
+    BufferHandle handle;
+    if(bufferFreeSlots.empty()) 
+    {
+        handle.Id = buffers.size();
+
+        buffers.push_back(buffer);
+    }
+    else 
+    {
+        handle.Id = bufferFreeSlots.back();
+        bufferFreeSlots.pop_back();
+
+        buffers[handle.Id] = buffer;
+    }
+
+    return handle;
+}
+
+VmaPool MemoryManager::AllocateMemoryPool(uint32_t size)
+{
+    VmaPoolCreateInfo poolCI
+    {
+        .memoryTypeIndex = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        .blockSize = size,
+        .minBlockCount = 1,
+        .maxBlockCount = 1,
+        .priority = 1
+    };
+    VmaPool pool;
+    vmaCreatePool(ContextBuilder::context.Allocator, &poolCI, &pool);
+
+    return pool;
+}
+
+TextureHandle MemoryManager::ReserveTextureSlot(Texture& texture)
+{
+    TextureHandle handle;
+    if(imageFreeSlots.empty()) 
+    {
+        handle.Id = textures.size();
+
+        textures.push_back(texture);
+    }
+    else 
+    {
+        handle.Id = imageFreeSlots.back();
+        imageFreeSlots.pop_back();
+
+        textures[handle.Id] = texture;
+    }
+
+    ResourceMapper::ScheduleImageMapping(handle);
+
+    return handle;
+}
+
+SamplerHandle MemoryManager::ReserveSamplerSlot(Sampler sampler)
+{
     SamplerHandle handle;
     if(samplerFreeSlots.empty()) 
     {
@@ -106,30 +303,12 @@ SamplerHandle MemoryManager::AllocateSampler(SamplerInfo samplerInfo)
     return handle;
 }
 
-BufferHandle MemoryManager::AllocateBuffer(BufferInfo bufferInfo)
+BufferHandle MemoryManager::ReserveBufferSlot(Buffer& buffer)
 {
-    Buffer buffer;
-
-    VkBufferCreateInfo bufferCI
-    {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = bufferInfo.Size,
-        .usage = GetVkBufferType(bufferInfo.Type) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
-    };
-
-    VmaAllocationCreateInfo bufferAllocInfo
-    {
-        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
-    };
-
-    vmaCreateBuffer(ContextBuilder::context.Allocator, &bufferCI, &bufferAllocInfo,
-         &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
-
     BufferHandle handle;
     if(bufferFreeSlots.empty()) 
     {
-        handle.Id = images.size();
+        handle.Id = buffers.size();
 
         buffers.push_back(buffer);
     }
@@ -146,30 +325,36 @@ BufferHandle MemoryManager::AllocateBuffer(BufferInfo bufferInfo)
     return handle;
 }
 
-BufferHandle MemoryManager::AllocateHostBuffer(BufferInfo bufferInfo)
+TransientTextureHandle MemoryManager::ReserveTransientTextureSlot()
 {
-    Buffer buffer;
-
-    VkBufferCreateInfo bufferCI
+    TextureHandle handle;
+    Texture texture {0, 0, 0, 0};
+    if(imageFreeSlots.empty()) 
     {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = bufferInfo.Size,
-        .usage = GetVkBufferType(bufferInfo.Type),
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
-    };
+        handle.Id = textures.size();
 
-    VmaAllocationCreateInfo bufferAllocInfo
+        textures.push_back(texture);
+    }
+    else 
     {
-        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST
-    };
+        handle.Id = imageFreeSlots.back();
+        imageFreeSlots.pop_back();
 
-    vmaCreateBuffer(ContextBuilder::context.Allocator, &bufferCI, &bufferAllocInfo,
-         &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
+        textures[handle.Id] = texture;
+    }
 
+    ResourceMapper::ScheduleImageMapping(handle);
+
+    return TransientTextureHandle{handle.Id};
+}
+
+TransientBufferHandle MemoryManager::ReserveTransientBufferSlot()
+{
     BufferHandle handle;
+    Buffer buffer{0,0,0};
     if(bufferFreeSlots.empty()) 
     {
-        handle.Id = images.size();
+        handle.Id = buffers.size();
 
         buffers.push_back(buffer);
     }
@@ -181,5 +366,7 @@ BufferHandle MemoryManager::AllocateHostBuffer(BufferInfo bufferInfo)
         buffers[handle.Id] = buffer;
     }
 
-    return handle;
+    ResourceMapper::ScheduleBufferMapping(handle);
+
+    return TransientBufferHandle{handle.Id};
 }

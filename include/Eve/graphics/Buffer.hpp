@@ -6,23 +6,32 @@ namespace Eve::Graphics
 {
     #pragma region
 
-        enum class BufferType : uint16_t
+        enum class BufferUsage : uint16_t
         {
-            BUFFER_TYPE_VERTEX       = 1 << 0,
-            BUFFER_TYPE_INDEX        = 1 << 1,
-            BUFFER_TYPE_UNIFORM      = 1 << 2,
-            BUFFER_TYPE_TRANSFER_SRC = 1 << 3,
-            BUFFER_TYPE_TRANSFER_DST = 1 << 4,
-            BUFFER_TYPE_STORAGE = 1 << 5
+            BUFFER_USAGE_INDEX        = 1 << 0,
+            BUFFER_USAGE_UNIFORM      = 1 << 1,
+            BUFFER_USAGE_TRANSFER_SRC = 1 << 2,
+            BUFFER_USAGE_TRANSFER_DST = 1 << 3,
+            BUFFER_USAGE_STORAGE = 1 << 4
         };
 
-        inline BufferType operator|(BufferType a, BufferType b)
+        inline BufferUsage operator|(BufferUsage a, BufferUsage b)
         {
-            return static_cast<BufferType>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+            return static_cast<BufferUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
         }
-        inline BufferType operator& (BufferType a, BufferType b)
+        inline BufferUsage operator& (BufferUsage a, BufferUsage b)
         {
-            return static_cast<BufferType>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+            return static_cast<BufferUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+        }
+        inline BufferUsage& operator|=(BufferUsage& a, BufferUsage b)
+        {
+            a = a | b;
+            return a;
+        }
+        inline BufferUsage& operator&=(BufferUsage& a, BufferUsage b)
+        {
+            a = a & b;
+            return a;
         }
 
     #pragma endregion
@@ -30,14 +39,28 @@ namespace Eve::Graphics
     struct BufferHandle
     {
         BufferHandle() = default;
-        BufferHandle(uint32_t id, uint32_t generationId) : Id(id) {}; 
+        BufferHandle(uint32_t id) : Id(id) {}; 
         uint32_t Id;
     };
 
+    struct TransientBufferHandle
+    {
+        TransientBufferHandle() = default;
+        TransientBufferHandle(uint32_t id) : Id(id) {}; 
+        uint32_t Id;
+    };
+
+    #pragma pack(push, 1)
     struct BufferInfo
     {
         uint64_t Size;
-        BufferType Type;
+        BufferUsage Usage;
+    };
+    #pragma pack(pop)
+
+    struct TransientBufferInfo
+    {
+        uint64_t Size;
     };
 
 }

@@ -11,15 +11,14 @@
 namespace Eve::Graphics
 {
 
-    inline static constexpr uint32_t bufferTypeConfigCount = 6;
+    inline static constexpr uint32_t bufferUsageConfigCount = 5;
     inline static constexpr uint32_t imageUsageConfigCount = 7;
     inline static constexpr uint32_t imageAspectMaskConfigCount = 3;
     inline static constexpr uint32_t shaderStageConfigCount = 3;
 
     // Buffers
-    static constexpr VkBufferUsageFlags bufferTypeLut[]
+    static constexpr VkBufferUsageFlags bufferUsageLUT[]
     {
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -65,7 +64,7 @@ namespace Eve::Graphics
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
         VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
@@ -288,19 +287,19 @@ namespace Eve::Graphics
     };
 
     // Buffers
-    static inline VkBufferUsageFlags GetVkBufferType(BufferType type)
+    static inline VkBufferUsageFlags GetVkBufferUsage(BufferUsage usage)
     {
-        uint32_t bits = static_cast<uint32_t>(type);
+        uint32_t bits = static_cast<uint32_t>(usage);
 
-        VkBufferUsageFlags bufferType = 0;
-        for(uint32_t i = 0; i < bufferTypeConfigCount; i++)
+        VkBufferUsageFlags bufferUsage = 0;
+        for(uint32_t i = 0; i < bufferUsageConfigCount; i++)
         {
             if(!(bits & (1u << i))) { continue; }
 
-            bufferType |= bufferTypeLut[i];
+            bufferUsage |= bufferUsageLUT[i];
         }
 
-        return bufferType;
+        return bufferUsage;
     }
 
     // Images
@@ -399,5 +398,28 @@ namespace Eve::Graphics
     static inline VkCompareOp GetVkCompareOp(DepthTest compareOp)
     {
         return compareOpLUT[static_cast<uint32_t>(compareOp)];
+    }
+
+    static inline VkImageAspectFlags GetVkImageAspectMaskBasedOnFormat(VkFormat format)
+    {
+        switch (format)
+        {
+            case (VK_FORMAT_D16_UNORM) :
+                return VK_IMAGE_ASPECT_DEPTH_BIT;
+            case (VK_FORMAT_D32_SFLOAT) :
+                return VK_IMAGE_ASPECT_DEPTH_BIT;
+
+            case (VK_FORMAT_S8_UINT) :
+                return VK_IMAGE_ASPECT_STENCIL_BIT;
+
+            case (VK_FORMAT_D16_UNORM_S8_UINT) :
+                return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            case (VK_FORMAT_D24_UNORM_S8_UINT) :
+                return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            case (VK_FORMAT_D32_SFLOAT_S8_UINT) :
+                return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+
+            default: return VK_IMAGE_ASPECT_COLOR_BIT;
+        }
     }
 }

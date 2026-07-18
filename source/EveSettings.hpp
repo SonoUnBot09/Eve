@@ -13,4 +13,6 @@ namespace Eve::Settings
         VK_FORMAT_R8G8B8A8_SRGB,
         VK_FORMAT_B8G8R8A8_SRGB
     };
+    inline static constexpr uint32_t transientDefaultTexturesPoolSize = 1024 * 1024 * 256;
+    inline static constexpr uint32_t transientDefaultBuffersPoolSize = 1024 * 1024 * 128;
 }

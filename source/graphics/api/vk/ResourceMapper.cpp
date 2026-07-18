@@ -1,3 +1,4 @@
+#include "Eve/graphics/Buffer.hpp"
 #include <graphics/api/vk/ResourceMapper.hpp>
 #include <graphics/api/vk/VulkanMapping.hpp>
 #include <graphics/api/vk/MemoryManager.hpp>
@@ -104,7 +105,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             BufferInfo bufferInfo
             {
                 .Size = maxBuffersCount * sizeof(uint64_t),
-                .Type = BufferType::BUFFER_TYPE_STORAGE | BufferType::BUFFER_TYPE_TRANSFER_DST
+                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_DST
             };
 
             BufferHandle handle = MemoryManager::AllocateBuffer(bufferInfo);
@@ -144,7 +145,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             BufferInfo bufferInfo
             {
                 .Size = maxBuffersCount * sizeof(uint64_t),
-                .Type = BufferType::BUFFER_TYPE_TRANSFER_SRC
+                .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
             };
 
             BufferHandle handle = MemoryManager::AllocateHostBuffer(bufferInfo);
