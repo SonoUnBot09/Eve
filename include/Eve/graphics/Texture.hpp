@@ -262,6 +262,10 @@ namespace Eve::Graphics
         uint32_t ArrayLayers;
         uint32_t MipLevels;
 
+        // Memory Info
+        uint64_t Offset;
+        uint64_t Stride;
+
         Format Format;
         TextureUsage Usage;
         TextureSample Sample;

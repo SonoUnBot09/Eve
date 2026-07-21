@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Eve/graphics/Texture.hpp"
+#include "Eve/graphics/Buffer.hpp"
+#include <algorithm>
+#include <ranges>
 #include <vector>
 #include <cstdint>
 
@@ -40,8 +42,8 @@ namespace Eve::Graphics
 
                 std::vector<TransientTextureHandle> TexturesToCreate;
                 std::vector<TransientTextureHandle> TexturesToDestroy;
-                std::vector<TransientTextureHandle> BuffersToCreate;
-                std::vector<TransientTextureHandle> BuffersToDestroy;
+                std::vector<TransientBufferHandle> BuffersToCreate;
+                std::vector<TransientBufferHandle> BuffersToDestroy;
             };
 
             struct SyncPoint
@@ -62,20 +64,67 @@ namespace Eve::Graphics
                 VkPipelineStageFlags2 StageMask;
                 VkAccessFlags2 AccessMask;
             };
-            
 
+            struct TextureBarrierInfoPair
+            {
+                TextureBarrierInfo SrcInfo;
+                TextureBarrierInfo DstInfo;
+                uint32_t SyncPointIndex;
+            };
+
+            struct BufferBarrierInfoPair
+            {
+                BufferBarrierInfo SrcInfo;
+                BufferBarrierInfo DstInfo;
+                uint32_t SyncPointIndex;
+            };
+            
+            struct TextureResource
+            {
+                TextureInfo TextureInfo;
+                Texture Texture;
+                uint32_t FramesCount;
+            };
+
+            struct BufferResource
+            {
+                BufferInfo BufferInfo;
+                Buffer Buffer;
+                uint32_t FramesCount;
+            };
+
+            struct MemorySlot
+            {
+                uint64_t Start;
+                uint64_t End;
+                uint64_t ResourceId;
+            };
+
+            static Texture AllocateTransientTexture(TextureInfo textureInfo);
+            static Buffer AllocateTransientBuffer(BufferInfo bufferInfo);
             static TextureBarrierInfo CalculateTextureBarrierInfo(Usage usage);
             static BufferBarrierInfo CalculateBufferBarrierInfo(Usage usage);
+
             static TextureUsage GetTextureUsage(Usage usage);
             static BufferUsage GetBufferUsage(Usage usage);
-            static bool IsOnlyRead(Usage usage);
+            static bool IsReadOnly(Usage usage);
+
+            static VkImageCreateInfo GetVirtualTextureCreateInfo(TextureInfo textureInfo);
+            static VkBufferCreateInfo GetVirtualBufferCreateInfo(BufferInfo bufferInfo);
 
             inline static std::vector<TextureInfo> requestedTextures;
             inline static std::vector<BufferInfo> requestedBuffers;
 
-            inline static std::vector<std::array<TextureHandle, Eve::Settings::MAX_FRAMES_IN_FLIGHT>> transientTextures;
-            inline static std::vector<std::array<BufferHandle, Eve::Settings::MAX_FRAMES_IN_FLIGHT>> transientBuffers;
+            inline static std::array<std::vector<TextureResource>, Eve::Settings::MAX_FRAMES_IN_FLIGHT> transientTextures;
+            inline static std::array<std::vector<BufferResource>, Eve::Settings::MAX_FRAMES_IN_FLIGHT> transientBuffers;
+            inline static std::vector<std::vector<TextureBarrierInfoPair>> textureBarriers;
+            inline static std::vector<std::vector<BufferBarrierInfoPair>> bufferBarriers;
+            inline static std::vector<TextureBarrierInfo> lastUsageTextures;
+            inline static std::vector<BufferBarrierInfo> lastUsageBuffers;
             
+            inline static std::vector<std::pair<TextureResource, bool>> texturesToReuse;
+            inline static std::vector<std::pair<BufferResource, bool>> buffersToReuse;
+
             inline static std::vector<Pass> passes;
             inline static std::vector<SyncPoint> syncPoints;
 
@@ -85,5 +134,16 @@ namespace Eve::Graphics
             inline static std::vector<VmaPool> texturePoolsInUse;
             inline static std::vector<VmaPool> bufferPoolsInUse;
             inline static std::vector<std::pair<VmaPool, uint32_t>> poolsToDestroy;
+
+            inline static std::vector<VmaVirtualAllocation> textureVirtualAllocations;
+            inline static std::vector<VmaVirtualAllocation> bufferVirtualAllocations;
+
+            inline static std::vector<MemorySlot> textureMemorySlots;
+            inline static std::vector<MemorySlot> bufferMemorySlots;
+
+            inline static std::vector<uint32_t> textureOccupancyCount;
+            inline static std::vector<uint32_t> bufferOccupancyCount;
+            inline static std::vector<TransientTextureHandle> usedTextureMemorySlotIds;
+            inline static std::vector<TransientBufferHandle> usedBufferMemorySlotIds;
     };
 }

@@ -156,7 +156,6 @@ TextureHandle MemoryManager::AllocateTexture3D(TextureInfo3D textureInfo)
     return handle;
 }
 
-
 SamplerHandle MemoryManager::AllocateSampler(SamplerInfo samplerInfo)
 {
     Sampler sampler;
