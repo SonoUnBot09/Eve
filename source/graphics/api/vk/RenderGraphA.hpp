@@ -46,6 +46,19 @@ namespace Eve::Graphics
 
         private:
 
+            struct TextureBarrierInfoPair
+            {
+                TextureBarrierInfo SrcInfo;
+                TextureBarrierInfo DstInfo;
+            };
+
+            struct BufferBarrierInfoPair
+            {
+                BufferBarrierInfo SrcInfo;
+                BufferBarrierInfo DstInfo;
+            };
+            
+
             struct Pass
             {
                 Pass(
@@ -54,6 +67,9 @@ namespace Eve::Graphics
                 ) : Textures(textures), Buffers(buffers) {};
                 std::vector<std::pair<TransientTextureHandle, Usage>> Textures;
                 std::vector<std::pair<TransientBufferHandle, Usage>> Buffers;
+
+                std::vector<TextureBarrierInfoPair> texturesBarriers;
+                std::vector<BufferBarrierInfoPair> buffersBarriers;
             };
 
             struct TexturesBucketPass

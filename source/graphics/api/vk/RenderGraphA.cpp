@@ -331,6 +331,84 @@ namespace
         }
     }
 
+    void CreateTransientTexture(TextureInfo textureInfo, Texture& texture)
+    {
+
+        VkImageType imageType = VK_IMAGE_TYPE_2D;
+        VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+        if(textureInfo.Data.Depth > 1)
+        {
+            imageType = VK_IMAGE_TYPE_3D;
+            imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+        }
+        else if(textureInfo.Data.Height == 1)
+        {
+            imageType = VK_IMAGE_TYPE_1D;
+            imageViewType = VK_IMAGE_VIEW_TYPE_1D;
+        }
+
+        VkFormat format = GetVkImageFormat(textureInfo.Data.Format);
+        VkImageCreateInfo imageCI
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .imageType = imageType,
+            .format = format,
+            .extent {.width = textureInfo.Data.Width, .height = textureInfo.Data.Height, .depth = textureInfo.Data.Depth},
+            .mipLevels = textureInfo.Data.MipLevels,
+            .arrayLayers = textureInfo.Data.ArrayLayers,
+            .samples = GetVkImageSamplesCount(textureInfo.Data.Sample),
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = GetVkImageUsage(textureInfo.Data.Usage),
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+
+        VmaAllocationCreateInfo imageAllocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+        };
+
+        vmaCreateImage(ContextBuilder::context.Allocator, &imageCI, &imageAllocInfo, 
+            &texture.Image, &texture.Allocation, &texture.AllocationInfo);
+        
+        VkImageViewCreateInfo imageViewCI
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = texture.Image,
+            .viewType = imageViewType,
+            .format = format,
+            .subresourceRange
+            {
+                .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
+                .baseMipLevel = 0,
+                .levelCount = textureInfo.Data.MipLevels,
+                .baseArrayLayer = 0,
+                .layerCount = textureInfo.Data.ArrayLayers
+            }
+        };
+
+        vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &texture.ImageView);
+    }
+
+    void CreateTransientBuffer(BufferInfo bufferInfo, Buffer& buffer)
+    {
+        VkBufferCreateInfo bufferCI
+        {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = bufferInfo.Data.Size,
+            .usage = GetVkBufferUsage(bufferInfo.Data.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+        };
+
+        VmaAllocationCreateInfo bufferAllocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+        };
+
+        vmaCreateBuffer(ContextBuilder::context.Allocator, &bufferCI, &bufferAllocInfo,
+            &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
+    }
+
     bool IsTextureBarrierNeeded(RenderGraph::TextureBarrierInfo src, RenderGraph::TextureBarrierInfo dst, Usage oldUsage, Usage newUsage)
     {
         if(IsReadOnly(oldUsage) && IsReadOnly(newUsage))
@@ -423,6 +501,15 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
     uint32_t buffersCount = requestedBuffers.size();
     uint32_t passesCount = passes.size();
 
+    for(uint32_t bucketIndex = 0; bucketIndex < texturesMemoryTypeIndicies.size(); bucketIndex++)
+    {
+        texturesBucketPasses[bucketIndex].resize(passesCount);
+    }
+    for(uint32_t bucketIndex = 0; bucketIndex < buffersMemoryTypeIndicies.size(); bucketIndex++)
+    {
+        buffersBucketPasses[bucketIndex].resize(passesCount);
+    }
+
     // Calculate first and last passes
     // Calculate resources usage
     // Calculate resource memory info
@@ -456,6 +543,9 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
                 if(firstPassIndex == -1)
                 {
                     firstPassIndex = passIndex;
+
+                    texturesBarriersInfo.push_back(std::pair{srcBarrierInfo, 0});
+                    barriersCount++;
                 }
 
                 lastPassIndex = passIndex;
@@ -528,6 +618,8 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
                 if(firstPassIndex == -1)
                 {
                     firstPassIndex = passIndex;
+                    buffersBarriersInfo.push_back(std::pair{srcBarrierInfo, 0});
+                    barriersCount++;
                 }
 
                 lastPassIndex = passIndex;
@@ -537,7 +629,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
                 BufferBarrierInfo dstBarrierInfo = CalculateBufferBarrierInfo(buffers[i].second);
 
                 bool firstUse = firstPassIndex == passIndex;
-                bool barrier = firstUse || IsBufferBarrierNeeded(srcBarrierInfo, dstBarrierInfo, oldUsage, buffers[i].second);
+                bool barrier = IsBufferBarrierNeeded(srcBarrierInfo, dstBarrierInfo, oldUsage, buffers[i].second);
 
                 if(barrier)
                 {
@@ -652,7 +744,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
     }
 
     // Buffers Memory Aliasing
-    for (uint32_t bucketIndex = 0; bucketIndex < buffersBucketPasses.size(); bucketIndex++)
+    for(uint32_t bucketIndex = 0; bucketIndex < buffersBucketPasses.size(); bucketIndex++)
     {
         uint64_t peakSize = 0;
         uint64_t peakAlignment = 0;
@@ -717,7 +809,133 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
 
     }
 
+    texturesVirtualAllocs.clear();
+    buffersVirtualAllocs.clear();
+
     vmaDestroyVirtualBlock(block);
+
+    // Create/Reuse textures and buffers
+    // Insert the barriers info in the right passes so the barriers can be created later
+    for(uint32_t textureId = 0; textureId < texturesCount; textureId++)
+    {
+        TextureResource& resource = transientTextures[frameIndex][textureId];
+
+        auto it = std::lower_bound(texturesPool.begin(), texturesPool.end(), resource, [](const std::pair<TextureResource, bool>& a, const TextureResource& b)
+        {
+            return std::memcmp(&a.first.TextureInfo, &b.TextureInfo, sizeof(TextureInfo)) < 0;
+        });
+
+        bool found = false;
+        for(; it != texturesPool.end(); it++)
+        {
+            if(std::memcmp(&it->first.TextureInfo, &resource.TextureInfo, sizeof(TextureInfo)) != 0)
+            {
+                break;
+            }
+
+            if(it->second == false)
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if(found)
+        {
+            resource.Texture = it->first.Texture;
+            it->second = true;
+        }
+        else 
+        {
+            CreateTransientTexture(resource.TextureInfo, resource.Texture);
+
+            MemoryBucket& memoryPool = texturesMemoryBucket[resource.MemoryInfo.BucketIndex];
+            vmaBindImageMemory2(ContextBuilder::context.Allocator, memoryPool.Allocation, 
+                resource.TextureInfo.MemoryInfo.Offset, resource.Texture.Image, nullptr);
+        }
+
+        // Insert barriers in their sync points
+        uint32_t offset = barriersOffsetPerTexture[textureId];
+        uint32_t barriersCount = barriersOffsetPerTexture[textureId + 1] - offset;
+        for(uint32_t i = 1; i < barriersCount; i++)
+        {
+            uint32_t index = i + offset;
+
+            TextureBarrierInfo& srcBarrierInfo = texturesBarriersInfo[index - 1].first;
+            TextureBarrierInfo& dstBarrierInfo = texturesBarriersInfo[index].first;
+            uint32_t passIndex = texturesBarriersInfo[index].second;
+
+            passes[passIndex].texturesBarriers.emplace_back(srcBarrierInfo, dstBarrierInfo);
+        }
+    }
+    for(uint32_t bufferId = 0; bufferId < buffersCount; bufferId++)
+    {
+        BufferResource& resource = transientBuffers[frameIndex][bufferId];
+
+        auto it = std::lower_bound(buffersPool.begin(), buffersPool.end(), resource, [](const std::pair<BufferResource, bool>& a, const BufferResource& b)
+        {
+            return std::memcmp(&a.first.BufferInfo, &b.BufferInfo, sizeof(BufferInfo)) < 0;
+        });
+
+        bool found = false;
+        for(; it != buffersPool.end(); it++)
+        {
+            if(std::memcmp(&it->first.BufferInfo, &resource.BufferInfo, sizeof(BufferInfo)) != 0)
+            {
+                break;
+            }
+
+            if(it->second == false)
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if(found)
+        {
+            resource.Buffer = it->first.Buffer;
+            it->second = true;
+        }
+        else 
+        {
+            CreateTransientBuffer(resource.BufferInfo, resource.Buffer);
+
+            MemoryBucket& memoryPool = buffersMemoryBucket[resource.MemoryInfo.BucketIndex];
+            vmaBindBufferMemory2(ContextBuilder::context.Allocator, memoryPool.Allocation, 
+                resource.BufferInfo.MemoryInfo.Offset, resource.Buffer.Buffer, nullptr);
+        }
+
+        // Insert barriers in their sync points
+        uint32_t offset = barriersOffsetPerBuffer[bufferId];
+        uint32_t barriersCount = barriersOffsetPerBuffer[bufferId + 1] - offset;
+        for(uint32_t i = 1; i < barriersCount; i++)
+        {
+            uint32_t index = i + offset;
+
+            BufferBarrierInfo& srcBarrierInfo = buffersBarriersInfo[index - 1].first;
+            BufferBarrierInfo& dstBarrierInfo = buffersBarriersInfo[index].first;
+            uint32_t passIndex = buffersBarriersInfo[index].second;
+
+            passes[passIndex].buffersBarriers.emplace_back(srcBarrierInfo, dstBarrierInfo);
+        }
+    }
+
+    requestedTextures.clear();
+    requestedBuffers.clear();
+    passes.clear();
+    for(uint32_t i = 0; texturesBucketPasses.size(); i++)
+    {
+        texturesBucketPasses[i].clear();
+    }
+    for(uint32_t i = 0; buffersBucketPasses.size(); i++)
+    {
+        buffersBucketPasses[i].clear();
+    }
+    barriersOffsetPerTexture.clear();
+    texturesBarriersInfo.clear();
+    barriersOffsetPerBuffer.clear();
+    buffersBarriersInfo.clear();
 }
 
 uint32_t RenderGraph::SetTextureMemoryInfo(const uint32_t frameIndex, const uint32_t textureId, const uint32_t passesCount)
