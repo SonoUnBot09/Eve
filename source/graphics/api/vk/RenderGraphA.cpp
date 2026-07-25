@@ -497,6 +497,12 @@ namespace
 
 void RenderGraph::CompileGraph(uint32_t frameIndex)
 {
+    UpdateTexturesPool(frameIndex);
+    UpdateBuffersPool(frameIndex);
+
+    transientTextures[frameIndex].clear();
+    transientBuffers[frameIndex].clear();
+
     uint32_t texturesCount = requestedTextures.size();
     uint32_t buffersCount = requestedBuffers.size();
     uint32_t passesCount = passes.size();
@@ -735,7 +741,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
         vmaClearVirtualBlock(block);
         virtualMemorySlots.clear();
 
-        bool success = ResizeTexturePoolIfNeeded(bucketIndex, peakSize, peakAlignment);
+        bool success = ResizeTextureMemoryPoolIfNeeded(bucketIndex, peakSize, peakAlignment);
 
         if(!success)
         {
@@ -800,7 +806,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
         vmaClearVirtualBlock(block);
         virtualMemorySlots.clear();
 
-        bool success = ResizeBufferPoolIfNeeded(bucketIndex, peakSize, peakAlignment);
+        bool success = ResizeBufferMemoryPoolIfNeeded(bucketIndex, peakSize, peakAlignment);
 
         if(!success)
         {
@@ -1286,7 +1292,7 @@ RenderGraph::BufferBarrierInfo RenderGraph::GetFirstBufferBarrierInfo(const uint
     return barrier;
 }
 
-bool RenderGraph::ResizeTexturePoolIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment)
+bool RenderGraph::ResizeTextureMemoryPoolIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment)
 {
     if(peakSize == 0) { return true; }
 
@@ -1340,7 +1346,7 @@ bool RenderGraph::ResizeTexturePoolIfNeeded(const uint32_t bucketIndex, const ui
     return true;
 }
 
-bool RenderGraph::ResizeBufferPoolIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment)
+bool RenderGraph::ResizeBufferMemoryPoolIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment)
 {
     if(peakSize == 0) { return true; }
 
@@ -1391,6 +1397,86 @@ bool RenderGraph::ResizeBufferPoolIfNeeded(const uint32_t bucketIndex, const uin
     memoryBucket.used = true;
 
     return true;
+}
+
+void RenderGraph::UpdateTexturesPool(const uint32_t frameIndex)
+{
+    std::vector<uint32_t> freeTexturesSlot;
+    for(uint32_t i = 0; i < texturesPool.size(); i++)
+    {
+        std::pair<TextureResource, bool>& data = texturesPool[i];
+
+        if(data.second == false) { freeTexturesSlot.push_back(i); continue; }
+
+        if(data.first.FramesCount == 0) { freeTexturesSlot.push_back(i); continue; }
+
+        data.first.FramesCount--;
+    }
+
+    uint32_t freeTexturesCount = freeTexturesSlot.size();
+    uint32_t freeTexturesIndex = 0;
+    for(uint32_t i = 0; i < transientTextures[frameIndex].size(); i++)
+    {
+        TextureResource& data = transientTextures[frameIndex][i];
+        data.FramesCount = 10; // TODO: Set with a valid frame delay
+
+        if(freeTexturesIndex < freeTexturesCount)
+        {
+            uint32_t index = freeTexturesSlot[freeTexturesIndex];
+
+            texturesPool[index] = std::pair{data, true};
+
+            freeTexturesIndex++;
+            
+            continue;
+        }
+
+        texturesPool.push_back(std::pair{data, true});
+    }
+
+    std::sort(texturesPool.begin(), texturesPool.end(), [](const std::pair<TextureResource, bool>& a, const std::pair<TextureResource, bool>& b) {
+        return memcmp(&a.first.TextureInfo, &b.first.TextureInfo, sizeof(TextureInfo)) < 0;
+    });
+}
+
+void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
+{
+    std::vector<uint32_t> freeBuffersSlot;
+    for(uint32_t i = 0; i < buffersPool.size(); i++)
+    {
+        std::pair<BufferResource, bool>& data = buffersPool[i];
+
+        if(data.second == false) { freeBuffersSlot.push_back(i); continue; }
+
+        if(data.first.FramesCount == 0) { freeBuffersSlot.push_back(i); continue; }
+
+        data.first.FramesCount--;
+    }
+
+    uint32_t freeBuffersCount = freeBuffersSlot.size();
+    uint32_t freeBuffersIndex = 0;
+    for(uint32_t i = 0; i < transientTextures[frameIndex].size(); i++)
+    {
+        BufferResource& data = transientBuffers[frameIndex][i];
+        data.FramesCount = 10; // TODO: Set with a valid frame delay
+
+        if(freeBuffersIndex < freeBuffersCount)
+        {
+            uint32_t index = freeBuffersSlot[freeBuffersIndex];
+
+            buffersPool[index] = std::pair{data, true};
+
+            freeBuffersIndex++;
+            
+            continue;
+        }
+
+        buffersPool.push_back(std::pair{data, true});
+    }
+
+    std::sort(buffersPool.begin(), buffersPool.end(), [](const std::pair<BufferResource, bool>& a, const std::pair<BufferResource, bool>& b) {
+        return memcmp(&a.first.BufferInfo, &b.first.BufferInfo, sizeof(BufferInfo)) < 0;
+    });
 }
 
 TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureInfo1D textureInfo)

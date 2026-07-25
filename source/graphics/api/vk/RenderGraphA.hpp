@@ -137,8 +137,11 @@ namespace Eve::Graphics
             static TextureBarrierInfo GetFirstTextureBarrierInfo(const uint32_t newAllocId, const uint64_t newAllocOffset, const uint64_t newAllocSize);
             static BufferBarrierInfo GetFirstBufferBarrierInfo(const uint32_t newAllocId, const uint64_t newAllocOffset, const uint64_t newAllocSize);
 
-            static bool ResizeTexturePoolIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment);
-            static bool ResizeBufferPoolIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment);
+            static bool ResizeTextureMemoryPoolIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment);
+            static bool ResizeBufferMemoryPoolIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment);
+
+            static void UpdateTexturesPool(const uint32_t frameIndex);
+            static void UpdateBuffersPool(const uint32_t frameIndex);
 
             // Input
             inline static std::vector<TextureInfo> requestedTextures;
