@@ -176,6 +176,18 @@ bool ContextBuilder::ChoosePhysicalDevice()
         }
     }
 
+    // Get GPU properties to use when the application is running
+    vkGetPhysicalDeviceMemoryProperties(choseGPU, &context.PhysicalDeviceInfo.MemoryProperties);
+    vkGetPhysicalDeviceProperties(choseGPU, &context.PhysicalDeviceInfo.Properties);
+    if(context.PhysicalDeviceInfo.Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+    {
+        context.PhysicalDeviceInfo.isDedicated = true;
+    }
+    else 
+    {
+        context.PhysicalDeviceInfo.isDedicated = false;
+    }
+
     context.PhysicalDevice = choseGPU;
 
     return true;

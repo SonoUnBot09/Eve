@@ -15,5 +15,12 @@ namespace Eve::Graphics
         VkQueue GraphicsQueue;
 
         VmaAllocator Allocator;
+
+        struct PhysicalDeviceInfo
+        {
+            VkPhysicalDeviceMemoryProperties MemoryProperties;
+            VkPhysicalDeviceProperties Properties;
+            bool isDedicated;
+        } PhysicalDeviceInfo;
     };
 }

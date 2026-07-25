@@ -258,17 +258,22 @@ namespace Eve::Graphics
     #pragma pack(push, 1)
     struct TextureInfo
     {
-        uint32_t Width, Height, Depth;
-        uint32_t ArrayLayers;
-        uint32_t MipLevels;
+        struct Data
+        {
+            uint32_t Width, Height, Depth;
+            uint32_t ArrayLayers;
+            uint32_t MipLevels;
 
-        // Memory Info
-        uint64_t Offset;
-        uint64_t Stride;
+            Format Format;
+            TextureUsage Usage = static_cast<TextureUsage>(0);
+            TextureSample Sample;
+        } Data;
 
-        Format Format;
-        TextureUsage Usage;
-        TextureSample Sample;
+        struct MemoryInfo
+        {
+            uint64_t Offset;
+            uint64_t Size;
+        } MemoryInfo;
     };
     #pragma pack(pop)
 

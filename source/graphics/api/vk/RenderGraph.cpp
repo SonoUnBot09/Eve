@@ -1,5 +1,3 @@
-#include "Eve/graphics/Buffer.hpp"
-#include "Eve/graphics/Texture.hpp"
 #include <graphics/api/vk/RenderGraph.hpp>
 
 using namespace Eve::Graphics;
@@ -99,8 +97,6 @@ void RenderGraph::AddPass(ComputePass* pass)
 
 void RenderGraph::CompileGraph(uint32_t frameIndex)
 {
-    // TODO: store buffers and textures in texturesToReuse and buffersToReuse
-
     std::vector<uint32_t> freeTexturesSlot;
     std::vector<uint32_t> freeBuffersSlot;
     for(uint32_t i = 0; i < texturesToReuse.size(); i++)
@@ -287,6 +283,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
 
         transientTextures[frameIndex][textureId].TextureInfo = requestedTextures[textureId];
         transientTextures[frameIndex][textureId].TextureInfo.Usage = usage;
+        transientTextures[frameIndex][textureId].FramesCount = 10;
 
         lastUsageTextures[textureId] = lastUsageInfo;
     }
@@ -351,6 +348,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
 
         transientBuffers[frameIndex][bufferId].BufferInfo = requestedBuffers[bufferId];
         transientBuffers[frameIndex][bufferId].BufferInfo.Usage = usage;
+        transientBuffers[frameIndex][bufferId].FramesCount = 10;
 
         lastUsageBuffers[bufferId] = lastUsageInfo;
     }
@@ -391,6 +389,8 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
     uint64_t peakBuffersPoolSize = 0;
     std::vector<TransientTextureHandle> recordedTextureHandles;
     std::vector<TransientBufferHandle> recordedBufferHandles;
+
+    // Memory Aliasing
     for (uint32_t passIndex = 0; passIndex < passes.size(); passIndex++)
     {
         Pass& pass = passes[passIndex];
@@ -647,7 +647,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
     // TODO: Create new pools if the real allocated memory is not enough and destroy the old pools
 
     
-    //Find or create new textures/buffers to use
+    // Find or create new textures/buffers to use
     for (uint32_t textureId = 0; textureId < requestedTextures.size(); textureId++)
     {
         TextureInfo textureInfo = transientTextures[frameIndex][textureId].TextureInfo;
@@ -683,6 +683,9 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
         else 
         {
             texture = AllocateTransientTexture(textureInfo);
+            //vmaBindImageMemory2()
+            //vkBindImageMemory(ContextBuilder::context.Device, texture.Image,)
+            
 
         }
 
@@ -1221,22 +1224,17 @@ Texture RenderGraph::AllocateTransientTexture(TextureInfo textureInfo)
 {
     Texture image;
 
-    VkImageType imageType;
-    VkImageViewType imageViewType;
-    if(textureInfo.Width > 1 && textureInfo.Height > 1 && textureInfo.Depth > 1)
+    VkImageType imageType = VK_IMAGE_TYPE_2D
+    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+    if(resource.TextureInfo.Data.Depth > 1)
     {
         imageType = VK_IMAGE_TYPE_3D;
-        imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+        imageViewType = VK_IMAGE_VIEW_TYPE_3D
     }
-    else if(textureInfo.Width > 1 && textureInfo.Height > 1)
-    {
-        imageType = VK_IMAGE_TYPE_2D;
-        imageViewType = VK_IMAGE_VIEW_TYPE_2D;
-    }
-    else
+    else if(resource.TextureInfo.Data.Height == 1)
     {
         imageType = VK_IMAGE_TYPE_1D;
-        imageViewType = VK_IMAGE_VIEW_TYPE_1D;
+        imageViewType = VK_IMAGE_VIEW_TYPE_1D
     }
 
     VkFormat format = GetVkImageFormat(textureInfo.Format);

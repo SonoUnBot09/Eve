@@ -10,8 +10,6 @@ namespace Eve::Graphics
 
     enum class Usage
     {
-        NONE,
-        
         // Sampled
         VERTEX_READ_TEXTURE_SAMPLED,
         FRAGMENT_READ_TEXTURE_SAMPLED,

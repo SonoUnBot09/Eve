@@ -53,13 +53,17 @@ namespace Eve::Graphics
     #pragma pack(push, 1)
     struct BufferInfo
     {
-        uint64_t Size;
-
-        // Memory Info
-        uint64_t Offset;
-        uint64_t Stride;
-
-        BufferUsage Usage;
+        struct Data
+        {
+            uint64_t Size;
+            BufferUsage Usage = static_cast<BufferUsage>(0);
+        } Data;
+        
+        struct MemoryInfo
+        {
+            uint64_t Offset;
+            uint64_t Size;
+        } MemoryInfo;
     };
     #pragma pack(pop)
 

@@ -244,15 +244,16 @@ BufferHandle MemoryManager::AllocateHostBuffer(BufferInfo bufferInfo)
 
 VmaPool MemoryManager::AllocateMemoryPool(uint32_t size)
 {
+
     VmaPoolCreateInfo poolCI
     {
-        .memoryTypeIndex = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         .blockSize = size,
         .minBlockCount = 1,
         .maxBlockCount = 1,
         .priority = 1
     };
     VmaPool pool;
+
     vmaCreatePool(ContextBuilder::context.Allocator, &poolCI, &pool);
 
     return pool;
