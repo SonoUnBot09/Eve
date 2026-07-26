@@ -1,6 +1,5 @@
-#include <graphics/api/vk/SwapchainBuilder.hpp>
-
-#include <vulkan/vulkan.hpp>
+#include <graphics/GraphicsCore.hpp>
+#include "SwapchainBuilder.hpp"
 
 #include <EveSettings.hpp>
 #include <Eve/Debug.hpp>
@@ -8,15 +7,13 @@
 using namespace Debug;
 using namespace Eve::Graphics;
 
-Swapchain SwapchainBuilder::Build(Context& context, Window& window, bool& success)
+bool SwapchainBuilder::Build(Swapchain& swapchain)
 {
-
     VkSurfaceCapabilitiesKHR surfaceCaps;
-    if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context.PhysicalDevice, context.Surface, &surfaceCaps) != VK_SUCCESS)
+    if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, &surfaceCaps) != VK_SUCCESS)
     {
         printError("Unable to get surface capabilities");
-        success = false;
-        return swapchain;
+        return false;
     }
 
     if(surfaceCaps.currentExtent.width != 0xFFFFFFFF)
@@ -27,7 +24,7 @@ Swapchain SwapchainBuilder::Build(Context& context, Window& window, bool& succes
     else 
     {
         int w, h;
-        SDL_GetWindowSizeInPixels(window.Window, &w, &h);
+        SDL_GetWindowSizeInPixels(GraphicsCore::Window.Window, &w, &h);
 
         uint32_t width = static_cast<uint32_t>(w);
         uint32_t height = static_cast<uint32_t>(h);
@@ -52,9 +49,9 @@ Swapchain SwapchainBuilder::Build(Context& context, Window& window, bool& succes
     }
 
     uint32_t supportedFormatsCount = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(context.PhysicalDevice, context.Surface, &supportedFormatsCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, &supportedFormatsCount, nullptr);
     std::vector<VkSurfaceFormatKHR> supportedFormats(supportedFormatsCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(context.PhysicalDevice, context.Surface, &supportedFormatsCount, supportedFormats.data());
+    vkGetPhysicalDeviceSurfaceFormatsKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, &supportedFormatsCount, supportedFormats.data());
 
     bool isRequiredFormatSupported = false;
     // Fallback for any format supported
@@ -87,7 +84,7 @@ Swapchain SwapchainBuilder::Build(Context& context, Window& window, bool& succes
     VkSwapchainCreateInfoKHR swapchainCI
     {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .surface = context.Surface,
+        .surface = GraphicsCore::Context.Surface,
         .minImageCount = swapchainImagesCount,
         .imageFormat = chooseFormat,
         .imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
@@ -99,18 +96,17 @@ Swapchain SwapchainBuilder::Build(Context& context, Window& window, bool& succes
         .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR
     };
 
-    if(vkCreateSwapchainKHR(context.Device, &swapchainCI, nullptr, &swapchain.Swapchain) != VK_SUCCESS)
+    if(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain) != VK_SUCCESS)
     {
         printError("Unable to create the swapchain");
-        success = false;
-        return swapchain;
+        return false;
     }
 
     // Swapchain images
     uint32_t imagesCount = 0;
-    vkGetSwapchainImagesKHR(context.Device, swapchain.Swapchain, &imagesCount, nullptr);
+    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, nullptr);
     swapchain.SwapchainImages.resize(imagesCount);
-    vkGetSwapchainImagesKHR(context.Device, swapchain.Swapchain, &imagesCount, swapchain.SwapchainImages.data());
+    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, swapchain.SwapchainImages.data());
 
     swapchain.SwapchainImageViews.resize(imagesCount);
     for(int i = 0; i < imagesCount; i++)
@@ -131,26 +127,23 @@ Swapchain SwapchainBuilder::Build(Context& context, Window& window, bool& succes
             }
         };
 
-        if(vkCreateImageView(context.Device, &imageViewCI, nullptr, &swapchain.SwapchainImageViews[i]) != VK_SUCCESS)
+        if(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchain.SwapchainImageViews[i]) != VK_SUCCESS)
         {
             printError("Unable to create swapchain image views");
-            success = false;
-            return swapchain;
+            return false;
         }
     }
 
-    success = true;
-    return swapchain;
+    return true;
 }
 
-Swapchain SwapchainBuilder::Rebuild(Context& context, Window& window, bool& success)
+bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
 {
     VkSurfaceCapabilitiesKHR surfaceCaps;
-    if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context.PhysicalDevice, context.Surface, &surfaceCaps) != VK_SUCCESS)
+    if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, &surfaceCaps) != VK_SUCCESS)
     {
         printError("Unable to get surface capabilities");
-        success = false;
-        return swapchain;
+        return false;
     }
 
     if(surfaceCaps.currentExtent.width != 0xFFFFFFFF)
@@ -161,7 +154,7 @@ Swapchain SwapchainBuilder::Rebuild(Context& context, Window& window, bool& succ
     else 
     {
         int w, h;
-        SDL_GetWindowSizeInPixels(window.Window, &w, &h);
+        SDL_GetWindowSizeInPixels(GraphicsCore::Window.Window, &w, &h);
 
         uint32_t width = static_cast<uint32_t>(w);
         uint32_t height = static_cast<uint32_t>(h);
@@ -184,7 +177,7 @@ Swapchain SwapchainBuilder::Rebuild(Context& context, Window& window, bool& succ
     VkSwapchainCreateInfoKHR swapchainCI
     {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .surface = context.Surface,
+        .surface = GraphicsCore::Context.Surface,
         .minImageCount = swapchainImagesCount,
         .imageFormat = chooseFormat,
         .imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
@@ -196,18 +189,17 @@ Swapchain SwapchainBuilder::Rebuild(Context& context, Window& window, bool& succ
         .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR
     };
 
-    if(vkCreateSwapchainKHR(context.Device, &swapchainCI, nullptr, &swapchain.Swapchain) != VK_SUCCESS)
+    if(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain) != VK_SUCCESS)
     {
         printError("Unable to create the swapchain");
-        success = false;
-        return swapchain;
+        return false;
     }
 
     // Swapchain images
     uint32_t imagesCount = 0;
-    vkGetSwapchainImagesKHR(context.Device, swapchain.Swapchain, &imagesCount, nullptr);
+    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, nullptr);
     swapchain.SwapchainImages.resize(imagesCount);
-    vkGetSwapchainImagesKHR(context.Device, swapchain.Swapchain, &imagesCount, swapchain.SwapchainImages.data());
+    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, swapchain.SwapchainImages.data());
 
     swapchain.SwapchainImageViews.resize(imagesCount);
     for(int i = 0; i < imagesCount; i++)
@@ -228,14 +220,12 @@ Swapchain SwapchainBuilder::Rebuild(Context& context, Window& window, bool& succ
             }
         };
 
-        if(vkCreateImageView(context.Device, &imageViewCI, nullptr, &swapchain.SwapchainImageViews[i]) != VK_SUCCESS)
+        if(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchain.SwapchainImageViews[i]) != VK_SUCCESS)
         {
             printError("Unable to create swapchain image views");
-            success = false;
-            return swapchain;
+            return false;
         }
     }
 
-    success = true;
-    return swapchain;
+    return true;
 }

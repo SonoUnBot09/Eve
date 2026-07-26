@@ -6,7 +6,7 @@
 #include <cstdint>
 
 #include <Eve/graphics/PassModule.hpp>
-#include <graphics/api/vk/MemoryManager.hpp>
+#include <graphics/MemoryManager.hpp>
 #include <EveSettings.hpp>
 
 using namespace Eve::Graphics;

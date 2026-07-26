@@ -1,7 +1,6 @@
-#include "Eve/graphics/Buffer.hpp"
-#include <graphics/api/vk/ResourceMapper.hpp>
-#include <graphics/api/vk/VulkanMapping.hpp>
-#include <graphics/api/vk/MemoryManager.hpp>
+#include <graphics/ResourceMapper.hpp>
+#include <graphics/VulkanMapping.hpp>
+#include <graphics/MemoryManager.hpp>
 
 using namespace Eve::Graphics;
 
@@ -45,7 +44,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             .pBindings = bindingsLayout.data()
         };
 
-        vkCreateDescriptorSetLayout(ContextBuilder::context.Device, &layoutCI, nullptr, &layout);
+        vkCreateDescriptorSetLayout(GraphicsCore::Context.Device, &layoutCI, nullptr, &layout);
 
     #pragma endregion
 
@@ -83,7 +82,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             .pPoolSizes = poolSize.data()
         };
 
-        vkCreateDescriptorPool(ContextBuilder::context.Device, &poolCI, nullptr, &pool);
+        vkCreateDescriptorPool(GraphicsCore::Context.Device, &poolCI, nullptr, &pool);
     
     #pragma endregion
 
@@ -97,15 +96,15 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             .pSetLayouts = &layout
         };
 
-        vkAllocateDescriptorSets(ContextBuilder::context.Device, &setAllocInfo, sets.data());
+        vkAllocateDescriptorSets(GraphicsCore::Context.Device, &setAllocInfo, sets.data());
 
         std::vector<VkWriteDescriptorSet> descriptorWrites {Eve::Settings::MAX_FRAMES_IN_FLIGHT};
         for (uint32_t i = 0; i < Eve::Settings::MAX_FRAMES_IN_FLIGHT; i++)
         {
             BufferInfo bufferInfo
             {
-                .Size = maxBuffersCount * sizeof(uint64_t),
-                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_DST
+                .Data.Size = maxBuffersCount * sizeof(uint64_t),
+                .Data.Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_DST
             };
 
             BufferHandle handle = MemoryManager::AllocateBuffer(bufferInfo);
@@ -133,7 +132,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             descriptorWrites.push_back(writeInfo);
         }
 
-        vkUpdateDescriptorSets(ContextBuilder::context.Device, descriptorWrites.size(), 
+        vkUpdateDescriptorSets(GraphicsCore::Context.Device, descriptorWrites.size(), 
         descriptorWrites.data(), 0, nullptr);
 
     #pragma endregion
@@ -144,8 +143,8 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
         {
             BufferInfo bufferInfo
             {
-                .Size = maxBuffersCount * sizeof(uint64_t),
-                .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+                .Data.Size = maxBuffersCount * sizeof(uint64_t),
+                .Data.Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
             };
 
             BufferHandle handle = MemoryManager::AllocateHostBuffer(bufferInfo);
@@ -300,7 +299,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .buffer = buffer.Buffer
         };
 
-        VkDeviceAddress address = vkGetBufferDeviceAddress(ContextBuilder::context.Device, &addressInfo);
+        VkDeviceAddress address = vkGetBufferDeviceAddress(GraphicsCore::Context.Device, &addressInfo);
 
         buffersAddress.push_back(address);
 
@@ -316,7 +315,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
     if(!descriptorSetWrites.empty())
     {
-        vkUpdateDescriptorSets(ContextBuilder::context.Device, descriptorSetWrites.size(), 
+        vkUpdateDescriptorSets(GraphicsCore::Context.Device, descriptorSetWrites.size(), 
         descriptorSetWrites.data(), 0, nullptr);
     }
 

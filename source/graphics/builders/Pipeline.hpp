@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vulkan/vulkan.hpp>
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -9,11 +10,12 @@
 
 namespace Eve::Graphics
 {
-    struct PipelineHandle
+    struct Pipeline
     {
-        uint32_t Id;
+        VkPipelineLayout Layout;
+        VkPipeline Pipeline;
     };
-    
+
     struct PipelineInfo
     {
         std::string VertShaderPath;
@@ -40,17 +42,5 @@ namespace Eve::Graphics
 
         // Color & Depth Formats
         Format ColorFormat, DepthFormat;
-
-        PipelineInfo(std::string vertShaderPath, std::string fragShaderPath, Format colorFormat, Format depthFormat) : 
-        VertShaderPath(vertShaderPath), FragShaderPath(fragShaderPath),
-        VertOffset(0), VertStride(0), FragOffset(0), FragStride(0),
-        VerticesAttributes({Format::FORMAT_R32G32B32_SFLOAT}),
-        Topology(Topology::TOPOLOGY_TRIANGLE_LIST), PolygonMode(PolygonMode::POLYGON_MODE_FILL),
-        CullMode(CullMode::CULL_MODE_BACK), LineWidth(1.0f), 
-        DepthTest(true), DepthWrite(true), StencilTest(true), CompareOp(DepthTest::DEPTH_COMPARE_LESS),
-        samplesCount(TextureSample::SAMPLE_1),
-        ColorFormat(colorFormat), DepthFormat(depthFormat) {};
-
-        
     };
 }

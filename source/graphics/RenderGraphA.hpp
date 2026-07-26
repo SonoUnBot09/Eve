@@ -1,14 +1,12 @@
 #pragma once
 
-#include "Eve/graphics/Texture.hpp"
-#include "graphics/api/vk/ContextBuilder.hpp"
 #include <algorithm>
 #include <ranges>
 #include <vector>
 #include <cstdint>
 
 #include <Eve/graphics/PassModule.hpp>
-#include <graphics/api/vk/MemoryManager.hpp>
+#include <graphics/MemoryManager.hpp>
 #include <EveSettings.hpp>
 
 using namespace Eve::Graphics;

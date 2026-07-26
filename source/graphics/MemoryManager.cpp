@@ -1,5 +1,6 @@
-#include <graphics/api/vk/MemoryManager.hpp>
-#include <graphics/api/vk/ResourceMapper.hpp>
+#include "MemoryManager.hpp"
+#include "ResourceMapper.hpp"
+#include "GraphicsCore.hpp"
 
 using namespace Eve::Graphics;
 
@@ -28,7 +29,7 @@ TextureHandle MemoryManager::AllocateTexture1D(TextureInfo1D textureInfo)
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
     };
 
-    vmaCreateImage(ContextBuilder::context.Allocator, &imageCI, &imageAllocInfo, 
+    vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
         &image.Image, &image.Allocation, &image.AllocationInfo);
     
     VkImageViewCreateInfo imageViewCI
@@ -47,7 +48,7 @@ TextureHandle MemoryManager::AllocateTexture1D(TextureInfo1D textureInfo)
         }
     };
 
-    vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &image.ImageView);
+    vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &image.ImageView);
 
     TextureHandle handle = ReserveTextureSlot(image);
 
@@ -79,7 +80,7 @@ TextureHandle MemoryManager::AllocateTexture2D(TextureInfo2D textureInfo)
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
     };
 
-    vmaCreateImage(ContextBuilder::context.Allocator, &imageCI, &imageAllocInfo, 
+    vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
         &image.Image, &image.Allocation, &image.AllocationInfo);
     
     VkImageViewCreateInfo imageViewCI
@@ -98,7 +99,7 @@ TextureHandle MemoryManager::AllocateTexture2D(TextureInfo2D textureInfo)
         }
     };
 
-    vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &image.ImageView);
+    vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &image.ImageView);
 
     TextureHandle handle = ReserveTextureSlot(image);
 
@@ -130,7 +131,7 @@ TextureHandle MemoryManager::AllocateTexture3D(TextureInfo3D textureInfo)
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
     };
 
-    vmaCreateImage(ContextBuilder::context.Allocator, &imageCI, &imageAllocInfo, 
+    vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
         &image.Image, &image.Allocation, &image.AllocationInfo);
     
     VkImageViewCreateInfo imageViewCI
@@ -149,7 +150,7 @@ TextureHandle MemoryManager::AllocateTexture3D(TextureInfo3D textureInfo)
         }
     };
 
-    vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &image.ImageView);
+    vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &image.ImageView);
 
     TextureHandle handle = ReserveTextureSlot(image);
 
@@ -172,7 +173,7 @@ SamplerHandle MemoryManager::AllocateSampler(SamplerInfo samplerInfo)
         .unnormalizedCoordinates = VK_FALSE
     };
 
-    vkCreateSampler(ContextBuilder::context.Device, &samplerCI, nullptr, &sampler.Sampler);
+    vkCreateSampler(GraphicsCore::Context.Device, &samplerCI, nullptr, &sampler.Sampler);
 
     SamplerHandle handle = ReserveSamplerSlot(sampler);
 
@@ -186,8 +187,8 @@ BufferHandle MemoryManager::AllocateBuffer(BufferInfo bufferInfo)
     VkBufferCreateInfo bufferCI
     {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = bufferInfo.Size,
-        .usage = GetVkBufferUsage(bufferInfo.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        .size = bufferInfo.Data.Size,
+        .usage = GetVkBufferUsage(bufferInfo.Data.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
 
@@ -196,7 +197,7 @@ BufferHandle MemoryManager::AllocateBuffer(BufferInfo bufferInfo)
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
     };
 
-    vmaCreateBuffer(ContextBuilder::context.Allocator, &bufferCI, &bufferAllocInfo,
+    vmaCreateBuffer(GraphicsCore::Context.Allocator, &bufferCI, &bufferAllocInfo,
          &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
 
     BufferHandle handle = ReserveBufferSlot(buffer);
@@ -211,8 +212,8 @@ BufferHandle MemoryManager::AllocateHostBuffer(BufferInfo bufferInfo)
     VkBufferCreateInfo bufferCI
     {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = bufferInfo.Size,
-        .usage = GetVkBufferUsage(bufferInfo.Usage),
+        .size = bufferInfo.Data.Size,
+        .usage = GetVkBufferUsage(bufferInfo.Data.Usage),
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
 
@@ -221,7 +222,7 @@ BufferHandle MemoryManager::AllocateHostBuffer(BufferInfo bufferInfo)
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST
     };
 
-    vmaCreateBuffer(ContextBuilder::context.Allocator, &bufferCI, &bufferAllocInfo,
+    vmaCreateBuffer(GraphicsCore::Context.Allocator, &bufferCI, &bufferAllocInfo,
          &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
 
     BufferHandle handle;
@@ -254,7 +255,7 @@ VmaPool MemoryManager::AllocateMemoryPool(uint32_t size)
     };
     VmaPool pool;
 
-    vmaCreatePool(ContextBuilder::context.Allocator, &poolCI, &pool);
+    vmaCreatePool(GraphicsCore::Context.Allocator, &poolCI, &pool);
 
     return pool;
 }

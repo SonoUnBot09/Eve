@@ -1,4 +1,4 @@
-#include <graphics/api/vk/WindowBuilder.hpp>
+#include "WindowBuilder.hpp"
 
 #include <SDL3/SDL.h>
 #include <Eve/Debug.hpp>
@@ -6,31 +6,22 @@
 using namespace Debug;
 using namespace Eve::Graphics;
 
-Window WindowBuilder::Build(bool& success)
+bool WindowBuilder::Build(Window& window)
 {
-    if(!isInitialized)
-    {
-        printError("SDL already initialized, cannot initialize it twice");
-        success = false;
-        return window;
-    }
 
     if(!InitializeSDLSubsystems())
     {
         printError("Unable to initialize SDL subsystems");
-        success = false;
-        return window;
+        return false;
     }
 
-    if(!CreateWindow())
+    if(!CreateWindow(window))
     {
         printError("Unable to initialize SDL subsystems");
-        success = false;
-        return window;
+        return false;
     }
 
-    success = true;
-    return window;
+    return true;
 }
 
 bool WindowBuilder::InitializeSDLSubsystems()
@@ -43,7 +34,7 @@ bool WindowBuilder::InitializeSDLSubsystems()
     return true;
 }
 
-bool WindowBuilder::CreateWindow()
+bool WindowBuilder::CreateWindow(Window& window)
 {
     window.Window = SDL_CreateWindow("Eve", 512, 512, SDL_WINDOW_RESIZABLE);
     window.Height = 512;

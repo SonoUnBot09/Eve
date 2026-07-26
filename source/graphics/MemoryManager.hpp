@@ -1,7 +1,7 @@
 #pragma once
 
-#include <graphics/api/vk/ContextBuilder.hpp>
-#include <graphics/api/vk/VulkanMapping.hpp>
+#include <graphics/GraphicsCore.hpp>
+#include "VulkanMapping.hpp"
 #include <Eve/graphics/Texture.hpp>
 #include <Eve/graphics/Sampler.hpp>
 #include <Eve/graphics/Buffer.hpp>

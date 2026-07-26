@@ -5,8 +5,8 @@
 #include <utility>
 #include <mutex>
 
-#include <graphics/api/vk/ContextBuilder.hpp>
-#include <graphics/api/vk/MemoryManager.hpp>
+#include <graphics/builders/ContextBuilder.hpp>
+#include "MemoryManager.hpp"
 #include <EveSettings.hpp>
 
 #include <Eve/graphics/Texture.hpp>

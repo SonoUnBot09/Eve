@@ -1,5 +1,5 @@
-#include <graphics/api/vk/ContextBuilder.hpp>
-#include <graphics/api/vk/CommandManager.hpp>
+#include <graphics/GraphicsCore.hpp>
+#include <graphics/CommandManager.hpp>
 #include <EveSettings.hpp>
 
 CommandPoolHandle CommandManager::AllocateCommandPool()
@@ -20,10 +20,10 @@ CommandPoolHandle CommandManager::AllocateCommandPool()
         VkCommandPoolCreateInfo cmdPoolCI
         {
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            .queueFamilyIndex = ContextBuilder::context.GraphicsQueueIndex
+            .queueFamilyIndex = GraphicsCore::Context.GraphicsQueueIndex
         };
 
-        vkCreateCommandPool(ContextBuilder::context.Device, &cmdPoolCI, nullptr,
+        vkCreateCommandPool(GraphicsCore::Context.Device, &cmdPoolCI, nullptr,
              &cmdPools[handle.Id + i]);
     }
 
@@ -53,7 +53,7 @@ CommandBufferHandle CommandManager::AllocateCommandBuffer(CommandPoolHandle pool
             .commandBufferCount = 1
         };
 
-        vkAllocateCommandBuffers(ContextBuilder::context.Device, &cmdBufferAllocInfo, 
+        vkAllocateCommandBuffers(GraphicsCore::Context.Device, &cmdBufferAllocInfo, 
             &cmdBuffers[handle.Id + i]);
     }
 

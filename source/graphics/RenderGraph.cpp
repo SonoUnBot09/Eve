@@ -1,4 +1,4 @@
-#include <graphics/api/vk/RenderGraph.hpp>
+#include <graphics/RenderGraph.hpp>
 
 using namespace Eve::Graphics;
 
@@ -412,7 +412,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
             };
 
             VkMemoryRequirements2 memoryRequirements;
-            vkGetDeviceImageMemoryRequirements(ContextBuilder::context.Device, &virtualMemoryInfo, &memoryRequirements);
+            vkGetDeviceImageMemoryRequirements(GraphicsCore::Context.Device, &virtualMemoryInfo, &memoryRequirements);
 
             VmaVirtualAllocationCreateInfo allocInfo
             {
@@ -523,7 +523,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
             };
 
             VkMemoryRequirements2 memoryRequirements;
-            vkGetDeviceBufferMemoryRequirements(ContextBuilder::context.Device, &virtualMemoryInfo, &memoryRequirements);
+            vkGetDeviceBufferMemoryRequirements(GraphicsCore::Context.Device, &virtualMemoryInfo, &memoryRequirements);
 
             VmaVirtualAllocationCreateInfo allocInfo
             {
@@ -684,7 +684,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
         {
             texture = AllocateTransientTexture(textureInfo);
             //vmaBindImageMemory2()
-            //vkBindImageMemory(ContextBuilder::context.Device, texture.Image,)
+            //vkBindImageMemory(GraphicsCore::Context.Device, texture.Image,)
             
 
         }
@@ -1258,7 +1258,7 @@ Texture RenderGraph::AllocateTransientTexture(TextureInfo textureInfo)
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
     };
 
-    vmaCreateImage(ContextBuilder::context.Allocator, &imageCI, &imageAllocInfo, 
+    vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
         &image.Image, &image.Allocation, &image.AllocationInfo);
     
     VkImageViewCreateInfo imageViewCI
@@ -1277,7 +1277,7 @@ Texture RenderGraph::AllocateTransientTexture(TextureInfo textureInfo)
         }
     };
 
-    vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &image.ImageView);
+    vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &image.ImageView);
    
     return image;
 }
@@ -1299,7 +1299,7 @@ Buffer RenderGraph::AllocateTransientBuffer(BufferInfo bufferInfo)
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
     };
 
-    vmaCreateBuffer(ContextBuilder::context.Allocator, &bufferCI, &bufferAllocInfo,
+    vmaCreateBuffer(GraphicsCore::Context.Allocator, &bufferCI, &bufferAllocInfo,
          &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
 
     return buffer;

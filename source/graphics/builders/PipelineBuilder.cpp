@@ -1,6 +1,6 @@
-#include <graphics/api/vk/ContextBuilder.hpp>
-#include <graphics/api/vk/PipelineBuilder.hpp>
-#include <graphics/api/vk/ResourceMapper.hpp>
+#include "ContextBuilder.hpp"
+#include "PipelineBuilder.hpp"
+#include <graphics/ResourceMapper.hpp>
 
 #include <Eve/Utils.hpp>
 #include <Eve/Debug.hpp>
@@ -8,7 +8,7 @@
 using namespace Eve::Graphics;
 using namespace Debug;
 
-bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, PipelineHandle& handle)
+bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, Pipeline& pipeline)
 {
     std::vector<VkPushConstantRange> pushConstantRanges;
 
@@ -52,8 +52,7 @@ bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, PipelineH
         .pPushConstantRanges = pushConstantRanges.data()
     };
 
-    VkPipelineLayout layout;
-    if(vkCreatePipelineLayout(ContextBuilder::context.Device, &pipelineLayoutCI, nullptr, &layout) != VK_SUCCESS)
+    if(vkCreatePipelineLayout(GraphicsCore::Context.Device, &pipelineLayoutCI, nullptr, &pipeline.Layout) != VK_SUCCESS)
     {
         printError("Unable to create the graphics pipeline layout");
         return false;
@@ -214,25 +213,14 @@ bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, PipelineH
         .pDepthStencilState = &depthStencilInfo,
         .pColorBlendState = &colorBlendInfo,
         .pDynamicState = &dynamicStateInfo,
-        .layout = layout
+        .layout = pipeline.Layout
     };
 
-    VkPipeline pipeline;
-    if(vkCreateGraphicsPipelines(ContextBuilder::context.Device, nullptr, 1, &pipelineCI, nullptr, &pipeline) != VK_SUCCESS)
+    if(vkCreateGraphicsPipelines(GraphicsCore::Context.Device, nullptr, 1, &pipelineCI, nullptr, &pipeline.Pipeline) != VK_SUCCESS)
     {
         printError("Unable to create the graphics pipeline");
         return false;
     }
-
-    Pipeline graphicsPipeline
-    {
-        .Layout = layout,
-        .Pipeline = pipeline
-    };
-
-    handle.Id = pipelines.size();
-
-    pipelines.push_back(graphicsPipeline);
 
     return true;
 }
@@ -286,7 +274,7 @@ VkShaderModule PipelineBuilder::CreateShaderModule(std::string path, shaderc_sha
     };
     
     VkShaderModule shaderModule = nullptr;
-    if(vkCreateShaderModule(ContextBuilder::context.Device, &shaderModuleCI, nullptr, &shaderModule) != VK_SUCCESS)
+    if(vkCreateShaderModule(GraphicsCore::Context.Device, &shaderModuleCI, nullptr, &shaderModule) != VK_SUCCESS)
     {
         printError("Unable to create the shader module of the shader at path '" + path + "'");
         return nullptr;

@@ -8,11 +8,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
 
-#include <Eve/graphics/Buffer.hpp>
-#include <Eve/graphics/Texture.hpp>
-#include <graphics/api/vk/Context.hpp>
-#include <graphics/api/vk/Swapchain.hpp>
-#include <graphics/api/vk/Window.hpp>
+#include "Context.hpp"
 
 #include <iostream>
 
@@ -22,21 +18,16 @@ namespace Eve::Graphics
     {
         public:
 
-            static Context& Build(Window _window, bool& success);
+            static bool Build(Context& context);
             
-            inline static Context context;
         private:
 
-            inline static bool isInitialized = false;
-
-            inline static Window window;
-
-            static bool CreateInstance();
-            static bool ChoosePhysicalDevice();
-            static bool GetSurface();
-            static bool GetGraphicsQueue();
-            static bool CreateDevice();
-            static bool InitializeVMA();
+            static bool CreateInstance(Context& context);
+            static bool ChoosePhysicalDevice(Context& context);
+            static bool GetSurface(Context& context);
+            static bool GetGraphicsQueue(Context& context);
+            static bool CreateDevice(Context& context);
+            static bool InitializeVMA(Context& context);
 
             // Vulkan dedicated func to print out errors
             static inline VKAPI_ATTR VkBool32 VKAPI_CALL PrintVulkanMessages( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

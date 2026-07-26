@@ -1,75 +1,58 @@
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 
-#include <graphics/api/vk/ContextBuilder.hpp>
+#include "ContextBuilder.hpp"
+#include <graphics/GraphicsCore.hpp>
 #include <EveSettings.hpp>
 #include <Eve/Debug.hpp>
 
 using namespace Debug;
 using namespace Eve::Graphics;
 
-Context& ContextBuilder::Build(Window _window, bool& success)
+bool ContextBuilder::Build(Context& context)
 {
 
-    if(isInitialized)
-    {
-        printError("Vulkan context already initialized, unable to initialize it again");
-        success = false;
-        return context;
-    }
-
-    window = _window;
-
-    if(!CreateInstance())
+    if(!CreateInstance(context))
     {
         printError("Unable to create a graphic instance");
-        success = false;
-        return context;
+        return false;
     }
 
-    if(!ChoosePhysicalDevice())
+    if(!ChoosePhysicalDevice(context))
     {
         printError("Unable to choose a GPU");
-        success = false;
-        return context;
+        return false;
     }
 
-    if(!GetSurface())
+    if(!GetSurface(context))
     {
         printError("Unable to get the monitor surface");
-        success = false;
-        return context;
+        return false;
     }
 
-    if(!GetGraphicsQueue())
+    if(!GetGraphicsQueue(context))
     {
         printError("Unable to get a graphics queue");
-        success = false;
-        return context;
+        return false;
     }
 
-    if(!CreateDevice())
+    if(!CreateDevice(context))
     {
         printError("Unable to create a logical device");
-        success = false;
-        return context;
+        return false;
     }
 
-    if(!InitializeVMA())
+    if(!InitializeVMA(context))
     {
         printError("Unable to initialize VMA");
-        success = false;
-        return context;
+        return false;
     }
 
 
-    isInitialized = true;
-    success = true;
-
-    return context;
+    return true;
 }
 
-bool ContextBuilder::CreateInstance()
+bool ContextBuilder::CreateInstance(Context& context)
 {
     // initialize volk
     if(volkInitialize() != VK_SUCCESS)
@@ -149,7 +132,7 @@ bool ContextBuilder::CreateInstance()
     return true;
 }
 
-bool ContextBuilder::ChoosePhysicalDevice()
+bool ContextBuilder::ChoosePhysicalDevice(Context& context)
 {
     uint32_t count = 0;
     vkEnumeratePhysicalDevices(context.Instance, &count, nullptr);
@@ -193,9 +176,9 @@ bool ContextBuilder::ChoosePhysicalDevice()
     return true;
 }
 
-bool ContextBuilder::GetSurface()
+bool ContextBuilder::GetSurface(Context& context)
 {
-    if(!SDL_Vulkan_CreateSurface(window.Window, context.Instance, nullptr, &context.Surface))
+    if(!SDL_Vulkan_CreateSurface(GraphicsCore::Window.Window, context.Instance, nullptr, &context.Surface))
     {
         printError("Unable to create the surface");
         return false;
@@ -204,7 +187,7 @@ bool ContextBuilder::GetSurface()
     return true;
 }
 
-bool ContextBuilder::GetGraphicsQueue()
+bool ContextBuilder::GetGraphicsQueue(Context& context)
 {
     uint32_t count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties2(context.PhysicalDevice, &count, nullptr);
@@ -228,7 +211,7 @@ bool ContextBuilder::GetGraphicsQueue()
     return false;
 }
 
-bool ContextBuilder::CreateDevice()
+bool ContextBuilder::CreateDevice(Context& context)
 {
     #pragma region Features
 
@@ -329,7 +312,7 @@ bool ContextBuilder::CreateDevice()
     return true;
 }
 
-bool ContextBuilder::InitializeVMA()
+bool ContextBuilder::InitializeVMA(Context& context)
 {
     VmaVulkanFunctions vmaFunctionsInfo {};
     VmaAllocatorCreateInfo allocatorCI

@@ -1,5 +1,4 @@
-#include "graphics/api/vk/ContextBuilder.hpp"
-#include <graphics/api/vk/RenderGraphA.hpp>
+#include <graphics/RenderGraphA.hpp>
 
 using namespace Eve::Graphics;
 
@@ -369,7 +368,7 @@ namespace
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
-        vkCreateImage(ContextBuilder::context.Device, &imageCI, nullptr, &image);
+        vkCreateImage(GraphicsCore::Context.Device, &imageCI, nullptr, &image);
         
         VkImageViewCreateInfo imageViewCI
         {
@@ -387,7 +386,7 @@ namespace
             }
         };
 
-        vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &imageView);
+        vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &imageView);
     }
 
     void CreateTransientBuffer(BufferInfo bufferInfo, VkBuffer buffer)
@@ -405,7 +404,7 @@ namespace
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
-        vkCreateBuffer(ContextBuilder::context.Device, &bufferCI, nullptr, &buffer);
+        vkCreateBuffer(GraphicsCore::Context.Device, &bufferCI, nullptr, &buffer);
     }
 
     bool IsTextureBarrierNeeded(RenderGraph::TextureBarrierInfo src, RenderGraph::TextureBarrierInfo dst, Usage oldUsage, Usage newUsage)
@@ -441,10 +440,10 @@ namespace
 
     uint32_t FindBestMemoryTypeIndex(VkMemoryRequirements2& memoryRequirements)
     {
-        bool isDedicatedGPU = ContextBuilder::context.PhysicalDeviceInfo.isDedicated;
+        bool isDedicatedGPU = GraphicsCore::Context.PhysicalDeviceInfo.isDedicated;
         int32_t score = INT32_MIN;
         int32_t memoryTypeIndex = 0;
-        for(uint32_t i = 0; i < ContextBuilder::context.PhysicalDeviceInfo.MemoryProperties.memoryTypeCount; i++)
+        for(uint32_t i = 0; i < GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypeCount; i++)
         {
             bool isCompatibleBit = (memoryRequirements.memoryRequirements.memoryTypeBits & (1 << i)) != 0;
 
@@ -453,31 +452,31 @@ namespace
             int32_t currentScore = 0;
 
             // Local Device?
-            if(ContextBuilder::context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+            if(GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
             {
                 currentScore += 500;
             }
 
             // Host Visible?
-            if(isDedicatedGPU && (ContextBuilder::context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
+            if(isDedicatedGPU && (GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
             {
                 currentScore -= 200;
             }
 
             // Host Coherent?
-            if(isDedicatedGPU && (ContextBuilder::context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+            if(isDedicatedGPU && (GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
             {
                 currentScore -= 150;
             }
 
             // Lazily Allocated?
-            if((ContextBuilder::context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT))
+            if((GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT))
             {
                 currentScore -= 1000;
             }
 
             // Some kink of memory which is not DEVICE_LOCAL, HOST_VISIBLE and HOST_COHERENT
-            if((ContextBuilder::context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags &
+            if((GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags &
                 ~(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) > 0 )
             {
                 currentScore -= 5000;
@@ -858,7 +857,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
             CreateTransientTexture(resource.TextureInfo, resource.Image, resource.ImageView);
 
             MemoryBucket& memoryPool = texturesMemoryBucket[resource.MemoryInfo.BucketIndex];
-            vmaBindImageMemory2(ContextBuilder::context.Allocator, memoryPool.Allocation, 
+            vmaBindImageMemory2(GraphicsCore::Context.Allocator, memoryPool.Allocation, 
                 resource.TextureInfo.MemoryInfo.Offset, resource.Image, nullptr);
 
             resource.PooledImage = false;
@@ -914,7 +913,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
             CreateTransientBuffer(resource.BufferInfo, resource.Buffer);
 
             MemoryBucket& memoryPool = buffersMemoryBucket[resource.MemoryInfo.BucketIndex];
-            vmaBindBufferMemory2(ContextBuilder::context.Allocator, memoryPool.Allocation, 
+            vmaBindBufferMemory2(GraphicsCore::Context.Allocator, memoryPool.Allocation, 
                 resource.BufferInfo.MemoryInfo.Offset, resource.Buffer, nullptr);
 
             resource.PooledBuffer = false;
@@ -1012,7 +1011,7 @@ uint32_t RenderGraph::SetTextureMemoryInfo(const uint32_t frameIndex, const uint
     };
 
     VkMemoryRequirements2 memoryRequirements { .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
-    vkGetDeviceImageMemoryRequirements(ContextBuilder::context.Device, &reqs, &memoryRequirements);
+    vkGetDeviceImageMemoryRequirements(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
 
     uint32_t memoryTypeIndex = FindBestMemoryTypeIndex(memoryRequirements);
 
@@ -1064,7 +1063,7 @@ uint32_t RenderGraph::SetBufferMemoryInfo(const uint32_t frameIndex, const uint3
     };
 
     VkMemoryRequirements2 memoryRequirements { .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
-    vkGetDeviceBufferMemoryRequirements(ContextBuilder::context.Device, &reqs, &memoryRequirements);
+    vkGetDeviceBufferMemoryRequirements(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
 
     uint32_t memoryTypeIndex = FindBestMemoryTypeIndex(memoryRequirements);
 
@@ -1317,15 +1316,15 @@ bool RenderGraph::ResizeTextureMemoryPoolIfNeeded(const uint32_t bucketIndex, co
 
         if(texture.first.MemoryInfo.BucketIndex != bucketIndex) { continue; }
 
-        vkDestroyImageView(ContextBuilder::context.Device, texture.first.ImageView, nullptr);
-        vkDestroyImage(ContextBuilder::context.Device, texture.first.Image, nullptr);
+        vkDestroyImageView(GraphicsCore::Context.Device, texture.first.ImageView, nullptr);
+        vkDestroyImage(GraphicsCore::Context.Device, texture.first.Image, nullptr);
 
         texturesPool.erase(texturesPool.begin() + i);
     }
 
     if(memoryBucket.used)
     {
-        vmaFreeMemory(ContextBuilder::context.Allocator, memoryBucket.Allocation);
+        vmaFreeMemory(GraphicsCore::Context.Allocator, memoryBucket.Allocation);
         memoryBucket.used = false;
     }
 
@@ -1341,7 +1340,7 @@ bool RenderGraph::ResizeTextureMemoryPoolIfNeeded(const uint32_t bucketIndex, co
         .usage = VMA_MEMORY_USAGE_AUTO
     };
 
-    VkResult result = vmaAllocateMemory(ContextBuilder::context.Allocator, &memReqs, &allocInfo, 
+    VkResult result = vmaAllocateMemory(GraphicsCore::Context.Allocator, &memReqs, &allocInfo, 
         &memoryBucket.Allocation, &memoryBucket.AllocationInfo);
 
     if(result != VK_SUCCESS)
@@ -1371,14 +1370,14 @@ bool RenderGraph::ResizeBufferMemoryPoolIfNeeded(const uint32_t bucketIndex, con
 
         if(buffer.first.MemoryInfo.BucketIndex != bucketIndex) { continue; }
 
-        vkDestroyBuffer(ContextBuilder::context.Device, buffer.first.Buffer, nullptr);
+        vkDestroyBuffer(GraphicsCore::Context.Device, buffer.first.Buffer, nullptr);
 
         buffersPool.erase(buffersPool.begin() + i);
     }
 
     if(memoryBucket.used)
     {
-        vmaFreeMemory(ContextBuilder::context.Allocator, memoryBucket.Allocation);
+        vmaFreeMemory(GraphicsCore::Context.Allocator, memoryBucket.Allocation);
         memoryBucket.used = false;
     }
 
@@ -1394,7 +1393,7 @@ bool RenderGraph::ResizeBufferMemoryPoolIfNeeded(const uint32_t bucketIndex, con
         .usage = VMA_MEMORY_USAGE_AUTO
     };
 
-    VkResult result = vmaAllocateMemory(ContextBuilder::context.Allocator, &memReqs, &allocInfo, 
+    VkResult result = vmaAllocateMemory(GraphicsCore::Context.Allocator, &memReqs, &allocInfo, 
         &memoryBucket.Allocation, &memoryBucket.AllocationInfo);
 
     if(result != VK_SUCCESS)
@@ -1441,8 +1440,8 @@ void RenderGraph::UpdateTexturesPool(const uint32_t frameIndex)
         
         // Destroy old images
         TextureResource oldTexture = texturesPool[index].first;
-        vkDestroyImageView(ContextBuilder::context.Device, oldTexture.ImageView, nullptr);
-        vkDestroyImage(ContextBuilder::context.Device, oldTexture.Image, nullptr);
+        vkDestroyImageView(GraphicsCore::Context.Device, oldTexture.ImageView, nullptr);
+        vkDestroyImage(GraphicsCore::Context.Device, oldTexture.Image, nullptr);
     }
 
 
@@ -1521,7 +1520,7 @@ void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
 
         // Destroy old buffer
         BufferResource oldBuffer = buffersPool[index].first;
-        vkDestroyBuffer(ContextBuilder::context.Device, oldBuffer.Buffer, nullptr);
+        vkDestroyBuffer(GraphicsCore::Context.Device, oldBuffer.Buffer, nullptr);
     }
 
     for(uint32_t i = 0; i < transientBuffers[frameIndex].size(); i++)
