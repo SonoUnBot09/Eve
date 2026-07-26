@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Eve/graphics/Buffer.hpp"
 #include <algorithm>
 #include <ranges>
 #include <vector>

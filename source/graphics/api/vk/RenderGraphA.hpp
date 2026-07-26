@@ -87,8 +87,10 @@ namespace Eve::Graphics
             struct TextureResource
             {
                 TextureInfo TextureInfo;
-                Texture Texture;
+                VkImage Image;
+                VkImageView ImageView;
                 uint32_t FramesCount;
+                bool PooledImage;
                 
                 struct MemoryInfo
                 {
@@ -101,8 +103,9 @@ namespace Eve::Graphics
             struct BufferResource
             {
                 BufferInfo BufferInfo;
-                Buffer Buffer;
+                VkBuffer Buffer;
                 uint32_t FramesCount;
+                bool PooledBuffer;
                 
                 struct MemoryInfo
                 {

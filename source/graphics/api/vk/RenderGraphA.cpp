@@ -1,3 +1,4 @@
+#include "graphics/api/vk/ContextBuilder.hpp"
 #include <graphics/api/vk/RenderGraphA.hpp>
 
 using namespace Eve::Graphics;
@@ -331,7 +332,7 @@ namespace
         }
     }
 
-    void CreateTransientTexture(TextureInfo textureInfo, Texture& texture)
+    void CreateTransientTexture(TextureInfo textureInfo, VkImage& image, VkImageView& imageView)
     {
 
         VkImageType imageType = VK_IMAGE_TYPE_2D;
@@ -368,13 +369,12 @@ namespace
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
-        vmaCreateImage(ContextBuilder::context.Allocator, &imageCI, &imageAllocInfo, 
-            &texture.Image, &texture.Allocation, &texture.AllocationInfo);
+        vkCreateImage(ContextBuilder::context.Device, &imageCI, nullptr, &image);
         
         VkImageViewCreateInfo imageViewCI
         {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image = texture.Image,
+            .image = image,
             .viewType = imageViewType,
             .format = format,
             .subresourceRange
@@ -387,10 +387,10 @@ namespace
             }
         };
 
-        vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &texture.ImageView);
+        vkCreateImageView(ContextBuilder::context.Device, &imageViewCI, nullptr, &imageView);
     }
 
-    void CreateTransientBuffer(BufferInfo bufferInfo, Buffer& buffer)
+    void CreateTransientBuffer(BufferInfo bufferInfo, VkBuffer buffer)
     {
         VkBufferCreateInfo bufferCI
         {
@@ -405,8 +405,7 @@ namespace
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
-        vmaCreateBuffer(ContextBuilder::context.Allocator, &bufferCI, &bufferAllocInfo,
-            &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
+        vkCreateBuffer(ContextBuilder::context.Device, &bufferCI, nullptr, &buffer);
     }
 
     bool IsTextureBarrierNeeded(RenderGraph::TextureBarrierInfo src, RenderGraph::TextureBarrierInfo dst, Usage oldUsage, Usage newUsage)
@@ -848,16 +847,21 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
 
         if(found)
         {
-            resource.Texture = it->first.Texture;
+            resource.Image = it->first.Image;
+            resource.ImageView = it->first.ImageView;
             it->second = true;
+
+            resource.PooledImage = true;
         }
         else 
         {
-            CreateTransientTexture(resource.TextureInfo, resource.Texture);
+            CreateTransientTexture(resource.TextureInfo, resource.Image, resource.ImageView);
 
             MemoryBucket& memoryPool = texturesMemoryBucket[resource.MemoryInfo.BucketIndex];
             vmaBindImageMemory2(ContextBuilder::context.Allocator, memoryPool.Allocation, 
-                resource.TextureInfo.MemoryInfo.Offset, resource.Texture.Image, nullptr);
+                resource.TextureInfo.MemoryInfo.Offset, resource.Image, nullptr);
+
+            resource.PooledImage = false;
         }
 
         // Insert barriers in their sync points
@@ -902,6 +906,8 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
         {
             resource.Buffer = it->first.Buffer;
             it->second = true;
+
+            resource.PooledBuffer = true;
         }
         else 
         {
@@ -909,7 +915,9 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
 
             MemoryBucket& memoryPool = buffersMemoryBucket[resource.MemoryInfo.BucketIndex];
             vmaBindBufferMemory2(ContextBuilder::context.Allocator, memoryPool.Allocation, 
-                resource.BufferInfo.MemoryInfo.Offset, resource.Buffer.Buffer, nullptr);
+                resource.BufferInfo.MemoryInfo.Offset, resource.Buffer, nullptr);
+
+            resource.PooledBuffer = false;
         }
 
         // Insert barriers in their sync points
@@ -930,11 +938,11 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
     requestedTextures.clear();
     requestedBuffers.clear();
     passes.clear();
-    for(uint32_t i = 0; texturesBucketPasses.size(); i++)
+    for(uint32_t i = 0; i < texturesBucketPasses.size(); i++)
     {
         texturesBucketPasses[i].clear();
     }
-    for(uint32_t i = 0; buffersBucketPasses.size(); i++)
+    for(uint32_t i = 0; i < buffersBucketPasses.size(); i++)
     {
         buffersBucketPasses[i].clear();
     }
@@ -1309,8 +1317,8 @@ bool RenderGraph::ResizeTextureMemoryPoolIfNeeded(const uint32_t bucketIndex, co
 
         if(texture.first.MemoryInfo.BucketIndex != bucketIndex) { continue; }
 
-        vkDestroyImageView(ContextBuilder::context.Device, texture.first.Texture.ImageView, nullptr);
-        vkDestroyImage(ContextBuilder::context.Device, texture.first.Texture.Image, nullptr);
+        vkDestroyImageView(ContextBuilder::context.Device, texture.first.ImageView, nullptr);
+        vkDestroyImage(ContextBuilder::context.Device, texture.first.Image, nullptr);
 
         texturesPool.erase(texturesPool.begin() + i);
     }
@@ -1363,7 +1371,7 @@ bool RenderGraph::ResizeBufferMemoryPoolIfNeeded(const uint32_t bucketIndex, con
 
         if(buffer.first.MemoryInfo.BucketIndex != bucketIndex) { continue; }
 
-        vkDestroyBuffer(ContextBuilder::context.Device, buffer.first.Buffer.Buffer, nullptr);
+        vkDestroyBuffer(ContextBuilder::context.Device, buffer.first.Buffer, nullptr);
 
         buffersPool.erase(buffersPool.begin() + i);
     }
@@ -1406,18 +1414,44 @@ void RenderGraph::UpdateTexturesPool(const uint32_t frameIndex)
     {
         std::pair<TextureResource, bool>& data = texturesPool[i];
 
-        if(data.second == false) { freeTexturesSlot.push_back(i); continue; }
-
-        if(data.first.FramesCount == 0) { freeTexturesSlot.push_back(i); continue; }
-
-        data.first.FramesCount--;
+        if (data.second == true) 
+        {
+            data.first.FramesCount = 10; // TODO: Set with a valid frame delay
+        }
+        else 
+        {
+            // Non è in uso, vediamo se è scaduta
+            if (data.first.FramesCount == 0) 
+            { 
+                freeTexturesSlot.push_back(i); 
+            }
+            else 
+            {
+                data.first.FramesCount--;
+            }
+        }
     }
 
-    uint32_t freeTexturesCount = freeTexturesSlot.size();
-    uint32_t freeTexturesIndex = 0;
+    int32_t freeTexturesCount = freeTexturesSlot.size();
+    int32_t freeTexturesIndex = 0;
+
+    for(uint32_t i = 0; i < freeTexturesCount; i++)
+    {
+        uint32_t index = freeTexturesSlot[i];
+        
+        // Destroy old images
+        TextureResource oldTexture = texturesPool[index].first;
+        vkDestroyImageView(ContextBuilder::context.Device, oldTexture.ImageView, nullptr);
+        vkDestroyImage(ContextBuilder::context.Device, oldTexture.Image, nullptr);
+    }
+
+
     for(uint32_t i = 0; i < transientTextures[frameIndex].size(); i++)
     {
         TextureResource& data = transientTextures[frameIndex][i];
+
+        if(data.PooledImage) { continue; }
+
         data.FramesCount = 10; // TODO: Set with a valid frame delay
 
         if(freeTexturesIndex < freeTexturesCount)
@@ -1434,6 +1468,20 @@ void RenderGraph::UpdateTexturesPool(const uint32_t frameIndex)
         texturesPool.push_back(std::pair{data, true});
     }
 
+    // There are some textures which need to be erased
+    for(int32_t i = freeTexturesCount - 1; i >= freeTexturesIndex; i--)
+    {
+        uint32_t index = freeTexturesSlot[i];
+
+        texturesPool.erase(texturesPool.begin() + index);
+    }
+
+    for(uint32_t i = 0; i < texturesPool.size(); i++)
+    {
+        // All the textures can be used again
+        texturesPool[i].second = false;
+    }
+
     std::sort(texturesPool.begin(), texturesPool.end(), [](const std::pair<TextureResource, bool>& a, const std::pair<TextureResource, bool>& b) {
         return memcmp(&a.first.TextureInfo, &b.first.TextureInfo, sizeof(TextureInfo)) < 0;
     });
@@ -1446,18 +1494,42 @@ void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
     {
         std::pair<BufferResource, bool>& data = buffersPool[i];
 
-        if(data.second == false) { freeBuffersSlot.push_back(i); continue; }
-
-        if(data.first.FramesCount == 0) { freeBuffersSlot.push_back(i); continue; }
-
-        data.first.FramesCount--;
+        if (data.second == true) 
+        {
+            data.first.FramesCount = 10; // TODO: Set with a valid frame delay
+        }
+        else 
+        {
+            // Non è in uso, vediamo se è scaduta
+            if (data.first.FramesCount == 0) 
+            { 
+                freeBuffersSlot.push_back(i); 
+            }
+            else 
+            {
+                data.first.FramesCount--;
+            }
+        }
     }
 
-    uint32_t freeBuffersCount = freeBuffersSlot.size();
-    uint32_t freeBuffersIndex = 0;
-    for(uint32_t i = 0; i < transientTextures[frameIndex].size(); i++)
+    int32_t freeBuffersCount = freeBuffersSlot.size();
+    int32_t freeBuffersIndex = 0;
+
+    for(uint32_t i = 0; i < freeBuffersCount; i++)
+    {
+        uint32_t index = freeBuffersSlot[i];
+
+        // Destroy old buffer
+        BufferResource oldBuffer = buffersPool[index].first;
+        vkDestroyBuffer(ContextBuilder::context.Device, oldBuffer.Buffer, nullptr);
+    }
+
+    for(uint32_t i = 0; i < transientBuffers[frameIndex].size(); i++)
     {
         BufferResource& data = transientBuffers[frameIndex][i];
+
+        if(data.PooledBuffer) { continue; }
+
         data.FramesCount = 10; // TODO: Set with a valid frame delay
 
         if(freeBuffersIndex < freeBuffersCount)
@@ -1472,6 +1544,20 @@ void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
         }
 
         buffersPool.push_back(std::pair{data, true});
+    }
+
+    // There are some buffers which need to be erased
+    for(int32_t i = freeBuffersCount - 1; i >= freeBuffersIndex; i--)
+    {
+        uint32_t index = freeBuffersSlot[i];
+
+        buffersPool.erase(buffersPool.begin() + index);
+    }
+
+    for(uint32_t i = 0; i < buffersPool.size(); i++)
+    {
+        // All the buffers can be used again
+        buffersPool[i].second = false;
     }
 
     std::sort(buffersPool.begin(), buffersPool.end(), [](const std::pair<BufferResource, bool>& a, const std::pair<BufferResource, bool>& b) {
