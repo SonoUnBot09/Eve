@@ -1,3 +1,4 @@
+#include "SlangCompiler.hpp"
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 
@@ -48,6 +49,8 @@ bool ContextBuilder::Build(Context& context)
         return false;
     }
 
+    // Init the Slang compiler
+    SlangCompiler::Initialize();
 
     return true;
 }

@@ -6,18 +6,19 @@
 
 #include <vector>
 
-using namespace Eve::Graphics;
-
-class CommandManager
+namespace Eve::Graphics
 {
-    public:
-        static CommandPoolHandle AllocateCommandPool();
-        static CommandBufferHandle AllocateCommandBuffer(CommandPoolHandle pool);
+    class CommandManager
+    {
+        public:
+            static CommandPoolHandle AllocateCommandPool();
+            static CommandBufferHandle AllocateCommandBuffer(CommandPoolHandle pool);
 
-    private:
-        inline static std::vector<VkCommandPool> cmdPools;
-        inline static std::vector<VkCommandBuffer> cmdBuffers;
+        private:
+            inline static std::vector<VkCommandPool> cmdPools;
+            inline static std::vector<VkCommandBuffer> cmdBuffers;
 
-        inline static std::vector<uint32_t> cmdPoolFreeSlots;
-        inline static std::vector<uint32_t> cmdBufferFreeSlots;
-};
+            inline static std::vector<uint32_t> cmdPoolFreeSlots;
+            inline static std::vector<uint32_t> cmdBufferFreeSlots;
+    };
+}

@@ -4,6 +4,7 @@
 #include <utility>
 #include <Eve/graphics/Texture.hpp>
 #include <Eve/graphics/Buffer.hpp>
+#include <Eve/graphics/Mesh.hpp>
 
 namespace Eve::Graphics
 {
@@ -47,13 +48,16 @@ namespace Eve::Graphics
     struct GraphicsPass
     {
         public:
-            void UseTransientTexture(Usage accessType);
-            void UseTransientBuffer(Usage accessType);
+            void UseTransientTexture(TransientTextureHandle texture, Usage accessType);
+            void UseTransientBuffer(TransientBufferHandle buffer, Usage accessType);
+            void DrawMesh(MeshHandle mesh, uint32_t instanceCount);
             std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures();
             std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers();
+            std::vector<std::pair<MeshHandle, uint32_t>>& GetDrawCalls();
         private:
             std::vector<std::pair<TransientTextureHandle, Usage>> textures;
             std::vector<std::pair<TransientBufferHandle, Usage>> buffers;
+            std::vector<std::pair<MeshHandle, uint32_t>> drawCalls;
     };
 
     struct TransferPass

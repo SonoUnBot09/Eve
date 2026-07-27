@@ -9,6 +9,9 @@ namespace Eve::Graphics
     class GraphicsCore
     {
         public:
+
+            bool Initialize();
+            
             inline static Window Window;
             inline static Context Context;
             inline static Swapchain Swapchain; 

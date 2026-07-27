@@ -2,6 +2,8 @@
 #include <graphics/CommandManager.hpp>
 #include <EveSettings.hpp>
 
+using namespace Eve::Graphics;
+
 CommandPoolHandle CommandManager::AllocateCommandPool()
 {
     CommandPoolHandle handle;

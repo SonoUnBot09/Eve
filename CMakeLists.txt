@@ -27,6 +27,21 @@ find_package(
     shaderc_combined
 )
 
+find_path(SLANG_INCLUDE_DIR slang.h
+    PATHS
+    $ENV{SLANG_DIR}/include
+    /usr/local/include
+    /usr/include
+)
+
+find_library(SLANG_LIBRARY
+    NAMES slang
+    PATHS
+    $ENV{SLANG_DIR}/lib
+    /usr/local/lib
+    /usr/lib
+)
+
 #[[
 if(TARGET Vulkan::shaderc_combined)
     set_target_properties(Vulkan::shaderc_combined PROPERTIES MAP_IMPORTED_CONFIG_DEBUG Release)
@@ -73,11 +88,13 @@ target_link_libraries(Eve PRIVATE
     Vulkan::Vulkan
     Vulkan::volk
     Vulkan::shaderc_combined
+    ${SLANG_LIBRARY}
 )
 
 target_include_directories(Eve
     PRIVATE third-parties
     PRIVATE source
+    PRIVATE ${SLANG_INCLUDE_DIR}
     PUBLIC include
 )
 

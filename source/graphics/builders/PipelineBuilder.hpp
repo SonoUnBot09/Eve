@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.hpp>
 #include <shaderc/shaderc.hpp>
 #include <graphics/VulkanMapping.hpp>
+#include <graphics/builders/SlangCompiler.hpp>
 
 #include "Pipeline.hpp"
 
@@ -19,6 +20,8 @@ namespace Eve::Graphics
 
         private:
 
-            inline static VkShaderModule CreateShaderModule(std::string path, shaderc_shader_kind kind);
+            inline static VkShaderModule CreateVertexModule(ShaderBytecode& input);
+            inline static VkShaderModule CreateFragmentModule(ShaderBytecode& input);
+            inline static VkShaderModule CreateComputeModule(ShaderBytecode& input);
     };
 }

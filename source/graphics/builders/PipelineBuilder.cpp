@@ -1,4 +1,5 @@
 #include "ContextBuilder.hpp"
+#include "SlangCompiler.hpp"
 #include "PipelineBuilder.hpp"
 #include <graphics/ResourceMapper.hpp>
 
@@ -58,20 +59,19 @@ bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, Pipeline&
         return false;
     }
 
-    VkShaderModule vertexShader = CreateShaderModule(pipelineInfo.VertShaderPath, shaderc_shader_kind::shaderc_glsl_vertex_shader);
-    VkShaderModule fragmentShader = CreateShaderModule(pipelineInfo.FragShaderPath, shaderc_shader_kind::shaderc_glsl_fragment_shader);
+    ShaderBytecode shaders = SlangCompiler::CompileVertFrag(pipelineInfo.ShaderPath.c_str());
+    VkShaderModule vertexShader = CreateVertexModule(shaders);
+    VkShaderModule fragmentShader = CreateFragmentModule(shaders);
 
     if(vertexShader == nullptr)
     {
         return false;
     }
-
     if(fragmentShader == nullptr)
     {
         return false;
     }
     
-    const char* entryPoint = "main";
     std::vector<VkPipelineShaderStageCreateInfo> shaderStagesInfo
     {
         VkPipelineShaderStageCreateInfo
@@ -79,51 +79,24 @@ bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, Pipeline&
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
             .module = vertexShader,
-            .pName = entryPoint
+            .pName = "vertex"
         },
         VkPipelineShaderStageCreateInfo
         {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
             .module = fragmentShader,
-            .pName = entryPoint
+            .pName = "fragment"
         }
-    };
-
-    std::vector<VkVertexInputAttributeDescription> vertexAttributes;
-
-    uint32_t offset = 0;
-    for(uint32_t i = 0; i < pipelineInfo.VerticesAttributes.size(); i++)
-    {
-        VkFormat format = GetVkImageFormat(pipelineInfo.VerticesAttributes[i]);
-        uint32_t stride = GetVkImageFormatSize(pipelineInfo.VerticesAttributes[i]);
-        VkVertexInputAttributeDescription attribute
-        {
-            .location = i,
-            .binding = 0,
-            .format = format,
-            .offset = offset
-        };
-
-        vertexAttributes.push_back(attribute);
-
-        offset += stride;
-    }
-
-    VkVertexInputBindingDescription vertexBinding
-    {
-        .binding = 0,
-        .stride = offset,
-        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
     };
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount = 1,
-        .pVertexBindingDescriptions = &vertexBinding,
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes.size()),
-        .pVertexAttributeDescriptions = vertexAttributes.data(),
+        .vertexBindingDescriptionCount = 0,
+        .pVertexBindingDescriptions = nullptr,
+        .vertexAttributeDescriptionCount = 0,
+        .pVertexAttributeDescriptions = nullptr,
     };
 
     VkPipelineInputAssemblyStateCreateInfo inputAsseblyInfo
@@ -225,58 +198,60 @@ bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, Pipeline&
     return true;
 }
 
-VkShaderModule PipelineBuilder::CreateShaderModule(std::string path, shaderc_shader_kind kind)
+VkShaderModule PipelineBuilder::CreateVertexModule(ShaderBytecode& input)
 {
-    std::string source = Utils::readTextFile(path);
-    if(source.empty())
-    {
-        printError("Unable to find the shader at path '" + path + "'");
-        return nullptr;
-    }
-
-    shaderc::Compiler compiler;
-    shaderc::CompileOptions compOpts;
-    compOpts.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
-    compOpts.SetTargetSpirv(shaderc_spirv_version_1_6);
-    compOpts.SetSourceLanguage(shaderc_source_language_glsl);
-    compOpts.SetOptimizationLevel(shaderc_optimization_level_performance);
-
-    std::string shaderName = "shader";
-    if(kind == shaderc_shader_kind::shaderc_glsl_vertex_shader)
-    {
-        shaderName = "vertex shader";
-    }
-    else 
-    {
-        shaderName = "fragment shader";
-    }
-
-    shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv
-    (
-        source, 
-        kind, 
-        shaderName.c_str(),
-        compOpts
-    );
-
-    if(result.GetCompilationStatus() != shaderc_compilation_status_success)
-    {
-        printError("Unable to compile the shader at path '" + path + "'");
-        return nullptr;
-    }
-
-    const size_t size = (result.cend() - result.cbegin()) * sizeof(uint32_t);
+    const size_t size = input.vertex.size() * sizeof(uint32_t);
     VkShaderModuleCreateInfo shaderModuleCI
     {
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .codeSize = size,
-        .pCode = result.cbegin()
+        .pCode = input.vertex.data()
     };
     
     VkShaderModule shaderModule = nullptr;
     if(vkCreateShaderModule(GraphicsCore::Context.Device, &shaderModuleCI, nullptr, &shaderModule) != VK_SUCCESS)
     {
-        printError("Unable to create the shader module of the shader at path '" + path + "'");
+        printError("Unable to create the shader module");
+        return nullptr;
+    }
+
+    return shaderModule;
+}
+
+VkShaderModule PipelineBuilder::CreateFragmentModule(ShaderBytecode& input)
+{
+    const size_t size = input.fragment.size() * sizeof(uint32_t);
+    VkShaderModuleCreateInfo shaderModuleCI
+    {
+        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+        .codeSize = size,
+        .pCode = input.fragment.data()
+    };
+    
+    VkShaderModule shaderModule = nullptr;
+    if(vkCreateShaderModule(GraphicsCore::Context.Device, &shaderModuleCI, nullptr, &shaderModule) != VK_SUCCESS)
+    {
+        printError("Unable to create the shader module");
+        return nullptr;
+    }
+
+    return shaderModule;
+}
+
+VkShaderModule PipelineBuilder::CreateComputeModule(ShaderBytecode& input)
+{
+    const size_t size = input.compute.size() * sizeof(uint32_t);
+    VkShaderModuleCreateInfo shaderModuleCI
+    {
+        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+        .codeSize = size,
+        .pCode = input.compute.data()
+    };
+    
+    VkShaderModule shaderModule = nullptr;
+    if(vkCreateShaderModule(GraphicsCore::Context.Device, &shaderModuleCI, nullptr, &shaderModule) != VK_SUCCESS)
+    {
+        printError("Unable to create the shader module");
         return nullptr;
     }
 

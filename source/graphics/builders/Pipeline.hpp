@@ -18,8 +18,7 @@ namespace Eve::Graphics
 
     struct PipelineInfo
     {
-        std::string VertShaderPath;
-        std::string FragShaderPath;
+        std::string ShaderPath;
 
         // Push Constant Offsets & Strides
         uint32_t VertOffset, VertStride, FragOffset, FragStride;
@@ -28,17 +27,17 @@ namespace Eve::Graphics
         std::vector<Format> VerticesAttributes;
 
         // Geometry
-        enum Topology Topology;
-        enum PolygonMode PolygonMode;
-        enum CullMode CullMode;
-        float LineWidth; 
+        enum Topology Topology = Topology::TOPOLOGY_TRIANGLE_LIST;
+        enum PolygonMode PolygonMode = PolygonMode::POLYGON_MODE_FILL;
+        enum CullMode CullMode = CullMode::CULL_MODE_BACK;
+        float LineWidth = 1; 
 
         // Depth Stencil
-        bool DepthTest, DepthWrite, StencilTest;
-        enum DepthTest CompareOp;
+        bool DepthTest = true, DepthWrite = true, StencilTest = false;;
+        enum DepthTest CompareOp = DepthTest::DEPTH_COMPARE_LESS;
 
         // Multi Sampling
-        TextureSample samplesCount;
+        TextureSample samplesCount = TextureSample::SAMPLE_1;
 
         // Color & Depth Formats
         Format ColorFormat, DepthFormat;
