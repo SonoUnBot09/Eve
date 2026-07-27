@@ -50,6 +50,11 @@ namespace Eve::Graphics
             static TransientTextureHandle ReserveTransientTextureSlot();
             static TransientBufferHandle ReserveTransientBufferSlot(); 
 
+            static void FreeTextureSlot(TextureHandle handle) { imageFreeSlots.push_back(handle.Id); }
+            static void FreeTextureSlot(TransientTextureHandle handle) { imageFreeSlots.push_back(handle.Id); }
+            static void FreeBufferSlot(BufferHandle handle) { bufferFreeSlots.push_back(handle.Id); }
+            static void FreeBufferSlot(TransientBufferHandle handle) { bufferFreeSlots.push_back(handle.Id); }
+
             inline static Texture& GetTexture(TextureHandle handle) { return textures[handle.Id]; }
             inline static Sampler GetSampler(SamplerHandle handle) { return samplers[handle.Id]; }
             inline static Buffer& GetBuffer(BufferHandle handle) { return buffers[handle.Id]; }

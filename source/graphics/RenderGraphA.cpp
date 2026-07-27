@@ -1,3 +1,4 @@
+#include "MemoryManager.hpp"
 #include <graphics/RenderGraphA.hpp>
 
 using namespace Eve::Graphics;
@@ -1408,6 +1409,7 @@ bool RenderGraph::ResizeBufferMemoryPoolIfNeeded(const uint32_t bucketIndex, con
 
 void RenderGraph::UpdateTexturesPool(const uint32_t frameIndex)
 {
+
     std::vector<uint32_t> freeTexturesSlot;
     for(uint32_t i = 0; i < texturesPool.size(); i++)
     {
@@ -1419,7 +1421,6 @@ void RenderGraph::UpdateTexturesPool(const uint32_t frameIndex)
         }
         else 
         {
-            // Non è in uso, vediamo se è scaduta
             if (data.first.FramesCount == 0) 
             { 
                 freeTexturesSlot.push_back(i); 
@@ -1449,6 +1450,7 @@ void RenderGraph::UpdateTexturesPool(const uint32_t frameIndex)
     {
         TextureResource& data = transientTextures[frameIndex][i];
 
+        MemoryManager::FreeTextureSlot(static_cast<TransientTextureHandle>(i));
         if(data.PooledImage) { continue; }
 
         data.FramesCount = 10; // TODO: Set with a valid frame delay
@@ -1488,6 +1490,7 @@ void RenderGraph::UpdateTexturesPool(const uint32_t frameIndex)
 
 void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
 {
+
     std::vector<uint32_t> freeBuffersSlot;
     for(uint32_t i = 0; i < buffersPool.size(); i++)
     {
@@ -1526,6 +1529,8 @@ void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
     for(uint32_t i = 0; i < transientBuffers[frameIndex].size(); i++)
     {
         BufferResource& data = transientBuffers[frameIndex][i];
+
+        MemoryManager::FreeBufferSlot(static_cast<TransientBufferHandle>(i));
 
         if(data.PooledBuffer) { continue; }
 

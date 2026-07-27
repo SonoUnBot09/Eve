@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Eve/utils/Vec.hpp"
 #include <vector>
 #include <utility>
 #include <Eve/graphics/Texture.hpp>
 #include <Eve/graphics/Buffer.hpp>
 #include <Eve/graphics/Mesh.hpp>
+#include <Eve/graphics/ShaderHandle.hpp>
 
 namespace Eve::Graphics
 {
@@ -45,40 +47,109 @@ namespace Eve::Graphics
         COPY_DESTINATION
     };
 
+    struct DrawCall
+    {
+        MeshHandle MeshHandle;
+        ShaderHandle ShaderHandle;
+        uint32_t instanceCount;
+    };
+
+    struct BufferCopy
+    {
+        uint32_t SrcBuffer;
+        uint32_t DstBuffer;
+        uint64_t Size;
+        uint64_t SrcOffset;
+        uint64_t DstOffset;
+    };
+
+    struct TextureCopy
+    {
+        uint32_t SrcTexture;
+        uint32_t DstTexture;
+        Vec3Int Extent;
+        Vec3Int SrcOffset;
+        Vec3Int DstOffset;
+    };
+
+    struct BufferToTextureCopy
+    {
+        uint32_t SrcBuffer; 
+        uint32_t DstTexture; 
+        uint64_t SrcOffset;
+        Vec3Int DstOffset;
+        Vec3Int Extent;
+    };
+
+    struct TextureToBufferCopy
+    {
+        uint32_t SrcTexture; 
+        uint32_t DstBuffer; 
+        Vec3Int SrcOffset;
+        Vec3Int Extent;
+        uint64_t DstOffset;
+    };
+
     struct GraphicsPass
     {
         public:
             void UseTransientTexture(TransientTextureHandle texture, Usage accessType);
             void UseTransientBuffer(TransientBufferHandle buffer, Usage accessType);
-            void DrawMesh(MeshHandle mesh, uint32_t instanceCount);
-            std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures();
-            std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers();
-            std::vector<std::pair<MeshHandle, uint32_t>>& GetDrawCalls();
+            void DrawMesh(MeshHandle mesh, ShaderHandle shader, uint32_t instanceCount);
+            inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures() { return textures; }
+            inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers() { return buffers; }
+            inline std::vector<DrawCall>& GetDrawCalls() { return drawCalls; }
         private:
             std::vector<std::pair<TransientTextureHandle, Usage>> textures;
             std::vector<std::pair<TransientBufferHandle, Usage>> buffers;
-            std::vector<std::pair<MeshHandle, uint32_t>> drawCalls;
+            std::vector<DrawCall> drawCalls;
     };
 
     struct TransferPass
     {
         public:
-            void UseTransientTexture(Usage accessType);
-            void UseTransientBuffer(Usage accessType);
-            std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures();
-            std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers();
+
+            // Transient
+            void CopyBuffer(TransientBufferHandle SrcBuffer, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset = 0, uint64_t DstOffset = 0);
+            void CopyTexture(TransientTextureHandle SrcTexture, TransientTextureHandle DstTexture, Vec3Int Extent, Vec3Int SrcOffset = {0,0,0}, Vec3Int DstOffset = {0,0,0});
+            void CopyBufferToTexture(TransientBufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent);
+            void CopyTextureToBuffer(TransientTextureHandle SrcTexture, TransientBufferHandle DstBuffer, Vec3Int SrcOffset, Vec3Int Extent, uint64_t DstOffset);
+
+            // Persistent
+            void CopyBuffer(BufferHandle SrcBuffer, BufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset = 0, uint64_t DstOffset = 0);
+            void CopyTexture(TextureHandle SrcTexture, TextureHandle DstTexture, Vec3Int Extent, Vec3Int SrcOffset = {0,0,0}, Vec3Int DstOffset = {0,0,0});
+            void CopyBufferToTexture(BufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent);
+            void CopyTextureToBuffer(TextureHandle SrcTexture, BufferHandle DstBuffer, Vec3Int SrcOffset, Vec3Int Extent, uint64_t DstOffset);
+
+            // Upload
+
+            
+            std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures() { return textures; }
+            std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers() { return buffers; }
         private:
             std::vector<std::pair<TransientTextureHandle, Usage>> textures;
             std::vector<std::pair<TransientBufferHandle, Usage>> buffers;
+
+            std::vector<BufferCopy> transientBufferCopies;
+            std::vector<TextureCopy> transientTextureCopies;
+            std::vector<BufferToTextureCopy> transientBufferToTextureCopies;
+            std::vector<TextureToBufferCopy> transientTextureToBufferCopies;
+
+            std::vector<BufferCopy> persistentBufferCopies;
+            std::vector<TextureCopy> persistentTextureCopies;
+            std::vector<BufferToTextureCopy> persistentBufferToTextureCopies;
+            std::vector<TextureToBufferCopy> persistentTextureToBufferCopies;
+
+
     };
 
     struct ComputePass
     {
         public:
-            void UseTransientTexture(Usage accessType);
-            void UseTransientBuffer(Usage accessType);
-            std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures();
-            std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers();
+            void UseTransientTexture(TransientTextureHandle texture, Usage accessType);
+            void UseTransientBuffer(TransientBufferHandle texture, Usage accessType);
+            std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures() { return textures; }
+            std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers() { return buffers; }
         private:
             std::vector<std::pair<TransientTextureHandle, Usage>> textures;
             std::vector<std::pair<TransientBufferHandle, Usage>> buffers;
