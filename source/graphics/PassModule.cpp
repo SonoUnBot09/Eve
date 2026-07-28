@@ -35,6 +35,18 @@ void TransferPass::CopyTextureToBuffer(TransientTextureHandle SrcTexture, Transi
     buffers.push_back(std::pair{DstBuffer, Usage::COPY_DESTINATION});
 }
 
+void TransferPass::UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset, uint64_t DstOffset)
+{
+    transientBufferUploads.emplace_back(SrcData, DstBuffer.Id, Size, SrcOffset, DstOffset);
+    buffers.emplace_back(DstBuffer, Usage::COPY_DESTINATION);
+}
+
+void TransferPass::UploadTexture(void* SrcData, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent)
+{
+    transientTextureUploads.emplace_back(SrcData, DstTexture.Id, SrcOffset, DstOffset, Extent);
+    textures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
+}
+
 #pragma region Common
 void GraphicsPass::UseTransientTexture(TransientTextureHandle texture, Usage accessType)
 {

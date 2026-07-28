@@ -24,14 +24,15 @@ namespace Eve::Graphics
             static TransientTextureHandle RequestTransientTexture2D(TransientTextureInfo2D textureInfo);
             static TransientTextureHandle RequestTransientTexture3D(TransientTextureInfo3D textureInfo);
             static TransientBufferHandle RequestTransientBuffer(TransientBufferInfo bufferInfo);
-            static void AddPass(GraphicsPass* pass);
-            static void AddPass(TransferPass* pass);
-            static void AddPass(ComputePass* pass);
+            static void AddPass(GraphicsPass& pass);
+            static void AddPass(TransferPass& pass);
+            static void AddPass(ComputePass& pass);
 
-            static void CompileGraph(uint32_t frameIndex);
+            static bool CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex);
 
             struct TextureBarrierInfo
             {
+                uint32_t TextureId;
                 VkPipelineStageFlags2 StageMask;
                 VkAccessFlags2 AccessMask;
                 VkImageLayout Layout;
@@ -39,6 +40,7 @@ namespace Eve::Graphics
 
             struct BufferBarrierInfo
             {
+                uint32_t BufferId;
                 VkPipelineStageFlags2 StageMask;
                 VkAccessFlags2 AccessMask;
             };
@@ -60,12 +62,30 @@ namespace Eve::Graphics
 
             struct Pass
             {
-                Pass(
-                    std::vector<std::pair<TransientTextureHandle, Usage>>& textures,
-                    std::vector<std::pair<TransientBufferHandle, Usage>>& buffers
-                ) : Textures(textures), Buffers(buffers) {};
-                std::vector<std::pair<TransientTextureHandle, Usage>> Textures;
                 std::vector<std::pair<TransientBufferHandle, Usage>> Buffers;
+                std::vector<std::pair<TransientTextureHandle, Usage>> Textures;
+
+                // --- Graphics ---
+                std::vector<DrawCall> drawCalls;
+
+                // --- Transfer ---
+                std::vector<BufferCopy> transientBufferCopies;
+                std::vector<TextureCopy> transientTextureCopies;
+                std::vector<BufferToTextureCopy> transientBufferToTextureCopies;
+                std::vector<TextureToBufferCopy> transientTextureToBufferCopies;
+
+                std::vector<BufferCopy> persistentBufferCopies;
+                std::vector<TextureCopy> persistentTextureCopies;
+                std::vector<BufferToTextureCopy> persistentBufferToTextureCopies;
+                std::vector<TextureToBufferCopy> persistentTextureToBufferCopies;
+
+                std::vector<BufferUpload> transientBufferUploads;
+                std::vector<TextureUpload> transientTextureUploads;
+                std::vector<BufferUpload> persistentBufferUploads;
+                std::vector<TextureUpload> persistentTextureUploads;
+
+                // --- Compute ---
+
 
                 std::vector<TextureBarrierInfoPair> texturesBarriers;
                 std::vector<BufferBarrierInfoPair> buffersBarriers;
@@ -127,6 +147,8 @@ namespace Eve::Graphics
                 uint64_t End;
                 uint32_t ResourceId;
             };
+
+            static bool RegisterCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer);
 
             static uint32_t SetTextureMemoryInfo(const uint32_t frameIndex, const uint32_t textureId, const uint32_t passesCount);
             static uint32_t SetBufferMemoryInfo(const uint32_t frameIndex, const uint32_t bufferId, const uint32_t passesCount);

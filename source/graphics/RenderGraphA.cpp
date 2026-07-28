@@ -1,4 +1,6 @@
+#include "Eve/graphics/Texture.hpp"
 #include "MemoryManager.hpp"
+#include "graphics/VulkanMapping.hpp"
 #include <graphics/RenderGraphA.hpp>
 
 using namespace Eve::Graphics;
@@ -494,7 +496,7 @@ namespace
     };
 };
 
-void RenderGraph::CompileGraph(uint32_t frameIndex)
+bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 {
     UpdateTexturesPool(frameIndex);
     UpdateBuffersPool(frameIndex);
@@ -563,6 +565,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
 
                 if(barrier)
                 {
+                    dstBarrierInfo.TextureId = textureId;
                     texturesBarriersInfo.push_back(std::pair{dstBarrierInfo, passIndex});
 
                     srcBarrierInfo = dstBarrierInfo;
@@ -638,6 +641,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
 
                 if(barrier)
                 {
+                    dstBarrierInfo.BufferId = bufferId;
                     buffersBarriersInfo.push_back(std::pair{dstBarrierInfo, passIndex});
 
                     srcBarrierInfo = dstBarrierInfo;
@@ -744,7 +748,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
 
         if(!success)
         {
-            return;
+            return false;
         }
     }
 
@@ -809,7 +813,7 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
 
         if(!success)
         {
-            return;
+            return false;
         }
 
     }
@@ -935,6 +939,8 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
         }
     }
 
+    RegisterCommands(frameIndex, cmdBuffer);
+
     requestedTextures.clear();
     requestedBuffers.clear();
     passes.clear();
@@ -950,6 +956,99 @@ void RenderGraph::CompileGraph(uint32_t frameIndex)
     texturesBarriersInfo.clear();
     barriersOffsetPerBuffer.clear();
     buffersBarriersInfo.clear();
+
+    return true;
+}
+
+bool RenderGraph::RegisterCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer)
+{
+
+    std::vector<VkImageMemoryBarrier2> textureMemoryBarriers;
+    std::vector<VkBufferMemoryBarrier2> bufferMemoryBarriers;
+
+    uint32_t passCount = passes.size();
+    for(uint32_t passIndex = 0; passIndex < passCount; passIndex++)
+    {
+        Pass& pass = passes[passIndex];
+        
+        std::vector<TextureBarrierInfoPair>& textureBarriers = pass.texturesBarriers;
+        std::vector<BufferBarrierInfoPair>& bufferBarriers = pass.buffersBarriers;
+
+        for(uint32_t i = 0; textureBarriers.size(); i++)
+        {
+            TextureBarrierInfoPair barrierInfo = textureBarriers[i];
+
+            uint32_t textureIndex = barrierInfo.DstInfo.TextureId;
+
+            VkImage image = transientTextures[frameIndex][textureIndex].Image;
+            VkFormat format = GetVkImageFormat(transientTextures[frameIndex][textureIndex].TextureInfo.Data.Format);
+            VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
+
+            VkImageMemoryBarrier2 barrier
+            {
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .srcStageMask = barrierInfo.SrcInfo.StageMask,
+                .srcAccessMask = barrierInfo.SrcInfo.AccessMask,
+                .dstStageMask = barrierInfo.DstInfo.StageMask,
+                .dstAccessMask = barrierInfo.DstInfo.AccessMask,
+                .oldLayout = barrierInfo.SrcInfo.Layout,
+                .newLayout = barrierInfo.DstInfo.Layout,
+                .image = image,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .subresourceRange
+                {
+                    .aspectMask = aspectMask,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1
+                }
+            };
+
+            textureMemoryBarriers.push_back(barrier);
+        }
+
+        for(uint32_t i = 0; bufferBarriers.size(); i++)
+        {
+            BufferBarrierInfoPair barrierInfo = bufferBarriers[i];
+
+            uint32_t bufferIndex = barrierInfo.DstInfo.BufferId;
+
+            VkBuffer buffer = transientBuffers[frameIndex][bufferIndex].Buffer;
+
+            VkBufferMemoryBarrier2 barrier
+            {
+                .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                .srcStageMask = barrierInfo.SrcInfo.StageMask,
+                .srcAccessMask = barrierInfo.SrcInfo.AccessMask,
+                .dstStageMask = barrierInfo.DstInfo.StageMask,
+                .dstAccessMask = barrierInfo.DstInfo.AccessMask,
+                .buffer = buffer,
+                .offset = 0,
+                .size = VK_WHOLE_SIZE,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED
+            };
+
+            bufferMemoryBarriers.push_back(barrier);
+        }
+
+        VkDependencyInfo dependency
+        {
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .bufferMemoryBarrierCount = static_cast<uint32_t>(bufferMemoryBarriers.size()),
+            .pBufferMemoryBarriers = bufferMemoryBarriers.data(),
+            .imageMemoryBarrierCount = static_cast<uint32_t>(textureMemoryBarriers.size()),
+            .pImageMemoryBarriers = textureMemoryBarriers.data()
+        };
+
+        vkCmdPipelineBarrier2(cmdBuffer, &dependency);
+
+        
+    }
+
+    return true;
 }
 
 uint32_t RenderGraph::SetTextureMemoryInfo(const uint32_t frameIndex, const uint32_t textureId, const uint32_t passesCount)
@@ -1642,25 +1741,52 @@ TransientBufferHandle RenderGraph::RequestTransientBuffer(TransientBufferInfo bu
     return handle;
 }
 
-void RenderGraph::AddPass(GraphicsPass* pass)
+void RenderGraph::AddPass(GraphicsPass& pass)
 {
-    passes.emplace_back(
-        pass->GetTextures(),
-        pass->GetBuffers());
+    Pass data
+    {
+        .Buffers = pass.GetBuffers(),
+        .Textures = pass.GetTextures(),
+        .drawCalls = pass.GetDrawCalls()
+    };
+
+    passes.push_back(data);
 }
 
-void RenderGraph::AddPass(TransferPass* pass)
+void RenderGraph::AddPass(TransferPass& pass)
 {
-    passes.emplace_back(
-        pass->GetTextures(),
-        pass->GetBuffers()
-    );
+    Pass data
+    {
+        .Buffers = pass.GetBuffers(),
+        .Textures = pass.GetTextures(),
+
+        .transientBufferCopies = pass.GetTransientBufferCopies(),
+        .transientTextureCopies = pass.GetTransientTextureCopies(),
+        .transientBufferToTextureCopies = pass.GetTransientBufferToTextureCopies(),
+        .transientTextureToBufferCopies = pass.GetTransientTextureToBufferCopies(),
+
+        .persistentBufferCopies = pass.GetPersistentBufferCopies(),
+        .persistentTextureCopies = pass.GetPersistentTextureCopies(),
+        .persistentBufferToTextureCopies = pass.GetPersistentBufferToTextureCopies(),
+        .persistentTextureToBufferCopies = pass.GetPersistentTextureToBufferCopies(),
+
+        .transientBufferUploads = pass.GetTransientBufferUploads(),
+        .transientTextureUploads = pass.GetTransientTextureUploads(),
+        .persistentBufferUploads = pass.GetPersistentBufferUploads(),
+        .persistentTextureUploads = pass.GetPersistentTextureUploads()
+    };
+
+    passes.push_back(data);
 }
 
-void RenderGraph::AddPass(ComputePass* pass)
+void RenderGraph::AddPass(ComputePass& pass)
 {
-    passes.emplace_back(
-        pass->GetTextures(),
-        pass->GetBuffers()
-    );
+    Pass data
+    {
+        .Buffers = pass.GetBuffers(),
+        .Textures = pass.GetTextures()
+
+        // To add compute
+    };
+    passes.push_back(data);
 }
