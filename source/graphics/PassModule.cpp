@@ -1,4 +1,5 @@
 #include <Eve/graphics/PassModule.hpp>
+#include "MemoryManager.hpp"
 
 using namespace Eve::Graphics;
 
@@ -37,15 +38,45 @@ void TransferPass::CopyTextureToBuffer(TransientTextureHandle SrcTexture, Transi
     buffers.push_back(std::pair{DstBuffer, Usage::COPY_DESTINATION});
 }
 
-void TransferPass::UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset, uint64_t DstOffset)
+void TransferPass::UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t DstOffset)
 {
-    transientBufferUploads.emplace_back(SrcData, DstBuffer.Id, Size, SrcOffset, DstOffset);
+    // --- Staging buffer creation ---
+    BufferInfo stagingBufferInfo
+    {
+        .Data.Size = Size,
+        .Data.Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+    };
+
+    BufferHandle stagingBufferHandle = MemoryManager::AllocateHostBuffer(stagingBufferInfo);
+
+    Buffer dstBuffer = MemoryManager::GetBuffer(stagingBufferHandle);
+
+    // --- Data copy into the stagin buffer ---
+    memcpy(dstBuffer.AllocationInfo.pMappedData, SrcData, Size);
+
+    // --- Record the upload command to execute ---
+    transientBufferUploads.emplace_back(stagingBufferHandle.Id, DstBuffer.Id, Size, DstOffset);
     buffers.emplace_back(DstBuffer, Usage::COPY_DESTINATION);
 }
 
-void TransferPass::UploadTexture(void* SrcData, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent)
+void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TransientTextureHandle DstTexture, Vec3Int DstOffset, Vec3Int Extent,
+    uint32_t BufferRowLenght, uint32_t BufferHeightLenght)
 {
-    transientTextureUploads.emplace_back(SrcData, DstTexture.Id, SrcOffset, DstOffset, Extent);
+    // --- Staging buffer creation ---
+    BufferInfo stagingBufferInfo
+    {
+        .Data.Size = Size,
+        .Data.Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+    };
+
+    BufferHandle stagingBufferHandle = MemoryManager::AllocateHostBuffer(stagingBufferInfo);
+
+    Buffer dstBuffer = MemoryManager::GetBuffer(stagingBufferHandle);
+
+    // --- Data copy into the stagin buffer ---
+    memcpy(dstBuffer.AllocationInfo.pMappedData, SrcData, Size);
+
+    transientTextureUploads.emplace_back(stagingBufferHandle.Id, DstTexture.Id, DstOffset, Extent, BufferRowLenght, BufferHeightLenght);
     textures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
 }
 

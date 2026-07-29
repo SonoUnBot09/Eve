@@ -96,20 +96,20 @@ namespace Eve::Graphics
 
     struct BufferUpload
     {
-        void* SrcData;
+        uint32_t SrcBufferId;
         uint32_t DstBuffer;
         uint64_t Size;
-        uint64_t SrcOffset;
         uint64_t DstOffset;
     };
 
     struct TextureUpload
     {
-        void* SrcData; 
+        uint32_t SrcBufferId; 
         uint32_t DstTexture; 
-        uint64_t SrcOffset;
         Vec3Int DstOffset;
         Vec3Int Extent;
+        uint32_t BufferRowLenght;
+        uint32_t BufferHeightLenght;
     };
 
     struct GraphicsPass
@@ -146,12 +146,14 @@ namespace Eve::Graphics
             void CopyTextureToBuffer(TextureHandle SrcTexture, BufferHandle DstBuffer, Vec3Int SrcOffset, Vec3Int Extent, uint64_t DstOffset);
 
             // Transient
-            void UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset = 0, uint64_t DstOffset = 0);
-            void UploadTexture(void* SrcData, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent);
+            void UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t DstOffset = 0);
+            void UploadTexture(void* SrcData, uint64_t Size, TransientTextureHandle DstTexture, Vec3Int DstOffset, Vec3Int Extent,
+                uint32_t BufferRowLenght = 0, uint32_t BufferHeightLenght = 0);
 
             // Persistent
-            void UploadBuffer(void* SrcData, BufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset = 0, uint64_t DstOffset = 0);
-            void UploadTexture(void* SrcData, TextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent);
+            void UploadBuffer(void* SrcData, BufferHandle DstBuffer, uint64_t Size, uint64_t DstOffset = 0);
+            void UploadTexture(void* SrcData, uint64_t Size, TextureHandle DstTexture, Vec3Int DstOffset, Vec3Int Extent,
+                uint32_t BufferRowLenght = 0, uint32_t BufferHeightLenght = 0);
             
             inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures() { return textures; }
             inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers() { return buffers; }

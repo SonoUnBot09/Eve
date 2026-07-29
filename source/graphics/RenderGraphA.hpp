@@ -146,7 +146,7 @@ namespace Eve::Graphics
                 uint32_t ResourceId;
             };
 
-            static bool RegisterCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer);
+            static bool RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer);
 
             static uint32_t SetTextureMemoryInfo(const uint32_t frameIndex, const uint32_t textureId, const uint32_t passesCount);
             static uint32_t SetBufferMemoryInfo(const uint32_t frameIndex, const uint32_t bufferId, const uint32_t passesCount);
@@ -165,21 +165,21 @@ namespace Eve::Graphics
             static void UpdateTexturesPool(const uint32_t frameIndex);
             static void UpdateBuffersPool(const uint32_t frameIndex);
 
-            static void RegisterTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RegisterTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RegisterTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RegisterTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
 
-            static void RegisterPersistentBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RegisterPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RegisterPersistentBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RegisterPersistentTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
 
-            static void RegisterTransientBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RegisterTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
 
-            static void RegisterPersistentBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RegisterPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
 
             // Input
             inline static std::vector<TextureInfo> requestedTextures;

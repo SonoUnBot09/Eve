@@ -940,7 +940,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
         }
     }
 
-    RegisterCommands(frameIndex, cmdBuffer);
+    RecordCommands(frameIndex, cmdBuffer);
 
     requestedTextures.clear();
     requestedBuffers.clear();
@@ -961,9 +961,8 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
     return true;
 }
 
-bool RenderGraph::RegisterCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer)
+bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer)
 {
-
     std::vector<VkImageMemoryBarrier2> textureMemoryBarriers;
     std::vector<VkBufferMemoryBarrier2> bufferMemoryBarriers;
 
@@ -1044,17 +1043,32 @@ bool RenderGraph::RegisterCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuff
             .pImageMemoryBarriers = textureMemoryBarriers.data()
         };
 
-        vkCmdPipelineBarrier2(cmdBuffer, &dependency);
+        if(bufferMemoryBarriers.size() > 0 || textureMemoryBarriers.size() > 0)
+        {
+            vkCmdPipelineBarrier2(cmdBuffer, &dependency);
+        }
 
         textureMemoryBarriers.clear();
         bufferMemoryBarriers.clear();
+
+        // --- Transient resource copies ---
+        RecordTransientBufferCopy(cmdBuffer, pass, frameIndex);
+        RecordTransientTextureCopy(cmdBuffer, pass, frameIndex);
+        RecordTransientBufferToTextureCopy(cmdBuffer, pass, frameIndex);
+        RecordTransientTextureToBufferCopy(cmdBuffer, pass, frameIndex);
+
+        // --- Transient resouce uploads ---
+        RecordTransientBufferUpload(cmdBuffer, pass, frameIndex);
+        RecordTransientTextureUpload(cmdBuffer, pass, frameIndex);
+
+
 
     }
 
     return true;
 }
 
-void RenderGraph::RegisterTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<BufferCopy>& copies = pass.transientBufferCopies;
 
@@ -1075,7 +1089,7 @@ void RenderGraph::RegisterTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& 
         vkCmdCopyBuffer(cmdBuffer, srcBuffer, dstBuffer, 1, &bufferCopy);
     }
 }
-void RenderGraph::RegisterTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<TextureCopy>& copies = pass.transientTextureCopies;
 
@@ -1126,7 +1140,7 @@ void RenderGraph::RegisterTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass&
 
 }
 
-void RenderGraph::RegisterTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<BufferToTextureCopy>& copies = pass.transientBufferToTextureCopies;
 
@@ -1164,7 +1178,7 @@ void RenderGraph::RegisterTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffe
              1, &bufferImageCopy);
     }
 }
-void RenderGraph::RegisterTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<TextureToBufferCopy>& copies = pass.transientTextureToBufferCopies;
 
@@ -1203,8 +1217,70 @@ void RenderGraph::RegisterTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffe
     }
 }
 
-void RenderGraph::RegisterTransientBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-void RenderGraph::RegisterTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+void RenderGraph::RecordTransientBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<BufferUpload>& uploads = pass.transientBufferUploads;
+
+    for(uint32_t i = 0; i < uploads.size(); i++)
+    {
+        BufferUpload uploadInfo = uploads[i];
+
+        Buffer& srcBuffer = MemoryManager::GetBuffer(uploadInfo.SrcBufferId);
+        Buffer& dstBuffer = MemoryManager::GetBuffer(uploadInfo.DstBuffer);
+
+        VkBufferCopy bufferCopy
+        {
+            .srcOffset = 0,
+            .dstOffset = uploadInfo.DstOffset,
+            .size = uploadInfo.Size
+        };
+
+        vkCmdCopyBuffer(cmdBuffer, srcBuffer.Buffer, dstBuffer.Buffer, 1, &bufferCopy);
+
+        MemoryManager::DestroyBuffer(uploadInfo.SrcBufferId);
+    }
+}
+
+void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<TextureUpload>& uploads = pass.transientTextureUploads;
+    // To complete
+    for(uint32_t i = 0; i < uploads.size(); i++)
+    {
+        TextureUpload uploadInfo = uploads[i];
+
+        Buffer& srcBuffer = MemoryManager::GetBuffer(uploadInfo.SrcBufferId);
+        Texture& dstTexture = MemoryManager::GetTexture(uploadInfo.DstTexture);
+
+        VkFormat format = GetVkImageFormat(transientTextures[frameIndex][uploadInfo.DstTexture].TextureInfo.Data.Format);
+
+        VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
+
+        VkBufferImageCopy bufferImageCopy
+        {
+            .bufferOffset = 0,
+            .bufferRowLength = uploadInfo.BufferRowLenght,
+            .bufferImageHeight = uploadInfo.BufferHeightLenght,
+            .imageSubresource
+            {
+                .aspectMask = aspectMask,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            },
+            .imageOffset {uploadInfo.DstOffset.x, uploadInfo.DstOffset.y, uploadInfo.DstOffset.z},
+            .imageExtent {
+                static_cast<uint32_t>(uploadInfo.Extent.x), 
+                static_cast<uint32_t>(uploadInfo.Extent.y), 
+                static_cast<uint32_t>(uploadInfo.Extent.z)}
+        };
+
+        vkCmdCopyBufferToImage(cmdBuffer, srcBuffer.Buffer, dstTexture.Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, &bufferImageCopy);
+
+        MemoryManager::DestroyBuffer(uploadInfo.SrcBufferId);
+    }
+}
 
 
 uint32_t RenderGraph::SetTextureMemoryInfo(const uint32_t frameIndex, const uint32_t textureId, const uint32_t passesCount)
