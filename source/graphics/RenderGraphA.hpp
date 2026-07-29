@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Eve/graphics/Texture.hpp"
 #include <algorithm>
 #include <ranges>
 #include <vector>
@@ -58,7 +57,6 @@ namespace Eve::Graphics
                 BufferBarrierInfo SrcInfo;
                 BufferBarrierInfo DstInfo;
             };
-            
 
             struct Pass
             {
@@ -166,6 +164,22 @@ namespace Eve::Graphics
 
             static void UpdateTexturesPool(const uint32_t frameIndex);
             static void UpdateBuffersPool(const uint32_t frameIndex);
+
+            static void RegisterTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RegisterTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RegisterTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RegisterTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+
+            static void RegisterPersistentBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RegisterPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RegisterPersistentBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RegisterPersistentTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+
+            static void RegisterTransientBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RegisterTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+
+            static void RegisterPersistentBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RegisterPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
 
             // Input
             inline static std::vector<TextureInfo> requestedTextures;

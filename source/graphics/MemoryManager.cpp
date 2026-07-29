@@ -1,6 +1,7 @@
 #include "MemoryManager.hpp"
 #include "ResourceMapper.hpp"
 #include "GraphicsCore.hpp"
+#include "MemoryBin.hpp"
 
 using namespace Eve::Graphics;
 
@@ -258,6 +259,24 @@ VmaPool MemoryManager::AllocateMemoryPool(uint32_t size)
     vmaCreatePool(GraphicsCore::Context.Allocator, &poolCI, &pool);
 
     return pool;
+}
+
+void MemoryManager::DestroyBuffer(BufferHandle handle)
+{
+    Buffer buffer = buffers[handle.Id];
+
+    MemoryBin::DestroyBuffer(buffer);
+
+    FreeBufferSlot(handle);
+}
+
+void MemoryManager::DestroyTexture(TextureHandle handle)
+{
+    Texture texture = textures[handle.Id];
+
+    MemoryBin::DestroyTexture(texture);
+
+    FreeTextureSlot(handle);
 }
 
 TextureHandle MemoryManager::ReserveTextureSlot(Texture& texture)

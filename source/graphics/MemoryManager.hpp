@@ -50,6 +50,9 @@ namespace Eve::Graphics
             static TransientTextureHandle ReserveTransientTextureSlot();
             static TransientBufferHandle ReserveTransientBufferSlot(); 
 
+            static void DestroyBuffer(BufferHandle handle);
+            static void DestroyTexture(TextureHandle handle);
+
             static void FreeTextureSlot(TextureHandle handle) { imageFreeSlots.push_back(handle.Id); }
             static void FreeTextureSlot(TransientTextureHandle handle) { imageFreeSlots.push_back(handle.Id); }
             static void FreeBufferSlot(BufferHandle handle) { bufferFreeSlots.push_back(handle.Id); }

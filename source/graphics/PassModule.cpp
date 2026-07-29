@@ -21,16 +21,18 @@ void TransferPass::CopyTexture(TransientTextureHandle SrcTexture, TransientTextu
     textures.push_back(std::pair{DstTexture, Usage::COPY_DESTINATION});
 }
 
-void TransferPass::CopyBufferToTexture(TransientBufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent)
+void TransferPass::CopyBufferToTexture(TransientBufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent,
+    uint32_t BufferRowLenght, uint32_t BufferHeightLenght)
 {
-    transientBufferToTextureCopies.emplace_back(SrcBuffer.Id, DstTexture.Id, SrcOffset, DstOffset, Extent);
+    transientBufferToTextureCopies.emplace_back(SrcBuffer.Id, DstTexture.Id, SrcOffset, BufferRowLenght, BufferHeightLenght, DstOffset, Extent);
     buffers.push_back(std::pair{SrcBuffer, Usage::COPY_SOURCE});
     textures.push_back(std::pair{DstTexture, Usage::COPY_DESTINATION});
 }
 
-void TransferPass::CopyTextureToBuffer(TransientTextureHandle SrcTexture, TransientBufferHandle DstBuffer, Vec3Int SrcOffset, Vec3Int Extent, uint64_t DstOffset)
+void TransferPass::CopyTextureToBuffer(TransientTextureHandle SrcTexture, TransientBufferHandle DstBuffer, Vec3Int SrcOffset, Vec3Int Extent, uint64_t DstOffset,
+     uint32_t BufferRowLenght, uint32_t BufferHeightLenght)
 {
-    transientTextureToBufferCopies.emplace_back(SrcTexture.Id, DstBuffer.Id, SrcOffset, Extent, DstOffset);
+    transientTextureToBufferCopies.emplace_back(SrcTexture.Id, DstBuffer.Id, SrcOffset, Extent, DstOffset, BufferRowLenght, BufferHeightLenght);
     textures.push_back(std::pair{SrcTexture, Usage::COPY_SOURCE});
     buffers.push_back(std::pair{DstBuffer, Usage::COPY_DESTINATION});
 }
