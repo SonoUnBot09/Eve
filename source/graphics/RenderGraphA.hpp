@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Eve/graphics/Texture.hpp"
 #include <algorithm>
 #include <ranges>
 #include <vector>
@@ -62,6 +63,8 @@ namespace Eve::Graphics
             {
                 std::vector<std::pair<TransientBufferHandle, Usage>> Buffers;
                 std::vector<std::pair<TransientTextureHandle, Usage>> Textures;
+
+                std::vector<std::pair<TransientTextureHandle, LoadStoreOp>> loadStoreOps;
 
                 // --- Graphics ---
                 std::vector<DrawCall> drawCalls;
@@ -180,6 +183,8 @@ namespace Eve::Graphics
 
             static void RecordPersistentBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
             static void RecordPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+
+            static void RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
 
             // Input
             inline static std::vector<TextureInfo> requestedTextures;

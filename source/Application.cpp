@@ -267,7 +267,7 @@ void Application::Render()
         .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue = {.color{.float32{0.0, 0.0,0.0, 1.0}}}
+        .clearValue = {.color{.float32{0.0, 0.0, 0.0, 1.0}}}
     };
 
     VkRenderingAttachmentInfo depthAttachmentInfo

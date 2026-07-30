@@ -1,7 +1,9 @@
 #include "Eve/graphics/PassModule.hpp"
 #include "Eve/graphics/Texture.hpp"
+#include "GraphicsCore.hpp"
 #include "MemoryManager.hpp"
 #include "graphics/VulkanMapping.hpp"
+#include <cstdint>
 #include <graphics/RenderGraphA.hpp>
 
 using namespace Eve::Graphics;
@@ -39,11 +41,14 @@ namespace
             case (Usage::COLOR_ATTACHMENT) :
                 return TextureUsage::USAGE_COLOR_ATTACHMENT; 
 
-            case (Usage::DEPTH_STENCIL_READ_ONLY) :
+            case (Usage::DEPTH_STENCIL) :
                 return TextureUsage::USAGE_DEPTH_STENCIL_ATTACHMENT; 
 
-            case (Usage::DEPTH_STENCIL_WRITE) :
+            case (Usage::DEPTH) :
                 return TextureUsage::USAGE_DEPTH_STENCIL_ATTACHMENT; 
+
+            case (Usage::STENCIL) :
+                return TextureUsage::USAGE_DEPTH_STENCIL_ATTACHMENT;
 
             case (Usage::COPY_SOURCE) :
                 return TextureUsage::USAGE_TRANSFER_SRC;
@@ -110,7 +115,13 @@ namespace
             case(Usage::COLOR_ATTACHMENT) :
                 return false;
             
-            case(Usage::DEPTH_STENCIL_WRITE) :
+            case(Usage::DEPTH_STENCIL) :
+                return false;
+
+            case(Usage::DEPTH) :
+                return false;
+
+            case(Usage::STENCIL) :
                 return false;
 
             case(Usage::COPY_DESTINATION) :
@@ -193,23 +204,31 @@ namespace
                 {
                     VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                     VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                    VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
                 };
 
-            case(Usage::DEPTH_STENCIL_READ_ONLY) :
+            case(Usage::DEPTH_STENCIL) :
                 return
                 {
                     VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-                    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
-                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+                    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
                 };
 
-            case(Usage::DEPTH_STENCIL_WRITE) :
+            case(Usage::DEPTH) :
                 return
                 {
                     VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-                    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
+                };
+
+            case(Usage::STENCIL) :
+                return
+                {
+                    VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
                 };
 
             case(Usage::COPY_SOURCE) :
@@ -495,6 +514,33 @@ namespace
 
         return memoryTypeIndex;
     };
+
+    VkAttachmentLoadOp GetVkLoadOp(LoadOperation loadOp)
+    {
+        switch(loadOp)
+        {
+            case (LoadOperation::LOAD) :
+                return VK_ATTACHMENT_LOAD_OP_LOAD;
+
+            case (LoadOperation::DISCARD) :
+                return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            
+            case(LoadOperation::CLEAR) : 
+                return VK_ATTACHMENT_LOAD_OP_CLEAR;
+        }
+    }
+
+    VkAttachmentStoreOp GetVkStoreOp(StoreOperation storeOp)
+    {
+        switch(storeOp)
+        {
+            case (StoreOperation::STORE) :
+                return VK_ATTACHMENT_STORE_OP_STORE;
+
+            case (StoreOperation::DISCARD) :
+                return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        }
+    }
 };
 
 bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
@@ -1061,8 +1107,6 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
         RecordTransientBufferUpload(cmdBuffer, pass, frameIndex);
         RecordTransientTextureUpload(cmdBuffer, pass, frameIndex);
 
-
-
     }
 
     return true;
@@ -1282,6 +1326,214 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass&
     }
 }
 
+void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<std::pair<TransientTextureHandle, Usage>>& textures = pass.Textures;
+    std::vector<std::pair<TransientTextureHandle, LoadStoreOp>>& loadStoreOps = pass.loadStoreOps;
+    std::vector<DrawCall>& drawCalls = pass.drawCalls;
+
+    // No draw calls
+    if(drawCalls.empty()) { return; }
+
+    bool useColorTarget = false;
+    bool useDepthTarget = false;
+    bool useStencilTarget = false;
+
+    std::vector<TransientTextureHandle> colorTargets;
+    TransientTextureHandle depthTarget;
+    TransientTextureHandle stencilTarget;
+
+    // Get color, depth and stencil targets
+    for(uint32_t i = 0; i < textures.size(); i++)
+    {
+        std::pair<TransientTextureHandle, Usage> data = textures[i];
+
+        switch (data.second)
+        {
+            case (Usage::COLOR_ATTACHMENT) : 
+                useColorTarget = true;
+                colorTargets.push_back(data.first);
+                break;
+            case (Usage::DEPTH_STENCIL) :
+                useDepthTarget = true;
+                useStencilTarget = true;
+                depthTarget = data.first;
+                stencilTarget = data.first;
+                break;
+            case(Usage::DEPTH) :
+                useDepthTarget = true;
+                depthTarget = data.first;
+                break;
+            case(Usage::STENCIL) :
+                useStencilTarget = true;
+                stencilTarget = data.first;
+                break;
+            default :
+                continue;
+        }
+    }
+
+    // No target to write onto
+    if(useColorTarget == false && useDepthTarget == false && useStencilTarget == false) { return; }
+
+    std::vector<VkRenderingAttachmentInfo> colorsAttachmentInfo;
+    VkRenderingAttachmentInfo depthAttachmentInfo{};
+    VkRenderingAttachmentInfo stencilAttachmentInfo{};
+
+    uint32_t width = UINT32_MAX;
+    uint32_t height = UINT32_MAX;
+    for(uint32_t i = 0; i < colorTargets.size(); i++)
+    {
+        TransientTextureHandle handle = colorTargets[i];
+
+        uint32_t _width = transientTextures[frameIndex][handle.Id].TextureInfo.Data.Width;
+        uint32_t _height = transientTextures[frameIndex][handle.Id].TextureInfo.Data.Height;
+
+        width = std::min(width, _width);
+        height = std::min(height, _height);
+
+        VkImageView imageView = transientTextures[frameIndex][handle.Id].ImageView;
+
+        LoadStoreOp loadStoreOp;
+        for(uint32_t j = 0; j < loadStoreOps.size(); j++)
+        {
+            if(loadStoreOps[j].first.Id != handle.Id) { continue; }
+
+            loadStoreOp = loadStoreOps[j].second;
+        }
+
+        VkAttachmentLoadOp loadOp = GetVkLoadOp(loadStoreOp.loadOp);
+        VkAttachmentStoreOp storeOp = GetVkStoreOp(loadStoreOp.storeOp);
+
+        VkRenderingAttachmentInfo attachment
+        {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = imageView,
+            .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .loadOp = loadOp,
+            .storeOp = storeOp,
+            .clearValue {.color{.float32{
+                loadStoreOp.clearColor.x, 
+                loadStoreOp.clearColor.y, 
+                loadStoreOp.clearColor.z, 
+                1.0}}}
+        };
+
+        colorsAttachmentInfo.push_back(attachment);
+    }
+
+    if(useDepthTarget)
+    {
+        uint32_t _width = transientTextures[frameIndex][depthTarget.Id].TextureInfo.Data.Width;
+        uint32_t _height = transientTextures[frameIndex][depthTarget.Id].TextureInfo.Data.Height;
+
+        width = std::min(width, _width);
+        height = std::min(height, _height);
+
+
+        VkImageView imageView = transientTextures[frameIndex][depthTarget.Id].ImageView;
+
+        LoadStoreOp loadStoreOp;
+        for(uint32_t j = 0; j < loadStoreOps.size(); j++)
+        {
+            if(loadStoreOps[j].first.Id != depthTarget.Id) { continue; }
+
+            loadStoreOp = loadStoreOps[j].second;
+        }
+
+        VkAttachmentLoadOp loadOp = GetVkLoadOp(loadStoreOp.loadOp);
+        VkAttachmentStoreOp storeOp = GetVkStoreOp(loadStoreOp.storeOp);
+
+        VkRenderingAttachmentInfo attachment
+        {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = imageView,
+            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+            .loadOp = loadOp,
+            .storeOp = storeOp,
+            .clearValue {.depthStencil{.depth{loadStoreOp.clearDepth}}}
+        };
+
+        depthAttachmentInfo = attachment;
+    }
+
+    if(useStencilTarget)
+    {
+        uint32_t _width = transientTextures[frameIndex][stencilTarget.Id].TextureInfo.Data.Width;
+        uint32_t _height = transientTextures[frameIndex][stencilTarget.Id].TextureInfo.Data.Height;
+
+        width = std::min(width, _width);
+        height = std::min(height, _height);
+
+        VkImageView imageView = transientTextures[frameIndex][stencilTarget.Id].ImageView;
+
+        LoadStoreOp loadStoreOp;
+        for(uint32_t j = 0; j < loadStoreOps.size(); j++)
+        {
+            if(loadStoreOps[j].first.Id != stencilTarget.Id) { continue; }
+
+            loadStoreOp = loadStoreOps[j].second;
+        }
+
+        VkAttachmentLoadOp loadOp = GetVkLoadOp(loadStoreOp.loadOp);
+        VkAttachmentStoreOp storeOp = GetVkStoreOp(loadStoreOp.storeOp);
+
+        VkRenderingAttachmentInfo attachment
+        {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = imageView,
+            .imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
+            .loadOp = loadOp,
+            .storeOp = storeOp,
+            .clearValue {.depthStencil{.stencil{loadStoreOp.clearStencil}}}
+        };
+
+        stencilAttachmentInfo = attachment;
+    }
+
+    // Invalid resolution
+    if(width == UINT32_MAX || height == UINT32_MAX) { return; }
+
+    VkRenderingInfo renderInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+        .renderArea
+        {
+            .offset {.x = 0, .y = 0},
+            .extent {.width = width, .height = height}
+        },
+        .layerCount = 1,
+        .colorAttachmentCount = static_cast<uint32_t>(colorsAttachmentInfo.size()),
+        .pColorAttachments = colorsAttachmentInfo.empty() ? nullptr : colorsAttachmentInfo.data(),
+        .pDepthAttachment = useDepthTarget ? &depthAttachmentInfo : nullptr,
+        .pStencilAttachment = useStencilTarget ? &stencilAttachmentInfo : nullptr
+    };
+
+    vkCmdBeginRendering(cmdBuffer, &renderInfo);
+    {
+
+        VkViewport viewport
+        {
+            .x = 0, .y = static_cast<float>(height),
+            .width = static_cast<float>(width),
+            .height =  -static_cast<float>(height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f
+        };
+
+        VkRect2D scissor
+        {
+            .offset {.x = 0, .y = 0},
+            .extent {.width = width, .height = height}
+        };
+
+        vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
+
+
+    }
+
+}
 
 uint32_t RenderGraph::SetTextureMemoryInfo(const uint32_t frameIndex, const uint32_t textureId, const uint32_t passesCount)
 {
@@ -1979,6 +2231,7 @@ void RenderGraph::AddPass(GraphicsPass& pass)
     {
         .Buffers = pass.GetBuffers(),
         .Textures = pass.GetTextures(),
+        .loadStoreOps = pass.GetLoadStoreOperations(),
         .drawCalls = pass.GetDrawCalls()
     };
 

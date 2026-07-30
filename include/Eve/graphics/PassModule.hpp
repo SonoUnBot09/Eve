@@ -39,12 +39,26 @@ namespace Eve::Graphics
 
         // Color Depth Stencil
         COLOR_ATTACHMENT,
-        DEPTH_STENCIL_READ_ONLY,
-        DEPTH_STENCIL_WRITE,
+        DEPTH_STENCIL,
+        DEPTH,
+        STENCIL,
        
         // Transfer
         COPY_SOURCE,
         COPY_DESTINATION
+    };
+
+    enum class LoadOperation
+    {
+        LOAD,
+        DISCARD,
+        CLEAR
+    };
+
+    enum class StoreOperation
+    {
+        STORE,
+        DISCARD
     };
 
     struct DrawCall
@@ -52,6 +66,15 @@ namespace Eve::Graphics
         MeshHandle MeshHandle;
         ShaderHandle ShaderHandle;
         uint32_t instanceCount;
+    };
+
+    struct LoadStoreOp
+    {
+        LoadOperation loadOp;
+        StoreOperation storeOp;
+        Vec3 clearColor;
+        float clearDepth;
+        uint8_t clearStencil;
     };
 
     struct BufferCopy
@@ -115,15 +138,30 @@ namespace Eve::Graphics
     struct GraphicsPass
     {
         public:
+
             void UseTransientTexture(TransientTextureHandle texture, Usage accessType);
             void UseTransientBuffer(TransientBufferHandle buffer, Usage accessType);
+
+            void UseColorTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
+            void UseDepthStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
+            void UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
+            void UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
+
             void DrawMesh(MeshHandle mesh, ShaderHandle shader, uint32_t instanceCount);
+
             inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures() { return textures; }
             inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers() { return buffers; }
+            inline std::vector<std::pair<TransientTextureHandle, LoadStoreOp>>& GetLoadStoreOperations() { return loadStoreOps; }
+
             inline std::vector<DrawCall>& GetDrawCalls() { return drawCalls; }
+
         private:
+
             std::vector<std::pair<TransientTextureHandle, Usage>> textures;
             std::vector<std::pair<TransientBufferHandle, Usage>> buffers;
+
+            std::vector<std::pair<TransientTextureHandle, LoadStoreOp>> loadStoreOps;
+
             std::vector<DrawCall> drawCalls;
     };
 

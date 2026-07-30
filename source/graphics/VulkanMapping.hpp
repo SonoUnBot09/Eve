@@ -12,7 +12,7 @@ namespace Eve::Graphics
 {
 
     inline static constexpr uint32_t bufferUsageConfigCount = 5;
-    inline static constexpr uint32_t imageUsageConfigCount = 7;
+    inline static constexpr uint32_t imageUsageConfigCount = 6;
     inline static constexpr uint32_t imageAspectMaskConfigCount = 3;
     inline static constexpr uint32_t shaderStageConfigCount = 3;
 
@@ -53,7 +53,6 @@ namespace Eve::Graphics
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-        VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT
     };
 
     static constexpr VkImageLayout imageLayoutLUT[]

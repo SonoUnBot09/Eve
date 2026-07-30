@@ -70,7 +70,7 @@ void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TransientTexture
     };
 
     BufferHandle stagingBufferHandle = MemoryManager::AllocateHostBuffer(stagingBufferInfo);
-
+    
     Buffer dstBuffer = MemoryManager::GetBuffer(stagingBufferHandle);
 
     // --- Data copy into the stagin buffer ---
@@ -88,6 +88,34 @@ void GraphicsPass::UseTransientTexture(TransientTextureHandle texture, Usage acc
 void GraphicsPass::UseTransientBuffer(TransientBufferHandle buffer, Usage accessType)
 {
     buffers.push_back(std::pair{buffer, accessType});
+}
+
+void GraphicsPass::UseColorTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
+{
+    UseTransientTexture(texture, Usage::COLOR_ATTACHMENT);
+
+    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
+}
+
+void GraphicsPass::UseDepthStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
+{
+    UseTransientTexture(texture, Usage::DEPTH_STENCIL);
+
+    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
+}
+
+void GraphicsPass::UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
+{
+    UseTransientTexture(texture, Usage::DEPTH);
+
+    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
+}
+
+void GraphicsPass::UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
+{
+    UseTransientTexture(texture, Usage::STENCIL);
+
+    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
 }
 
 void ComputePass::UseTransientTexture(TransientTextureHandle texture, Usage accessType)
