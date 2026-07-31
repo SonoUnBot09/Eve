@@ -8,7 +8,8 @@
 #include <graphics/VulkanMapping.hpp>
 #include <graphics/builders/SlangCompiler.hpp>
 
-#include "Pipeline.hpp"
+#include "ShaderObject.hpp"
+#include <Eve/graphics/ShaderHandle.hpp>
 
 namespace Eve::Graphics
 {
@@ -16,7 +17,7 @@ namespace Eve::Graphics
     {
         public:
 
-            bool BuildGraphicsPipeline(PipelineInfo pipelineInfo,  Pipeline& pipeline);
+            bool BuildGraphicsPipeline(ShaderInfo pipelineInfo,  GraphicsShaderObject& pipeline);
 
         private:
 

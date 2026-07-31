@@ -12,7 +12,7 @@ namespace Eve::Graphics
         uint32_t Id;
     };
 
-    struct MeshData
+    struct CPUMesh
     {
         std::vector<Vec3> Vertices;
         std::vector<uint32_t> Indicies;
@@ -27,7 +27,7 @@ namespace Eve::Graphics
     {
         BufferHandle VertexBuffer;
         BufferHandle IndexBuffer;
-
+        
         BufferHandle NormalBuffer;
         BufferHandle ColorBuffer;
         BufferHandle UVBuffer;

@@ -11,6 +11,7 @@ namespace Eve::Graphics
             static void DestroyBuffer(Buffer buffer);
             static void DestroyTexture(Texture texture);
 
+            static void DestroyEverythingNow();
         private:
             inline static std::vector<std::pair<Buffer, uint32_t>> buffersToDestroy;
             inline static std::vector<std::pair<Texture, uint32_t>> texturesToDestroy;

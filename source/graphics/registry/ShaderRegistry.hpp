@@ -1,0 +1,14 @@
+#pragma once
+
+#include <graphics/builders/PipelineBuilder.hpp>
+
+namespace Eve::Graphics
+{
+    class ShaderRegistry
+    {
+        public:
+            inline static GraphicsShaderObject GetShaderObject(ShaderHandle handle) { return shaderObjects[handle.Id]; }
+        private:
+            inline static std::vector<GraphicsShaderObject> shaderObjects;
+    };
+}

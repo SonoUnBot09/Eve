@@ -70,5 +70,7 @@ namespace Eve::Graphics
             inline static std::vector<uint32_t> imageFreeSlots;
             inline static std::vector<uint32_t> samplerFreeSlots;
             inline static std::vector<uint32_t> bufferFreeSlots;
+
+            friend class MemoryBin;
     };
 }

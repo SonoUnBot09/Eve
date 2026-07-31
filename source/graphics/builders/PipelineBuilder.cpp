@@ -9,7 +9,7 @@
 using namespace Eve::Graphics;
 using namespace Debug;
 
-bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, Pipeline& pipeline)
+bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo pipelineInfo, GraphicsShaderObject& shaderObject)
 {
     std::vector<VkPushConstantRange> pushConstantRanges;
 
@@ -53,7 +53,7 @@ bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, Pipeline&
         .pPushConstantRanges = pushConstantRanges.data()
     };
 
-    if(vkCreatePipelineLayout(GraphicsCore::Context.Device, &pipelineLayoutCI, nullptr, &pipeline.Layout) != VK_SUCCESS)
+    if(vkCreatePipelineLayout(GraphicsCore::Context.Device, &pipelineLayoutCI, nullptr, &shaderObject.Layout) != VK_SUCCESS)
     {
         printError("Unable to create the graphics pipeline layout");
         return false;
@@ -62,6 +62,9 @@ bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, Pipeline&
     ShaderBytecode shaders = SlangCompiler::CompileVertFrag(pipelineInfo.ShaderPath.c_str());
     VkShaderModule vertexShader = CreateVertexModule(shaders);
     VkShaderModule fragmentShader = CreateFragmentModule(shaders);
+
+    shaderObject.VertexModule = vertexShader;
+    shaderObject.FragmentModule = fragmentShader;
 
     if(vertexShader == nullptr)
     {
@@ -186,10 +189,10 @@ bool PipelineBuilder::BuildGraphicsPipeline(PipelineInfo pipelineInfo, Pipeline&
         .pDepthStencilState = &depthStencilInfo,
         .pColorBlendState = &colorBlendInfo,
         .pDynamicState = &dynamicStateInfo,
-        .layout = pipeline.Layout
+        .layout = shaderObject.Layout
     };
 
-    if(vkCreateGraphicsPipelines(GraphicsCore::Context.Device, nullptr, 1, &pipelineCI, nullptr, &pipeline.Pipeline) != VK_SUCCESS)
+    if(vkCreateGraphicsPipelines(GraphicsCore::Context.Device, nullptr, 1, &pipelineCI, nullptr, &shaderObject.Pipeline) != VK_SUCCESS)
     {
         printError("Unable to create the graphics pipeline");
         return false;

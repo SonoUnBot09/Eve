@@ -1,3 +1,4 @@
+#include "GraphicsCore.hpp"
 #include <graphics/ResourceMapper.hpp>
 #include <graphics/VulkanMapping.hpp>
 #include <graphics/MemoryManager.hpp>
@@ -159,6 +160,19 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
     #pragma endregion
 }
 
+void ResourceMapper::DestroyGlobalDescriptor()
+{
+    if(layout)
+    {
+        vkDestroyDescriptorSetLayout(GraphicsCore::Context.Device, layout, nullptr);
+    }
+
+    if(pool)
+    {
+        vkDestroyDescriptorPool(GraphicsCore::Context.Device, pool, nullptr);
+    }
+}
+
 bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex)
 {
     descriptorSetWrites.clear();
@@ -167,7 +181,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
     // Images erase
     uint32_t imagesToErase = 0;
-    for(uint32_t i = imagesToMap.size() - 1; i >= 0; i--)
+    for(int32_t i = imagesToMap.size() - 1; i >= 0; i--)
     {
         if(imagesToMap[i].second > 0)
         {
@@ -181,7 +195,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
     // Sampler erase
     uint32_t samplersToErase = 0;
-    for(uint32_t i = samplersToMap.size() - 1; i >= 0; i--)
+    for(int32_t i = samplersToMap.size() - 1; i >= 0; i--)
     {
         if(samplersToMap[i].second > 0)
         {
@@ -195,7 +209,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
     // Buffer erase
     uint32_t buffersToErase = 0;
-    for(uint32_t i = buffersToMap.size() - 1; i >= 0; i--)
+    for(int32_t i = buffersToMap.size() - 1; i >= 0; i--)
     {
         if(buffersToMap[i].second > 0)
         {

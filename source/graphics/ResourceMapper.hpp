@@ -18,7 +18,9 @@ namespace Eve::Graphics
     class ResourceMapper
     {
         public:
-            static void CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t maxSamplersCount, uint32_t maxBuffersCount);        
+        
+            static void CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t maxSamplersCount, uint32_t maxBuffersCount);
+            static void DestroyGlobalDescriptor();        
             
             static void ScheduleImageMapping(TextureHandle handle);
             static void ScheduleSamplerMapping(SamplerHandle handle);

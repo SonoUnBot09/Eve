@@ -1,10 +1,16 @@
+#include "Eve/graphics/Mesh.hpp"
 #include "Eve/graphics/PassModule.hpp"
 #include "Eve/graphics/Texture.hpp"
 #include "GraphicsCore.hpp"
 #include "MemoryManager.hpp"
+#include "builders/ShaderObject.hpp"
 #include "graphics/VulkanMapping.hpp"
+#include "registry/MeshRegistry.hpp"
 #include <cstdint>
 #include <graphics/RenderGraphA.hpp>
+#include <graphics/registry/ShaderRegistry.hpp>
+#include <graphics/registry/MeshRegistry.hpp>
+#include <graphics/ResourceMapper.hpp>
 
 using namespace Eve::Graphics;
 
@@ -986,6 +992,8 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
         }
     }
 
+    ResourceMapper::MapResources(cmdBuffer, frameIndex);
+
     RecordCommands(frameIndex, cmdBuffer);
 
     requestedTextures.clear();
@@ -1106,6 +1114,8 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
         // --- Transient resouce uploads ---
         RecordTransientBufferUpload(cmdBuffer, pass, frameIndex);
         RecordTransientTextureUpload(cmdBuffer, pass, frameIndex);
+
+        RecordDrawCalls(cmdBuffer, pass, frameIndex);
 
     }
 
@@ -1530,9 +1540,25 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32
         vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
         vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 
+        for(uint32_t i = 0; i < drawCalls.size(); i++)
+        {
+            DrawCall drawCall = drawCalls[i];
 
+            GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(drawCall.ShaderHandle);
+
+            CPUMesh& cpuMesh = MeshRegistry::GetMeshData(drawCall.MeshHandle);
+            GraphicsMesh& graphicsMesh = MeshRegistry::GetGraphicsMesh(drawCall.MeshHandle);
+            VkBuffer indexBuffer = MemoryManager::GetBuffer(graphicsMesh.IndexBuffer).Buffer;
+
+            vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.Pipeline);
+
+            VkDeviceSize offset {0};
+            vkCmdBindIndexBuffer(cmdBuffer, indexBuffer, offset, VK_INDEX_TYPE_UINT32);
+
+            vkCmdDrawIndexed(cmdBuffer, graphicsMesh.IndexCount, drawCall.instanceCount, 0, 0, 0);
+        }
     }
-
+    vkCmdEndRendering(cmdBuffer);
 }
 
 uint32_t RenderGraph::SetTextureMemoryInfo(const uint32_t frameIndex, const uint32_t textureId, const uint32_t passesCount)

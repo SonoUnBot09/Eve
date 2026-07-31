@@ -10,7 +10,8 @@ namespace Eve::Graphics
     {
         public:
 
-            bool Initialize();
+            static bool Initialize();
+            static void Destroy();
             
             inline static Window Window;
             inline static Context Context;

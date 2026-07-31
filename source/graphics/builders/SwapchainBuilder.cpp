@@ -139,6 +139,10 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
 
 bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
 {
+    vkDeviceWaitIdle(GraphicsCore::Context.Device);
+    
+    Destroy(swapchain);
+
     VkSurfaceCapabilitiesKHR surfaceCaps;
     if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, &surfaceCaps) != VK_SUCCESS)
     {
@@ -228,4 +232,20 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
     }
 
     return true;
+}
+
+void SwapchainBuilder::Destroy(Swapchain& swapchain)
+{
+    for (VkImageView &imageView : swapchain.SwapchainImageViews)
+    {
+        vkDestroyImageView(GraphicsCore::Context.Device, imageView, nullptr);
+    }
+    swapchain.SwapchainImageViews.clear();
+
+    if(swapchain.Swapchain)
+    {
+        vkDestroySwapchainKHR(GraphicsCore::Context.Device, swapchain.Swapchain, nullptr);
+    }
+    swapchain.SwapchainImages.clear();
+    swapchain.Swapchain = nullptr;
 }
