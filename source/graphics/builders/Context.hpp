@@ -7,15 +7,15 @@ namespace Eve::Graphics
 {
     struct Context
     {
-        VkInstance Instance;
-        VkPhysicalDevice PhysicalDevice;
-        VkDevice Device;
-        VkSurfaceKHR Surface;
+        VkInstance Instance = nullptr;
+        VkPhysicalDevice PhysicalDevice = nullptr;
+        VkDevice Device = nullptr;
+        VkSurfaceKHR Surface = nullptr;
 
         uint32_t GraphicsQueueIndex;
-        VkQueue GraphicsQueue;
+        VkQueue GraphicsQueue = nullptr;
 
-        VmaAllocator Allocator;
+        VmaAllocator Allocator = nullptr;
 
         struct PhysicalDeviceInfo
         {

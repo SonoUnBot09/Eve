@@ -7,7 +7,7 @@ namespace Eve::Graphics
     struct Swapchain
     {
         uint32_t Width, Height;
-        VkSwapchainKHR Swapchain;
+        VkSwapchainKHR Swapchain = nullptr;
         VkFormat Format;
         std::vector<VkImage> SwapchainImages;
         std::vector<VkImageView> SwapchainImageViews;

@@ -1,6 +1,7 @@
 #include "GraphicsCore.hpp"
 #include "ResourceMapper.hpp"
 #include "MemoryBin.hpp"
+#include "builders/Context.hpp"
 #include "builders/SwapchainBuilder.hpp"
 
 using namespace Eve::Graphics;
@@ -29,6 +30,7 @@ bool GraphicsCore::Initialize()
 
 void GraphicsCore::Destroy()
 {
+    if(!Context.Device) { return; }
     vkDeviceWaitIdle(Context.Device);
 
     ResourceMapper::DestroyGlobalDescriptor();

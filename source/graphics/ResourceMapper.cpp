@@ -1,5 +1,5 @@
-#include "GraphicsCore.hpp"
 #include <graphics/ResourceMapper.hpp>
+#include "EveSettings.hpp"
 #include <graphics/VulkanMapping.hpp>
 #include <graphics/MemoryManager.hpp>
 
@@ -30,7 +30,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
         {
             .binding = 2,
             .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = maxBuffersCount,
+            .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
         };
 
@@ -56,19 +56,19 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
         VkDescriptorPoolSize imageDescriptorSize
         {
             .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            .descriptorCount = maxImagesCount
+            .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
         };
 
         VkDescriptorPoolSize samplerDescriptorSize
         {
             .type = VK_DESCRIPTOR_TYPE_SAMPLER,
-            .descriptorCount = maxSamplersCount
+            .descriptorCount = maxSamplersCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
         };
 
         VkDescriptorPoolSize bufferDescriptorSize
         {
             .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = 1
+            .descriptorCount = 1 * Eve::Settings::MAX_FRAMES_IN_FLIGHT
         };
 
         poolSize.push_back(imageDescriptorSize);
@@ -89,17 +89,21 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
 
     #pragma region Set
 
+        std::vector<VkDescriptorSetLayout> layouts(Eve::Settings::MAX_FRAMES_IN_FLIGHT, layout);
+
         VkDescriptorSetAllocateInfo setAllocInfo
         {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .descriptorPool = pool,
             .descriptorSetCount = Eve::Settings::MAX_FRAMES_IN_FLIGHT,
-            .pSetLayouts = &layout
+            .pSetLayouts = layouts.data()
         };
 
         vkAllocateDescriptorSets(GraphicsCore::Context.Device, &setAllocInfo, sets.data());
 
-        std::vector<VkWriteDescriptorSet> descriptorWrites {Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+        std::vector<VkWriteDescriptorSet> descriptorWrites;
+        descriptorWrites.reserve(Eve::Settings::MAX_FRAMES_IN_FLIGHT);
+
         for (uint32_t i = 0; i < Eve::Settings::MAX_FRAMES_IN_FLIGHT; i++)
         {
             BufferInfo bufferInfo
@@ -125,7 +129,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
                 .dstSet = sets[i],
                 .dstBinding = 2,
                 .dstArrayElement = 0,
-                .descriptorCount = 0,
+                .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                 .pBufferInfo = &bufferWriteInfo
             };

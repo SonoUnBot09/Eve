@@ -51,15 +51,13 @@ if(TARGET Vulkan::volk)
     set_target_properties(Vulkan::volk PROPERTIES MAP_IMPORTED_CONFIG_DEBUG Release)
 endif()]]
 
+file(GLOB_RECURSE SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
+)
+
 add_executable(Eve
     main.cpp
-    source/Application.cpp
-    source/entities/EntityCommandPool.cpp
-    source/entities/EntityManager.cpp
-    source/entities/MemoryLayout.cpp
-    source/entities/Table.cpp
-    source/entities/SystemDispatcher.cpp
-    source/S_Test.cpp
+    ${SOURCES}
 )
 
 target_compile_features(Eve PRIVATE cxx_std_20)

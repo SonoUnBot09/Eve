@@ -1,4 +1,3 @@
-#include "SlangCompiler.hpp"
 #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 
@@ -6,16 +5,16 @@
 #include <graphics/GraphicsCore.hpp>
 #include <EveSettings.hpp>
 #include <Eve/Debug.hpp>
+#include "SlangCompiler.hpp"
 
 using namespace Debug;
 using namespace Eve::Graphics;
 
 bool ContextBuilder::Build(Context& context)
 {
-
     if(!CreateInstance(context))
     {
-        printError("Unable to create a graphic instance");
+        printError("Unable to create the vulkan instance");
         return false;
     }
 
@@ -76,10 +75,8 @@ bool ContextBuilder::CreateInstance(Context& context)
     uint32_t extensionsCount = 0;
     const char* const* extensions = SDL_Vulkan_GetInstanceExtensions(&extensionsCount);
 
-    std::vector<const char *> requestedExtensions
-    {
-        "VK_EXT_descriptor_indexing"
-    };
+    std::vector<const char *> requestedExtensions;
+    
     if(Eve::Settings::useValidationLayers)
     {
         requestedExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
