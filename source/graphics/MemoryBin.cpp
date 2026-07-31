@@ -1,7 +1,8 @@
 #include "MemoryBin.hpp"
 #include "EveSettings.hpp"
 #include "GraphicsCore.hpp"
-#include "MemoryManager.hpp"
+#include <graphics/registers/MemoryRegistry.hpp>
+#include "Resources.hpp"
 
 using namespace Eve::Graphics;
 
@@ -15,7 +16,7 @@ void MemoryBin::DestroyPendingResources()
             continue;
         }
 
-        Buffer buffer = buffersToDestroy[i].first;
+        BufferObject& buffer = buffersToDestroy[i].first;
 
         vmaDestroyBuffer(GraphicsCore::Context.Allocator, buffer.Buffer, buffer.Allocation);
 
@@ -30,7 +31,7 @@ void MemoryBin::DestroyPendingResources()
             continue;
         }
 
-        Texture texture = texturesToDestroy[i].first;
+        TextureObject& texture = texturesToDestroy[i].first;
 
         vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
         
@@ -44,7 +45,7 @@ void MemoryBin::DestroyEverythingNow()
 {
     for(uint32_t i = 0; i < buffersToDestroy.size(); i++)
     {
-        Buffer buffer = buffersToDestroy[i].first;
+        BufferObject& buffer = buffersToDestroy[i].first;
 
         vmaDestroyBuffer(GraphicsCore::Context.Allocator, buffer.Buffer, buffer.Allocation);
 
@@ -53,7 +54,7 @@ void MemoryBin::DestroyEverythingNow()
 
     for(uint32_t i = 0; i < texturesToDestroy.size(); i++)
     {
-        Texture texture = texturesToDestroy[i].first;
+        TextureObject& texture = texturesToDestroy[i].first;
 
         vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
         
@@ -62,68 +63,68 @@ void MemoryBin::DestroyEverythingNow()
         texturesToDestroy.erase(texturesToDestroy.begin() + i);
     }
 
-    for(uint32_t i = 0; i < MemoryManager::buffers.size(); i++)
+    for(uint32_t i = 0; i < MemoryRegistry::buffers.size(); i++)
     {
         bool skip = false;
-        for(uint32_t freeSlotIndex = 0; freeSlotIndex < MemoryManager::bufferFreeSlots.size(); freeSlotIndex++)
+        for(uint32_t freeSlotIndex = 0; freeSlotIndex < MemoryRegistry::bufferFreeSlots.size(); freeSlotIndex++)
         {
             if(freeSlotIndex == i) {skip = true; break;}
         }
 
         if(skip == true) { continue; }
 
-        Buffer buffer = MemoryManager::buffers[i];
+        BufferObject buffer = MemoryRegistry::buffers[i];
 
         vmaDestroyBuffer(GraphicsCore::Context.Allocator, buffer.Buffer, buffer.Allocation);
     }
 
-    for(uint32_t i = 0; i < MemoryManager::textures.size(); i++)
+    for(uint32_t i = 0; i < MemoryRegistry::textures.size(); i++)
     {
         bool skip = false;
-        for(uint32_t freeSlotIndex = 0; freeSlotIndex < MemoryManager::imageFreeSlots.size(); freeSlotIndex++)
+        for(uint32_t freeSlotIndex = 0; freeSlotIndex < MemoryRegistry::imageFreeSlots.size(); freeSlotIndex++)
         {
             if(freeSlotIndex == i) {skip = true; break;}
         }
 
         if(skip == true) { continue; }
 
-        Texture texture = MemoryManager::textures[i];
+        TextureObject texture = MemoryRegistry::textures[i];
 
         vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
         
         vmaDestroyImage(GraphicsCore::Context.Allocator, texture.Image, texture.Allocation);
     }
 
-    for(uint32_t i = 0; i < MemoryManager::samplers.size(); i++)
+    for(uint32_t i = 0; i < MemoryRegistry::samplers.size(); i++)
     {
         bool skip = false;
-        for(uint32_t freeSlotIndex = 0; freeSlotIndex < MemoryManager::samplerFreeSlots.size(); freeSlotIndex++)
+        for(uint32_t freeSlotIndex = 0; freeSlotIndex < MemoryRegistry::samplerFreeSlots.size(); freeSlotIndex++)
         {
             if(freeSlotIndex == i) {skip = true; break;}
         }
 
         if(skip == true) { continue; }
 
-        Sampler sampler = MemoryManager::samplers[i];
+        SamplerObject sampler = MemoryRegistry::samplers[i];
 
         vkDestroySampler(GraphicsCore::Context.Device, sampler.Sampler, nullptr);
     }
 
-    MemoryManager::buffers.clear();
-    MemoryManager::textures.clear();
-    MemoryManager::samplers.clear();
+    MemoryRegistry::buffers.clear();
+    MemoryRegistry::textures.clear();
+    MemoryRegistry::samplers.clear();
 
-    MemoryManager::bufferFreeSlots.clear();
-    MemoryManager::imageFreeSlots.clear();
-    MemoryManager::samplerFreeSlots.clear();
+    MemoryRegistry::bufferFreeSlots.clear();
+    MemoryRegistry::imageFreeSlots.clear();
+    MemoryRegistry::samplerFreeSlots.clear();
 }
 
-void MemoryBin::DestroyBuffer(Buffer buffer)
+void MemoryBin::DestroyBuffer(BufferObject buffer)
 {
     buffersToDestroy.push_back(std::pair{buffer, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
 }
 
-void MemoryBin::DestroyTexture(Texture texture)
+void MemoryBin::DestroyTexture(TextureObject texture)
 {
     texturesToDestroy.push_back(std::pair{texture, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
 }

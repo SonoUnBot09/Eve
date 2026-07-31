@@ -1,0 +1,209 @@
+#pragma once
+
+#include <graphics/GraphicsCore.hpp>
+
+#include <Eve/graphics/Buffer.hpp>
+#include <Eve/graphics/Sampler.hpp>
+#include <Eve/graphics/Texture.hpp>
+
+#include <graphics/Resources.hpp>
+
+#include <vulkan/vulkan.hpp>
+#include <vma/vk_mem_alloc.h>
+
+#include "VulkanMapping.hpp"
+
+namespace Eve::Graphics::Helpers
+{
+
+    static inline void AllocateGPUBuffer(BufferInfo bufferInfo, BufferObject& buffer)
+    {
+        VkBufferCreateInfo bufferCI
+        {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = bufferInfo.Data.Size,
+            .usage = GetVkBufferUsage(bufferInfo.Data.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+        };
+
+        VmaAllocationCreateInfo bufferAllocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+        };
+
+        vmaCreateBuffer(GraphicsCore::Context.Allocator, &bufferCI, &bufferAllocInfo,
+            &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
+    }
+
+    static inline void AllocateCPUBuffer(BufferInfo bufferInfo, BufferObject& buffer)
+    {
+        VkBufferCreateInfo bufferCI
+        {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = bufferInfo.Data.Size,
+            .usage = GetVkBufferUsage(bufferInfo.Data.Usage),
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+        };
+
+        VmaAllocationCreateInfo bufferAllocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST
+        };
+
+        vmaCreateBuffer(GraphicsCore::Context.Allocator, &bufferCI, &bufferAllocInfo,
+            &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
+    }
+
+    static inline void AllocateSampler(SamplerInfo samplerInfo, SamplerObject& sampler)
+    {
+        VkSamplerCreateInfo samplerCI
+        {
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .magFilter = GetVkFilterMode(samplerInfo.MagFilter),
+            .minFilter = GetVkFilterMode(samplerInfo.MinFilter),
+            .mipmapMode = GetVkMipmapMode(samplerInfo.MipmapMode),
+            .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+            .unnormalizedCoordinates = VK_FALSE
+        };
+
+        vkCreateSampler(GraphicsCore::Context.Device, &samplerCI, nullptr, &sampler.Sampler);
+
+    }
+
+    static inline void AllocateTexture1D(TextureInfo1D textureInfo, TextureObject& texture)
+    {
+        VkFormat format = GetVkImageFormat(textureInfo.Format);
+        VkImageCreateInfo imageCI
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .imageType =VK_IMAGE_TYPE_1D,
+            .format = format,
+            .extent {.width = textureInfo.Width, .height = 1, .depth = 1},
+            .mipLevels = textureInfo.MipLevels,
+            .arrayLayers = textureInfo.ArrayLayers,
+            .samples = GetVkImageSamplesCount(textureInfo.Sample),
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = GetVkImageUsage(textureInfo.Usage),
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+
+        VmaAllocationCreateInfo imageAllocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+        };
+
+        vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
+            &texture.Image, &texture.Allocation, &texture.AllocationInfo);
+        
+        VkImageViewCreateInfo imageViewCI
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = texture.Image,
+            .viewType = VK_IMAGE_VIEW_TYPE_1D,
+            .format = format,
+            .subresourceRange
+            {
+                .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
+                .baseMipLevel = 0,
+                .levelCount = textureInfo.MipLevels,
+                .baseArrayLayer = 0,
+                .layerCount = textureInfo.ArrayLayers
+            }
+        };
+
+        vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
+    }
+
+    static inline void AllocateTexture2D(TextureInfo2D textureInfo, TextureObject& texture)
+    {
+        VkFormat format = GetVkImageFormat(textureInfo.Format);
+        VkImageCreateInfo imageCI
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = format,
+            .extent {.width = textureInfo.Width, .height = textureInfo.Width, .depth = 1},
+            .mipLevels = textureInfo.MipLevels,
+            .arrayLayers = textureInfo.ArrayLayers,
+            .samples = GetVkImageSamplesCount(textureInfo.Sample),
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = GetVkImageUsage(textureInfo.Usage),
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+
+        VmaAllocationCreateInfo imageAllocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+        };
+
+        vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
+            &texture.Image, &texture.Allocation, &texture.AllocationInfo);
+        
+        VkImageViewCreateInfo imageViewCI
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = texture.Image,
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = format,
+            .subresourceRange
+            {
+                .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
+                .baseMipLevel = 0,
+                .levelCount = textureInfo.MipLevels,
+                .baseArrayLayer = 0,
+                .layerCount = textureInfo.ArrayLayers
+            }
+        };
+
+        vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
+    }
+
+    static inline void AllocateTexture3D(TextureInfo3D textureInfo, TextureObject& texture)
+    {
+        VkFormat format = GetVkImageFormat(textureInfo.Format);
+        VkImageCreateInfo imageCI
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .imageType = VK_IMAGE_TYPE_3D,
+            .format = format,
+            .extent {.width = textureInfo.Width, .height = textureInfo.Width, .depth = textureInfo.Depth},
+            .mipLevels = textureInfo.MipLevels,
+            .arrayLayers = textureInfo.ArrayLayers,
+            .samples = GetVkImageSamplesCount(textureInfo.Sample),
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = GetVkImageUsage(textureInfo.Usage),
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+
+        VmaAllocationCreateInfo imageAllocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+        };
+
+        vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
+            &texture.Image, &texture.Allocation, &texture.AllocationInfo);
+        
+        VkImageViewCreateInfo imageViewCI
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = texture.Image,
+            .viewType = VK_IMAGE_VIEW_TYPE_3D,
+            .format = format,
+            .subresourceRange
+            {
+                .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
+                .baseMipLevel = 0,
+                .levelCount = textureInfo.MipLevels,
+                .baseArrayLayer = 0,
+                .layerCount = textureInfo.ArrayLayers
+            }
+        };
+
+        vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
+    }
+}

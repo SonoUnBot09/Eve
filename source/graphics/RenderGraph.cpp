@@ -2,14 +2,15 @@
 #include "Eve/graphics/PassModule.hpp"
 #include "Eve/graphics/Texture.hpp"
 #include "GraphicsCore.hpp"
-#include "MemoryManager.hpp"
+#include <graphics/registers/MemoryRegistry.hpp>
+#include "Resources.hpp"
 #include "builders/ShaderObject.hpp"
-#include "graphics/VulkanMapping.hpp"
-#include "registry/MeshRegistry.hpp"
+#include "graphics/helpers/VulkanMapping.hpp"
+#include <graphics/registers/MeshRegistry.hpp>
 #include <cstdint>
-#include <graphics/RenderGraphA.hpp>
-#include <graphics/registry/ShaderRegistry.hpp>
-#include <graphics/registry/MeshRegistry.hpp>
+#include <graphics/RenderGraph.hpp>
+#include <graphics/registers/ShaderRegistry.hpp>
+#include <graphics/registers/MeshRegistry.hpp>
 #include <graphics/ResourceMapper.hpp>
 
 using namespace Eve::Graphics;
@@ -1279,8 +1280,8 @@ void RenderGraph::RecordTransientBufferUpload(VkCommandBuffer& cmdBuffer, Pass& 
     {
         BufferUpload uploadInfo = uploads[i];
 
-        Buffer& srcBuffer = MemoryManager::GetBuffer(uploadInfo.SrcBufferId);
-        Buffer& dstBuffer = MemoryManager::GetBuffer(uploadInfo.DstBuffer);
+        BufferObject& srcBuffer = MemoryRegistry::GetBuffer(uploadInfo.SrcBufferId);
+        BufferObject& dstBuffer = MemoryRegistry::GetBuffer(uploadInfo.DstBuffer);
 
         VkBufferCopy bufferCopy
         {
@@ -1291,7 +1292,7 @@ void RenderGraph::RecordTransientBufferUpload(VkCommandBuffer& cmdBuffer, Pass& 
 
         vkCmdCopyBuffer(cmdBuffer, srcBuffer.Buffer, dstBuffer.Buffer, 1, &bufferCopy);
 
-        MemoryManager::DestroyBuffer(uploadInfo.SrcBufferId);
+        MemoryRegistry::DestroyBuffer(uploadInfo.SrcBufferId);
     }
 }
 
@@ -1303,8 +1304,8 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass&
     {
         TextureUpload uploadInfo = uploads[i];
 
-        Buffer& srcBuffer = MemoryManager::GetBuffer(uploadInfo.SrcBufferId);
-        Texture& dstTexture = MemoryManager::GetTexture(uploadInfo.DstTexture);
+        BufferObject& srcBuffer = MemoryRegistry::GetBuffer(uploadInfo.SrcBufferId);
+        TextureObject& dstTexture = MemoryRegistry::GetTexture(uploadInfo.DstTexture);
 
         VkFormat format = GetVkImageFormat(transientTextures[frameIndex][uploadInfo.DstTexture].TextureInfo.Data.Format);
 
@@ -1332,7 +1333,7 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass&
         vkCmdCopyBufferToImage(cmdBuffer, srcBuffer.Buffer, dstTexture.Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &bufferImageCopy);
 
-        MemoryManager::DestroyBuffer(uploadInfo.SrcBufferId);
+        MemoryRegistry::DestroyBuffer(uploadInfo.SrcBufferId);
     }
 }
 
@@ -1548,7 +1549,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32
 
             CPUMesh& cpuMesh = MeshRegistry::GetMeshData(drawCall.MeshHandle);
             GraphicsMesh& graphicsMesh = MeshRegistry::GetGraphicsMesh(drawCall.MeshHandle);
-            VkBuffer indexBuffer = MemoryManager::GetBuffer(graphicsMesh.IndexBuffer).Buffer;
+            VkBuffer indexBuffer = MemoryRegistry::GetBuffer(graphicsMesh.IndexBuffer).Buffer;
 
             vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.Pipeline);
 
@@ -2059,7 +2060,7 @@ void RenderGraph::UpdateTexturesPool(const uint32_t frameIndex)
     {
         TextureResource& data = transientTextures[frameIndex][i];
 
-        MemoryManager::FreeTextureSlot(static_cast<TransientTextureHandle>(i));
+        MemoryRegistry::FreeTextureSlot(static_cast<TransientTextureHandle>(i));
         if(data.PooledImage) { continue; }
 
         data.FramesCount = 10; // TODO: Set with a valid frame delay
@@ -2139,7 +2140,7 @@ void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
     {
         BufferResource& data = transientBuffers[frameIndex][i];
 
-        MemoryManager::FreeBufferSlot(static_cast<TransientBufferHandle>(i));
+        MemoryRegistry::FreeBufferSlot(static_cast<TransientBufferHandle>(i));
 
         if(data.PooledBuffer) { continue; }
 
@@ -2180,7 +2181,7 @@ void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
 
 TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureInfo1D textureInfo)
 {
-    TransientTextureHandle handle = MemoryManager::ReserveTransientTextureSlot();
+    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot();
 
     TextureInfo data
     {
@@ -2201,7 +2202,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureIn
 
 TransientTextureHandle RenderGraph::RequestTransientTexture2D(TransientTextureInfo2D textureInfo)
 {
-    TransientTextureHandle handle = MemoryManager::ReserveTransientTextureSlot();
+    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot();
     TextureInfo data
     {
         .Data.Width = textureInfo.Width, 
@@ -2220,7 +2221,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture2D(TransientTextureIn
 
 TransientTextureHandle RenderGraph::RequestTransientTexture3D(TransientTextureInfo3D textureInfo)
 {
-    TransientTextureHandle handle = MemoryManager::ReserveTransientTextureSlot();
+    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot();
     TextureInfo data
     {
         .Data.Width = textureInfo.Width, 
@@ -2239,7 +2240,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture3D(TransientTextureIn
 
 TransientBufferHandle RenderGraph::RequestTransientBuffer(TransientBufferInfo bufferInfo)
 {
-    TransientBufferHandle handle = MemoryManager::ReserveTransientBufferSlot();
+    TransientBufferHandle handle = MemoryRegistry::ReserveTransientBufferSlot();
 
     BufferInfo data
     {

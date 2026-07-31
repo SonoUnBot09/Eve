@@ -6,7 +6,8 @@
 #include <mutex>
 
 #include <graphics/builders/ContextBuilder.hpp>
-#include "MemoryManager.hpp"
+#include <graphics/registers/MemoryRegistry.hpp>
+#include "Resources.hpp"
 #include <EveSettings.hpp>
 
 #include <Eve/graphics/Texture.hpp>
@@ -41,7 +42,7 @@ namespace Eve::Graphics
             inline static std::vector<VkBufferCopy> copyRegions;
 
             inline static std::vector<BufferHandle> stagingBufferHandles {Eve::Settings::MAX_FRAMES_IN_FLIGHT};
-            inline static std::vector<Buffer> stagingBuffers{Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+            inline static std::vector<BufferObject> stagingBuffers{Eve::Settings::MAX_FRAMES_IN_FLIGHT};
 
             inline static std::mutex imagesMutex;
             inline static std::mutex samplersMutex;

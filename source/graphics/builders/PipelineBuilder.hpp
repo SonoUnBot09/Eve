@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <shaderc/shaderc.hpp>
-#include <graphics/VulkanMapping.hpp>
+#include <graphics/helpers/VulkanMapping.hpp>
 #include <graphics/builders/SlangCompiler.hpp>
 
 #include "ShaderObject.hpp"

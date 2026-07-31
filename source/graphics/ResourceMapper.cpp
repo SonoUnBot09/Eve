@@ -1,7 +1,7 @@
 #include <graphics/ResourceMapper.hpp>
 #include "EveSettings.hpp"
-#include <graphics/VulkanMapping.hpp>
-#include <graphics/MemoryManager.hpp>
+#include "Resources.hpp"
+#include <graphics/helpers/VulkanMapping.hpp>
 
 using namespace Eve::Graphics;
 
@@ -112,13 +112,13 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
                 .Data.Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_DST
             };
 
-            BufferHandle handle = MemoryManager::AllocateBuffer(bufferInfo);
+            BufferHandle handle = MemoryRegistry::CreateGPUBuffer(bufferInfo);
 
             BDABuffers.push_back(handle);
 
             VkDescriptorBufferInfo bufferWriteInfo
             {
-                .buffer = MemoryManager::GetBuffer(handle).Buffer,
+                .buffer = MemoryRegistry::GetBuffer(handle).Buffer,
                 .offset = 0,
                 .range = maxBuffersCount * sizeof(uint64_t)
             };
@@ -152,11 +152,11 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
                 .Data.Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
             };
 
-            BufferHandle handle = MemoryManager::AllocateHostBuffer(bufferInfo);
+            BufferHandle handle = MemoryRegistry::CreateCPUBuffer(bufferInfo);
 
             stagingBufferHandles.push_back(handle);
 
-            Buffer& buffer = MemoryManager::GetBuffer(handle);
+            BufferObject& buffer = MemoryRegistry::GetBuffer(handle);
 
             stagingBuffers.push_back(buffer);
         }
@@ -241,7 +241,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         TextureHandle handle = imagesToMap[i].first;
 
-        Texture& image = MemoryManager::GetTexture(handle);
+        TextureObject& image = MemoryRegistry::GetTexture(handle);
 
         VkDescriptorImageInfo imageInfo
         {
@@ -275,7 +275,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         SamplerHandle handle = samplersToMap[i].first;
 
-        Sampler sampler = MemoryManager::GetSampler(handle);
+        SamplerObject sampler = MemoryRegistry::GetSampler(handle);
 
         VkDescriptorImageInfo imageInfo
         {
@@ -309,7 +309,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         BufferHandle handle = buffersToMap[i].first;
 
-        Buffer& buffer = MemoryManager::GetBuffer(handle);
+        BufferObject& buffer = MemoryRegistry::GetBuffer(handle);
 
         VkBufferDeviceAddressInfo addressInfo
         {
@@ -351,7 +351,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         cmdBuffer, 
 
         stagingBuffers[frameIndex].Buffer,
-        MemoryManager::GetBuffer(BDABuffers[frameIndex]).Buffer,
+        MemoryRegistry::GetBuffer(BDABuffers[frameIndex]).Buffer,
 
         copyRegions.size(),
         copyRegions.data()
@@ -364,7 +364,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
         .dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
         .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
-        .buffer = MemoryManager::GetBuffer(BDABuffers[frameIndex]).Buffer,
+        .buffer = MemoryRegistry::GetBuffer(BDABuffers[frameIndex]).Buffer,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .offset = 0,

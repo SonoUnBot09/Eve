@@ -1,5 +1,7 @@
 #include <Eve/graphics/PassModule.hpp>
-#include "MemoryManager.hpp"
+#include <graphics/registers/MemoryRegistry.hpp>
+#include "Resources.hpp"
+#include "registers/MemoryRegistry.hpp"
 
 using namespace Eve::Graphics;
 
@@ -47,9 +49,9 @@ void TransferPass::UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, 
         .Data.Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
     };
 
-    BufferHandle stagingBufferHandle = MemoryManager::AllocateHostBuffer(stagingBufferInfo);
+    BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);
 
-    Buffer dstBuffer = MemoryManager::GetBuffer(stagingBufferHandle);
+    BufferObject dstBuffer = MemoryRegistry::GetBuffer(stagingBufferHandle);
 
     // --- Data copy into the stagin buffer ---
     memcpy(dstBuffer.AllocationInfo.pMappedData, SrcData, Size);
@@ -69,9 +71,9 @@ void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TransientTexture
         .Data.Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
     };
 
-    BufferHandle stagingBufferHandle = MemoryManager::AllocateHostBuffer(stagingBufferInfo);
+    BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);
     
-    Buffer dstBuffer = MemoryManager::GetBuffer(stagingBufferHandle);
+    BufferObject dstBuffer = MemoryRegistry::GetBuffer(stagingBufferHandle);
 
     // --- Data copy into the stagin buffer ---
     memcpy(dstBuffer.AllocationInfo.pMappedData, SrcData, Size);
