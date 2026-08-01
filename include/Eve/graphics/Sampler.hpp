@@ -24,6 +24,7 @@ namespace Eve::Graphics
     {
         SamplerHandle() = default;
         uint32_t Id;
+        uint32_t Generation;
     };
 
     struct SamplerInfo

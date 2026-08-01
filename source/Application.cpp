@@ -1,7 +1,9 @@
 #include <Application.hpp>
 #include <graphics/GraphicsCore.hpp>
+#include <Eve/entities/SystemDispatcher.hpp>
 
 using namespace Eve::Graphics;
+using namespace Eve::Entities;
 
 bool Application::Initialize()
 {
@@ -18,7 +20,7 @@ bool Application::Initialize()
 void Application::Start()
 {
     //print("Going to execute start stages");
-    //SystemDispatcher::ExecuteStartStage();
+    SystemDispatcher::ExecuteStartStage();
     //print("Start stage executed");
 }
 
@@ -88,7 +90,7 @@ void Application::Run()
         timer += deltaTime;
         fps++;
 
-        //SystemDispatcher::ExecuteUpdateStage(deltaTime);
+        SystemDispatcher::ExecuteUpdateStage(deltaTime);
 
         //Render();
         

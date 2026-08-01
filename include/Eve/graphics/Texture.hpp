@@ -180,8 +180,9 @@ namespace Eve::Graphics
     struct TextureHandle
     {
         TextureHandle() = default;
-        TextureHandle(uint32_t id) : Id(id) {}; 
+        TextureHandle(uint32_t id, uint32_t generation) : Id(id), Generation(generation) {}; 
         uint32_t Id;
+        uint32_t Generation;
     };
 
     struct TransientTextureHandle

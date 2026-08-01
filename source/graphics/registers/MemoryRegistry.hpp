@@ -43,9 +43,9 @@ namespace Eve::Graphics
             inline static BufferObject& GetBuffer(BufferHandle handle) { return buffers[handle.Id]; }
         private:
 
-            inline static std::vector<TextureObject> textures;
-            inline static std::vector<SamplerObject> samplers;
-            inline static std::vector<BufferObject> buffers;
+            inline static std::vector<TextureObject> textures;      inline static std::vector<uint32_t> textureGenerations;
+            inline static std::vector<SamplerObject> samplers;      inline static std::vector<uint32_t> samplerGenerations;
+            inline static std::vector<BufferObject> buffers;        inline static std::vector<uint32_t> bufferGenerations;
 
             inline static std::vector<uint32_t> imageFreeSlots;
             inline static std::vector<uint32_t> samplerFreeSlots;

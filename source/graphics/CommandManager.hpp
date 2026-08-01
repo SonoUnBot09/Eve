@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include <Eve/graphics/CommandPool.hpp>
-#include <Eve/graphics/CommandBuffer.hpp>
+#include <graphics/Resources.hpp>
+#include <graphics/Resources.hpp>
 
 #include <vector>
 

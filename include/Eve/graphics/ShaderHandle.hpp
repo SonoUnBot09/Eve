@@ -20,9 +20,6 @@ namespace Eve::Graphics
         // Push Constant Offsets & Strides
         uint32_t VertOffset, VertStride, FragOffset, FragStride;
 
-        // Vertex Attributes
-        std::vector<Format> VerticesAttributes;
-
         // Geometry
         enum Topology Topology = Topology::TOPOLOGY_TRIANGLE_LIST;
         enum PolygonMode PolygonMode = PolygonMode::POLYGON_MODE_FILL;

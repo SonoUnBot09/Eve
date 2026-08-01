@@ -108,13 +108,24 @@ TextureHandle MemoryRegistry::ReserveTextureSlot(TextureObject& texture)
     TextureHandle handle;
     if(imageFreeSlots.empty()) 
     {
-        handle.Id = textures.size();
+        uint32_t size = textures.size(); 
+
+        textureGenerations.resize(size + 1);
+
+        handle.Id = size;
+        handle.Generation = textureGenerations[handle.Id];
+
+        textureGenerations[handle.Id]++;
 
         textures.push_back(texture);
     }
     else 
     {
         handle.Id = imageFreeSlots.back();
+        handle.Generation = textureGenerations[handle.Id];
+
+        textureGenerations[handle.Id]++;
+
         imageFreeSlots.pop_back();
 
         textures[handle.Id] = texture;
@@ -130,13 +141,24 @@ SamplerHandle MemoryRegistry::ReserveSamplerSlot(SamplerObject sampler)
     SamplerHandle handle;
     if(samplerFreeSlots.empty()) 
     {
-        handle.Id = samplers.size();
+        uint32_t size = samplers.size(); 
+
+        samplerGenerations.resize(size + 1);
+
+        handle.Id = size;
+        handle.Generation = samplerGenerations[handle.Id];
+
+        samplerGenerations[handle.Id]++;
 
         samplers.push_back(sampler);
     }
     else 
     {
         handle.Id = samplerFreeSlots.back();
+        handle.Generation = samplerGenerations[handle.Id];
+
+        samplerGenerations[handle.Id]++;
+
         samplerFreeSlots.pop_back();
 
         samplers[handle.Id] = sampler;
@@ -152,13 +174,24 @@ BufferHandle MemoryRegistry::ReserveGPUBufferSlot(BufferObject& buffer)
     BufferHandle handle;
     if(bufferFreeSlots.empty()) 
     {
-        handle.Id = buffers.size();
+        uint32_t size = buffers.size(); 
+
+        bufferGenerations.resize(size + 1);
+
+        handle.Id = size;
+        handle.Generation = bufferGenerations[handle.Id];
+
+        bufferGenerations[handle.Id]++;
 
         buffers.push_back(buffer);
     }
     else 
     {
         handle.Id = bufferFreeSlots.back();
+        handle.Generation = bufferGenerations[handle.Id];
+
+        bufferGenerations[handle.Id]++;
+
         bufferFreeSlots.pop_back();
 
         buffers[handle.Id] = buffer;
@@ -174,13 +207,24 @@ BufferHandle MemoryRegistry::ReserveCPUBufferSlot(BufferObject& buffer)
     BufferHandle handle;
     if(bufferFreeSlots.empty()) 
     {
-        handle.Id = buffers.size();
+        uint32_t size = buffers.size(); 
+
+        bufferGenerations.resize(size + 1);
+
+        handle.Id = size;
+        handle.Generation = bufferGenerations[handle.Id];
+
+        bufferGenerations[handle.Id]++;
 
         buffers.push_back(buffer);
     }
     else 
     {
         handle.Id = bufferFreeSlots.back();
+        handle.Generation = bufferGenerations[handle.Id];
+
+        bufferGenerations[handle.Id]++;
+
         bufferFreeSlots.pop_back();
 
         buffers[handle.Id] = buffer;
@@ -195,13 +239,18 @@ TransientTextureHandle MemoryRegistry::ReserveTransientTextureSlot()
     TextureObject texture {0, 0, 0, 0};
     if(imageFreeSlots.empty()) 
     {
-        handle.Id = textures.size();
+        uint32_t size = textures.size(); 
+
+        textureGenerations.resize(size + 1);
+
+        handle.Id = size;
 
         textures.push_back(texture);
     }
     else 
     {
         handle.Id = imageFreeSlots.back();
+
         imageFreeSlots.pop_back();
 
         textures[handle.Id] = texture;
@@ -218,13 +267,18 @@ TransientBufferHandle MemoryRegistry::ReserveTransientBufferSlot()
     BufferObject buffer{0,0,0};
     if(bufferFreeSlots.empty()) 
     {
-        handle.Id = buffers.size();
+        uint32_t size = buffers.size(); 
+
+        bufferGenerations.resize(size + 1);
+
+        handle.Id = size;
 
         buffers.push_back(buffer);
     }
     else 
     {
         handle.Id = bufferFreeSlots.back();
+        
         bufferFreeSlots.pop_back();
 
         buffers[handle.Id] = buffer;

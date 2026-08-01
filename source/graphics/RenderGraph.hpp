@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Eve/graphics/Texture.hpp"
 #include <algorithm>
 #include <ranges>
 #include <vector>

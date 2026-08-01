@@ -24,4 +24,15 @@ namespace Eve::Graphics
         VmaAllocation Allocation;
         VmaAllocationInfo AllocationInfo;
     };
+
+    struct CommandBufferHandle
+    {
+        uint32_t Id;
+    };
+
+    struct CommandPoolHandle
+    {
+        uint32_t Id;
+    };
+
 }
