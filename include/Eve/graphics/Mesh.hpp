@@ -10,6 +10,7 @@ namespace Eve::Graphics
     struct MeshHandle
     {
         uint32_t Id;
+        uint32_t Generation;
     };
 
     struct CPUMesh

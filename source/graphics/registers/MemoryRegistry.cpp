@@ -68,23 +68,6 @@ BufferHandle MemoryRegistry::CreateCPUBuffer(BufferInfo bufferInfo)
     return handle;
 }
 
-VmaPool MemoryRegistry::AllocateMemoryPool(uint32_t size)
-{
-
-    VmaPoolCreateInfo poolCI
-    {
-        .blockSize = size,
-        .minBlockCount = 1,
-        .maxBlockCount = 1,
-        .priority = 1
-    };
-    VmaPool pool;
-
-    vmaCreatePool(GraphicsCore::Context.Allocator, &poolCI, &pool);
-
-    return pool;
-}
-
 void MemoryRegistry::DestroyBuffer(BufferHandle handle)
 {
     BufferObject buffer = buffers[handle.Id];
@@ -101,6 +84,42 @@ void MemoryRegistry::DestroyTexture(TextureHandle handle)
     MemoryBin::DestroyTexture(texture);
 
     FreeTextureSlot(handle);
+}
+
+void MemoryRegistry::DestroySampler(SamplerHandle handle)
+{
+    SamplerObject sampler = samplers[handle.Id];
+
+    MemoryBin::DestroySampler(sampler);
+
+    FreeSamplerSlot(handle);
+}
+
+void MemoryRegistry::DestroyBuffer(uint32_t id)
+{
+    BufferObject buffer = buffers[id];
+
+    MemoryBin::DestroyBuffer(buffer);
+
+    FreeBufferSlot(id);
+}
+
+void MemoryRegistry::DestroyTexture(uint32_t id)
+{
+    TextureObject texture = textures[id];
+
+    MemoryBin::DestroyTexture(texture);
+
+    FreeTextureSlot(id);
+}
+
+void MemoryRegistry::DestroySampler(uint32_t id)
+{
+    SamplerObject sampler = samplers[id];
+
+    MemoryBin::DestroySampler(sampler);
+
+    FreeSamplerSlot(id);
 }
 
 TextureHandle MemoryRegistry::ReserveTextureSlot(TextureObject& texture)
@@ -278,7 +297,7 @@ TransientBufferHandle MemoryRegistry::ReserveTransientBufferSlot()
     else 
     {
         handle.Id = bufferFreeSlots.back();
-        
+
         bufferFreeSlots.pop_back();
 
         buffers[handle.Id] = buffer;

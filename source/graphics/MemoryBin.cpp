@@ -8,6 +8,7 @@ using namespace Eve::Graphics;
 
 void MemoryBin::DestroyPendingResources()
 {
+    // --- Buffer Destruction ---
     for(uint32_t i = 0; i < buffersToDestroy.size(); i++)
     {
         if(buffersToDestroy[i].second > 0)
@@ -23,6 +24,7 @@ void MemoryBin::DestroyPendingResources()
         buffersToDestroy.erase(buffersToDestroy.begin() + i);
     }
 
+    // --- Texture Destruction ---
     for(uint32_t i = 0; i < texturesToDestroy.size(); i++)
     {
         if(texturesToDestroy[i].second > 0)
@@ -38,6 +40,22 @@ void MemoryBin::DestroyPendingResources()
         vmaDestroyImage(GraphicsCore::Context.Allocator, texture.Image, texture.Allocation);
 
         texturesToDestroy.erase(texturesToDestroy.begin() + i);
+    }
+
+    // --- Sampler Destruction ---
+    for(uint32_t i = 0; i < samplersToDestroy.size(); i++)
+    {
+        if(samplersToDestroy[i].second > 0)
+        {
+            samplersToDestroy[i].second--;
+            continue;
+        }
+
+        SamplerObject& sampler = samplersToDestroy[i].first;
+
+        vkDestroySampler(GraphicsCore::Context.Device, sampler.Sampler, nullptr);
+
+        samplersToDestroy.erase(samplersToDestroy.begin() + i);
     }
 }
 
@@ -127,4 +145,9 @@ void MemoryBin::DestroyBuffer(BufferObject buffer)
 void MemoryBin::DestroyTexture(TextureObject texture)
 {
     texturesToDestroy.push_back(std::pair{texture, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+}
+
+void MemoryBin::DestroySampler(SamplerObject sampler)
+{
+    samplersToDestroy.push_back(std::pair{sampler, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
 }
