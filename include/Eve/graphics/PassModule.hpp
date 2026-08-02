@@ -149,16 +149,22 @@ namespace Eve::Graphics
 
             void DrawMesh(MeshHandle mesh, ShaderHandle shader, uint32_t instanceCount);
 
-            inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures() { return textures; }
-            inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers() { return buffers; }
+            inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTransientTextures() { return transientTextures; }
+            inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }
+            inline std::vector<std::pair<TextureHandle, Usage>>& GetPersistentTextures() { return persistentTextures; }
+            inline std::vector<std::pair<BufferHandle, Usage>>& GetPersistentBuffers() { return persistentBuffers; }
+
             inline std::vector<std::pair<TransientTextureHandle, LoadStoreOp>>& GetLoadStoreOperations() { return loadStoreOps; }
 
             inline std::vector<DrawCall>& GetDrawCalls() { return drawCalls; }
 
         private:
 
-            std::vector<std::pair<TransientTextureHandle, Usage>> textures;
-            std::vector<std::pair<TransientBufferHandle, Usage>> buffers;
+            std::vector<std::pair<TransientTextureHandle, Usage>> transientTextures;
+            std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;
+
+            std::vector<std::pair<TextureHandle, Usage>> persistentTextures;
+            std::vector<std::pair<BufferHandle, Usage>> persistentBuffers;
 
             std::vector<std::pair<TransientTextureHandle, LoadStoreOp>> loadStoreOps;
 
@@ -193,8 +199,11 @@ namespace Eve::Graphics
             void UploadTexture(void* SrcData, uint64_t Size, TextureHandle DstTexture, Vec3Int DstOffset, Vec3Int Extent,
                 uint32_t BufferRowLenght = 0, uint32_t BufferHeightLenght = 0);
             
-            inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures() { return textures; }
-            inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers() { return buffers; }
+            inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTransientTextures() { return transientTextures; }
+            inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }
+            inline std::vector<std::pair<TextureHandle, Usage>>& GetPersistentTextures() { return persistentTextures; }
+            inline std::vector<std::pair<BufferHandle, Usage>>& GetPersistentBuffers() { return persistentBuffers; }
+
 
             inline std::vector<BufferCopy>& GetTransientBufferCopies() { return transientBufferCopies; }
             inline std::vector<TextureCopy>& GetTransientTextureCopies() { return transientTextureCopies; }
@@ -213,8 +222,11 @@ namespace Eve::Graphics
             inline std::vector<TextureUpload>& GetPersistentTextureUploads() { return persistentTextureUploads; }
             
         private:
-            std::vector<std::pair<TransientTextureHandle, Usage>> textures;
-            std::vector<std::pair<TransientBufferHandle, Usage>> buffers;
+
+            std::vector<std::pair<TransientTextureHandle, Usage>> transientTextures;
+            std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;
+            std::vector<std::pair<TextureHandle, Usage>> persistentTextures;
+            std::vector<std::pair<BufferHandle, Usage>> persistentBuffers;
 
             std::vector<BufferCopy> transientBufferCopies;
             std::vector<TextureCopy> transientTextureCopies;
@@ -239,10 +251,15 @@ namespace Eve::Graphics
         public:
             void UseTransientTexture(TransientTextureHandle texture, Usage accessType);
             void UseTransientBuffer(TransientBufferHandle texture, Usage accessType);
-            std::vector<std::pair<TransientTextureHandle, Usage>>& GetTextures() { return textures; }
-            std::vector<std::pair<TransientBufferHandle, Usage>>& GetBuffers() { return buffers; }
+
+            std::vector<std::pair<TransientTextureHandle, Usage>>& GetTransientTextures() { return transientTextures; }
+            std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }
+            std::vector<std::pair<TextureHandle, Usage>>& GetPersistentTextures() { return persistentTextures; }
+            std::vector<std::pair<BufferHandle, Usage>>& GetPersistentBuffers() { return persistentBuffers; }
         private:
-            std::vector<std::pair<TransientTextureHandle, Usage>> textures;
-            std::vector<std::pair<TransientBufferHandle, Usage>> buffers;
+            std::vector<std::pair<TransientTextureHandle, Usage>> transientTextures;
+            std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;
+            std::vector<std::pair<TextureHandle, Usage>> persistentTextures;
+            std::vector<std::pair<BufferHandle, Usage>> persistentBuffers;
     };
 }

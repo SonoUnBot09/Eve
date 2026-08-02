@@ -1,10 +1,12 @@
 #include "MemoryRegistry.hpp"
+#include "Eve/graphics/PassModule.hpp"
 #include <graphics/ResourceMapper.hpp>
 #include <graphics/GraphicsCore.hpp>
 #include <graphics/MemoryBin.hpp>
 #include <graphics/Resources.hpp>
 #include <graphics/helpers/AllocationHelper.hpp>
 #include <graphics/helpers/VulkanMapping.hpp>
+#include <graphics/RenderGraph.hpp>
 
 using namespace Eve::Graphics;
 
@@ -13,7 +15,19 @@ TextureHandle MemoryRegistry::CreateTexture1D(TextureInfo1D textureInfo)
     TextureObject texture {};
     Helpers::AllocateTexture1D(textureInfo, texture);
 
-    TextureHandle handle = ReserveTextureSlot(texture);
+    TextureInfo info
+    {
+        .Data.Width = textureInfo.Width,
+        .Data.Height = 1,
+        .Data.Depth = 1,
+        .Data.ArrayLayers = textureInfo.ArrayLayers,
+        .Data.Format = textureInfo.Format,
+        .Data.MipLevels = textureInfo.MipLevels,
+        .Data.Sample = textureInfo.Sample,
+        .Data.Usage = textureInfo.Usage
+    };
+
+    TextureHandle handle = ReserveTextureSlot(texture, info);
 
     return handle;
 }
@@ -23,7 +37,19 @@ TextureHandle MemoryRegistry::CreateTexture2D(TextureInfo2D textureInfo)
     TextureObject texture {};
     Helpers::AllocateTexture2D(textureInfo, texture);
 
-    TextureHandle handle = ReserveTextureSlot(texture);
+    TextureInfo info
+    {
+        .Data.Width = textureInfo.Width,
+        .Data.Height = textureInfo.Height,
+        .Data.Depth = 1,
+        .Data.ArrayLayers = textureInfo.ArrayLayers,
+        .Data.Format = textureInfo.Format,
+        .Data.MipLevels = textureInfo.MipLevels,
+        .Data.Sample = textureInfo.Sample,
+        .Data.Usage = textureInfo.Usage
+    };
+
+    TextureHandle handle = ReserveTextureSlot(texture, info);
 
     return handle;
 }
@@ -33,7 +59,19 @@ TextureHandle MemoryRegistry::CreateTexture3D(TextureInfo3D textureInfo)
     TextureObject texture {};
     Helpers::AllocateTexture3D(textureInfo, texture);
 
-    TextureHandle handle = ReserveTextureSlot(texture);
+    TextureInfo info
+    {
+        .Data.Width = textureInfo.Width,
+        .Data.Height = textureInfo.Height,
+        .Data.Depth = textureInfo.Depth,
+        .Data.ArrayLayers = textureInfo.ArrayLayers,
+        .Data.Format = textureInfo.Format,
+        .Data.MipLevels = textureInfo.MipLevels,
+        .Data.Sample = textureInfo.Sample,
+        .Data.Usage = textureInfo.Usage
+    };
+
+    TextureHandle handle = ReserveTextureSlot(texture, info);
 
     return handle;
 }
@@ -43,7 +81,14 @@ SamplerHandle MemoryRegistry::CreateSampler(SamplerInfo samplerInfo)
     SamplerObject sampler {};
     Helpers::AllocateSampler(samplerInfo, sampler);
 
-    SamplerHandle handle = ReserveSamplerSlot(sampler);
+    SamplerInfo info
+    {
+        .MinFilter = samplerInfo.MinFilter,
+        .MagFilter = samplerInfo.MagFilter,
+        .MipmapMode = samplerInfo.MipmapMode
+    };
+
+    SamplerHandle handle = ReserveSamplerSlot(sampler, info);
 
     return handle;
 }
@@ -53,7 +98,13 @@ BufferHandle MemoryRegistry::CreateGPUBuffer(BufferInfo bufferInfo)
     BufferObject buffer {};
     Helpers::AllocateGPUBuffer(bufferInfo, buffer);
 
-    BufferHandle handle = ReserveGPUBufferSlot(buffer);
+    BufferInfo info
+    {
+        .Data.Size = bufferInfo.Data.Size,
+        .Data.Usage = bufferInfo.Data.Usage
+    };
+
+    BufferHandle handle = ReserveGPUBufferSlot(buffer, info);
 
     return handle;
 }
@@ -63,7 +114,7 @@ BufferHandle MemoryRegistry::CreateCPUBuffer(BufferInfo bufferInfo)
     BufferObject buffer {};
     Helpers::AllocateCPUBuffer(bufferInfo, buffer);
 
-    BufferHandle handle = ReserveGPUBufferSlot(buffer);
+    BufferHandle handle = ReserveCPUBufferSlot(buffer);
 
     return handle;
 }
@@ -122,7 +173,7 @@ void MemoryRegistry::DestroySampler(uint32_t id)
     FreeSamplerSlot(id);
 }
 
-TextureHandle MemoryRegistry::ReserveTextureSlot(TextureObject& texture)
+TextureHandle MemoryRegistry::ReserveTextureSlot(TextureObject& texture, TextureInfo& textureInfo)
 {
     TextureHandle handle;
     if(imageFreeSlots.empty()) 
@@ -137,6 +188,16 @@ TextureHandle MemoryRegistry::ReserveTextureSlot(TextureObject& texture)
         textureGenerations[handle.Id]++;
 
         textures.push_back(texture);
+        texturesInfo.push_back(textureInfo);
+
+        // --- Update the Render Graph with the new resource state ---
+        RenderGraph::persistentTexturesState.push_back(RenderGraph::PersistentTextureState
+        {
+            .StageMask = VK_PIPELINE_STAGE_2_NONE,
+            .AccessMask = VK_ACCESS_2_NONE,
+            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .Usage = static_cast<Usage>(0)
+        });
     }
     else 
     {
@@ -148,14 +209,26 @@ TextureHandle MemoryRegistry::ReserveTextureSlot(TextureObject& texture)
         imageFreeSlots.pop_back();
 
         textures[handle.Id] = texture;
+        texturesInfo[handle.Id] = textureInfo;
+
+        // --- Update the Render Graph with the new resource state ---
+        RenderGraph::persistentTexturesState[handle.Id] = RenderGraph::PersistentTextureState
+        {
+            .StageMask = VK_PIPELINE_STAGE_2_NONE,
+            .AccessMask = VK_ACCESS_2_NONE,
+            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .Usage = static_cast<Usage>(0)
+        };
     }
 
     ResourceMapper::ScheduleImageMapping(handle);
 
+
+
     return handle;
 }
 
-SamplerHandle MemoryRegistry::ReserveSamplerSlot(SamplerObject sampler)
+SamplerHandle MemoryRegistry::ReserveSamplerSlot(SamplerObject sampler, SamplerInfo& samplerInfo)
 {
     SamplerHandle handle;
     if(samplerFreeSlots.empty()) 
@@ -170,6 +243,7 @@ SamplerHandle MemoryRegistry::ReserveSamplerSlot(SamplerObject sampler)
         samplerGenerations[handle.Id]++;
 
         samplers.push_back(sampler);
+        samplersInfo.push_back(samplerInfo);
     }
     else 
     {
@@ -181,6 +255,7 @@ SamplerHandle MemoryRegistry::ReserveSamplerSlot(SamplerObject sampler)
         samplerFreeSlots.pop_back();
 
         samplers[handle.Id] = sampler;
+        samplersInfo[handle.Id] = samplerInfo;
     }
 
     ResourceMapper::ScheduleSamplerMapping(handle);
@@ -188,7 +263,7 @@ SamplerHandle MemoryRegistry::ReserveSamplerSlot(SamplerObject sampler)
     return handle;
 }
 
-BufferHandle MemoryRegistry::ReserveGPUBufferSlot(BufferObject& buffer)
+BufferHandle MemoryRegistry::ReserveGPUBufferSlot(BufferObject& buffer, BufferInfo& bufferInfo)
 {
     BufferHandle handle;
     if(bufferFreeSlots.empty()) 
@@ -203,6 +278,15 @@ BufferHandle MemoryRegistry::ReserveGPUBufferSlot(BufferObject& buffer)
         bufferGenerations[handle.Id]++;
 
         buffers.push_back(buffer);
+        buffersInfo.push_back(bufferInfo);
+
+        // --- Update the Render Graph with the new resource state ---
+        RenderGraph::persistentBuffersState.push_back(RenderGraph::PersistentBufferState
+        {
+            .StageMask = VK_PIPELINE_STAGE_2_NONE,
+            .AccessMask = VK_ACCESS_2_NONE,
+            .Usage = static_cast<Usage>(0)
+        });
     }
     else 
     {
@@ -214,6 +298,15 @@ BufferHandle MemoryRegistry::ReserveGPUBufferSlot(BufferObject& buffer)
         bufferFreeSlots.pop_back();
 
         buffers[handle.Id] = buffer;
+        buffersInfo[handle.Id] = bufferInfo;
+
+        // --- Update the Render Graph with the new resource state ---
+        RenderGraph::persistentBuffersState[handle.Id] = RenderGraph::PersistentBufferState
+        {
+            .StageMask = VK_PIPELINE_STAGE_2_NONE,
+            .AccessMask = VK_ACCESS_2_NONE,
+            .Usage = static_cast<Usage>(0)
+        };
     }
 
     ResourceMapper::ScheduleBufferMapping(handle);
@@ -236,6 +329,9 @@ BufferHandle MemoryRegistry::ReserveCPUBufferSlot(BufferObject& buffer)
         bufferGenerations[handle.Id]++;
 
         buffers.push_back(buffer);
+        
+        BufferInfo dummyInfo {};
+        buffersInfo.push_back(dummyInfo);
     }
     else 
     {
@@ -265,6 +361,9 @@ TransientTextureHandle MemoryRegistry::ReserveTransientTextureSlot()
         handle.Id = size;
 
         textures.push_back(texture);
+
+        TextureInfo dummyInfo{};
+        texturesInfo.push_back(dummyInfo);
     }
     else 
     {
@@ -293,6 +392,9 @@ TransientBufferHandle MemoryRegistry::ReserveTransientBufferSlot()
         handle.Id = size;
 
         buffers.push_back(buffer);
+
+        BufferInfo dummyInfo{};
+        buffersInfo.push_back(dummyInfo);
     }
     else 
     {

@@ -456,6 +456,25 @@ namespace
         }
     }
 
+    bool IsTextureBarrierNeeded(RenderGraph::PersistentTextureState src, RenderGraph::TextureBarrierInfo dst, Usage newUsage)
+    {
+        if(IsReadOnly(src.Usage) && IsReadOnly(newUsage))
+        {
+            if(src.Layout == dst.Layout)
+            {
+                return false;
+            }
+            else 
+            {
+                return true;
+            }
+        }
+        else 
+        {
+            return true;
+        }
+    }
+
     bool IsBufferBarrierNeeded(RenderGraph::BufferBarrierInfo src, RenderGraph::BufferBarrierInfo dst, Usage oldUsage, Usage newUsage)
     {
         if(IsReadOnly(oldUsage) && IsReadOnly(newUsage))
@@ -467,6 +486,19 @@ namespace
             return true;
         }
     }
+
+    bool IsBufferBarrierNeeded(RenderGraph::PersistentBufferState src, RenderGraph::BufferBarrierInfo dst, Usage newUsage)
+    {
+        if(IsReadOnly(src.Usage) && IsReadOnly(newUsage))
+        {
+            return false;
+        }
+        else 
+        {
+            return true;
+        }
+    }
+
 
     uint32_t FindBestMemoryTypeIndex(VkMemoryRequirements2& memoryRequirements)
     {
@@ -558,8 +590,8 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
     transientTextures[frameIndex].clear();
     transientBuffers[frameIndex].clear();
 
-    uint32_t texturesCount = requestedTextures.size();
-    uint32_t buffersCount = requestedBuffers.size();
+    uint32_t transientTexturesCount = transientRequestedTextures.size();
+    uint32_t transientBuffersCount = transientRequestedBuffers.size();
     uint32_t passesCount = passes.size();
 
     for(uint32_t bucketIndex = 0; bucketIndex < texturesMemoryTypeIndicies.size(); bucketIndex++)
@@ -576,7 +608,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
     // Calculate resource memory info
     uint32_t texturesBarriersOffset = 0;
     barriersOffsetPerTexture.push_back(texturesBarriersOffset);
-    for(uint32_t textureId = 0; textureId < texturesCount; textureId++)
+    for(uint32_t textureId = 0; textureId < transientTexturesCount; textureId++)
     {
         uint32_t barriersCount = 0;
         int32_t firstPassIndex = -1;
@@ -594,7 +626,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
         for(uint32_t passIndex = 0; passIndex < passesCount; passIndex++)
         {
             // For each pass
-            std::vector<std::pair<TransientTextureHandle, Usage>>& textures = passes[passIndex].Textures;
+            std::vector<std::pair<TransientTextureHandle, Usage>>& textures = passes[passIndex].transientTextures;
             for(uint32_t i = 0; i < textures.size(); i++)
             {
                 // For each textures in that pass grab the texture usage
@@ -643,7 +675,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 
         if(firstPassIndex == -1) { continue; }
 
-        transientTextures[frameIndex][textureId].TextureInfo = requestedTextures[textureId];
+        transientTextures[frameIndex][textureId].TextureInfo = transientRequestedTextures[textureId];
         transientTextures[frameIndex][textureId].TextureInfo.Data.Usage = usage;
 
         uint32_t bucketIndex = SetTextureMemoryInfo(frameIndex, textureId, passesCount);
@@ -653,7 +685,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
     }
     uint32_t buffersBarriersOffset = 0;
     barriersOffsetPerBuffer.push_back(buffersBarriersOffset);
-    for(uint32_t bufferId = 0; bufferId < buffersCount; bufferId++)
+    for(uint32_t bufferId = 0; bufferId < transientBuffersCount; bufferId++)
     {
         uint32_t barriersCount = 0;
         int32_t firstPassIndex = -1;
@@ -670,10 +702,10 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
         for(uint32_t passIndex = 0; passIndex < passesCount; passIndex++)
         {
             // For each pass
-            std::vector<std::pair<TransientBufferHandle, Usage>>& buffers = passes[passIndex].Buffers;
+            std::vector<std::pair<TransientBufferHandle, Usage>>& buffers = passes[passIndex].transientBuffers;
             for(uint32_t i = 0; i < buffers.size(); i++)
             {
-                // For each textures in that pass grab the texture usage
+                // For each buffer in that pass grab the texture usage
                 // and calculate the first and last passes
                 if(buffers[i].first.Id != bufferId) { continue; }
 
@@ -719,7 +751,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 
         if(firstPassIndex == -1) { continue; }
 
-        transientBuffers[frameIndex][bufferId].BufferInfo = requestedBuffers[bufferId];
+        transientBuffers[frameIndex][bufferId].BufferInfo = transientRequestedBuffers[bufferId];
         transientBuffers[frameIndex][bufferId].BufferInfo.Data.Usage = usage;
 
         uint32_t bucketIndex = SetBufferMemoryInfo(frameIndex, bufferId, passesCount);
@@ -727,6 +759,102 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
         buffersBucketPasses[bucketIndex][firstPassIndex].BuffersToCreate.emplace_back(bufferId);
         buffersBucketPasses[bucketIndex][lastPassIndex].BuffersToDestroy.emplace_back(bufferId);
 
+    }
+
+    // Generate persistent texture and buffer barriers
+    for(uint32_t passIndex = 0; passIndex < passesCount; passIndex++)
+    {
+        Pass& pass = passes[passIndex];
+        std::vector<std::pair<TextureHandle, Usage>>& textures = pass.persistentTextures;
+        std::vector<std::pair<BufferHandle, Usage>>& buffers = pass.persistentBuffers;
+
+        // --- Textures ---
+        for(uint32_t i = 0; i < textures.size(); i++)
+        {
+            uint32_t textureId = textures[i].first.Id;
+            Usage newUsage = textures[i].second;
+
+            PersistentTextureState& textureState = persistentTexturesState[textureId];
+            TextureBarrierInfo dstBarrierInfo = CalculateTextureBarrierInfo(newUsage);
+
+            bool barrier = IsTextureBarrierNeeded(textureState, dstBarrierInfo, newUsage);
+
+            if(barrier)
+            {
+                dstBarrierInfo.TextureId = textureId;
+
+                TextureBarrierInfo srcBarrierInfo
+                {
+                    .TextureId = textureId,
+                    .StageMask = textureState.StageMask,
+                    .AccessMask = textureState.AccessMask,
+                    .Layout = textureState.Layout
+                };
+
+                TextureBarrierInfoPair barrierInfo
+                {
+                    .SrcInfo = srcBarrierInfo,
+                    .DstInfo = dstBarrierInfo
+                };
+
+                pass.persistentTexturesBarriers.push_back(barrierInfo);
+
+                textureState.StageMask = dstBarrierInfo.StageMask;
+                textureState.AccessMask = dstBarrierInfo.AccessMask;
+                textureState.Layout = dstBarrierInfo.Layout;
+            }
+            else 
+            {
+                textureState.StageMask |= dstBarrierInfo.StageMask;
+                textureState.AccessMask |= dstBarrierInfo.AccessMask;
+            }
+
+            textureState.Usage = newUsage;
+
+        }
+
+        // --- Buffers ----
+        for(uint32_t i = 0; i < buffers.size(); i++)
+        {
+            uint32_t bufferId = buffers[i].first.Id;
+            Usage newUsage = buffers[i].second;
+
+            PersistentBufferState& bufferState = persistentBuffersState[bufferId];
+            BufferBarrierInfo dstBarrierInfo = CalculateBufferBarrierInfo(newUsage);
+
+            bool barrier = IsBufferBarrierNeeded(bufferState, dstBarrierInfo, newUsage);
+
+            if(barrier)
+            {
+                dstBarrierInfo.BufferId = bufferId;
+
+                BufferBarrierInfo srcBarrierInfo
+                {
+                    .BufferId = bufferId,
+                    .StageMask = bufferState.StageMask,
+                    .AccessMask = bufferState.AccessMask
+                };
+
+                BufferBarrierInfoPair barrierInfo
+                {
+                    .SrcInfo = srcBarrierInfo,
+                    .DstInfo = dstBarrierInfo
+                };
+
+                pass.persistentBuffersBarriers.push_back(barrierInfo);
+
+                bufferState.StageMask = dstBarrierInfo.StageMask;
+                bufferState.AccessMask = dstBarrierInfo.AccessMask;
+            }
+            else 
+            {
+                bufferState.StageMask |= dstBarrierInfo.StageMask;
+                bufferState.AccessMask |= dstBarrierInfo.AccessMask;
+            }
+
+            bufferState.Usage = newUsage;
+
+        }
     }
 
     VmaVirtualBlockCreateInfo virtualBlockCI
@@ -737,8 +865,8 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
     VmaVirtualBlock block;
     vmaCreateVirtualBlock(&virtualBlockCI, &block);
 
-    texturesVirtualAllocs.resize(texturesCount);
-    buffersVirtualAllocs.resize(buffersCount);
+    texturesVirtualAllocs.resize(transientTexturesCount);
+    buffersVirtualAllocs.resize(transientBuffersCount);
 
     // Textures Memory Aliasing
     for(uint32_t bucketIndex = 0; bucketIndex < texturesBucketPasses.size(); bucketIndex++)
@@ -879,7 +1007,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 
     // Create/Reuse textures and buffers
     // Insert the barriers info in the right passes so the barriers can be created later
-    for(uint32_t textureId = 0; textureId < texturesCount; textureId++)
+    for(uint32_t textureId = 0; textureId < transientTexturesCount; textureId++)
     {
         TextureResource& resource = transientTextures[frameIndex][textureId];
 
@@ -933,10 +1061,10 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
             TextureBarrierInfo& dstBarrierInfo = texturesBarriersInfo[index].first;
             uint32_t passIndex = texturesBarriersInfo[index].second;
 
-            passes[passIndex].texturesBarriers.emplace_back(srcBarrierInfo, dstBarrierInfo);
+            passes[passIndex].transientTexturesBarriers.emplace_back(srcBarrierInfo, dstBarrierInfo);
         }
     }
-    for(uint32_t bufferId = 0; bufferId < buffersCount; bufferId++)
+    for(uint32_t bufferId = 0; bufferId < transientBuffersCount; bufferId++)
     {
         BufferResource& resource = transientBuffers[frameIndex][bufferId];
 
@@ -989,7 +1117,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
             BufferBarrierInfo& dstBarrierInfo = buffersBarriersInfo[index].first;
             uint32_t passIndex = buffersBarriersInfo[index].second;
 
-            passes[passIndex].buffersBarriers.emplace_back(srcBarrierInfo, dstBarrierInfo);
+            passes[passIndex].transientBuffersBarriers.emplace_back(srcBarrierInfo, dstBarrierInfo);
         }
     }
 
@@ -997,8 +1125,8 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 
     RecordCommands(frameIndex, cmdBuffer);
 
-    requestedTextures.clear();
-    requestedBuffers.clear();
+    transientRequestedTextures.clear();
+    transientRequestedBuffers.clear();
     passes.clear();
     for(uint32_t i = 0; i < texturesBucketPasses.size(); i++)
     {
@@ -1026,12 +1154,15 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
     {
         Pass& pass = passes[passIndex];
         
-        std::vector<TextureBarrierInfoPair>& textureBarriers = pass.texturesBarriers;
-        std::vector<BufferBarrierInfoPair>& bufferBarriers = pass.buffersBarriers;
+        std::vector<TextureBarrierInfoPair>& transientTextureBarriers = pass.transientTexturesBarriers;
+        std::vector<BufferBarrierInfoPair>& transientBufferBarriers = pass.transientBuffersBarriers;
+        std::vector<TextureBarrierInfoPair>& persistentTextureBarriers = pass.persistentTexturesBarriers;
+        std::vector<BufferBarrierInfoPair>& persistentBufferBarriers = pass.persistentBuffersBarriers;
 
-        for(uint32_t i = 0; textureBarriers.size(); i++)
+        // --- Record Transient Textures Barriers ---
+        for(uint32_t i = 0; transientTextureBarriers.size(); i++)
         {
-            TextureBarrierInfoPair barrierInfo = textureBarriers[i];
+            TextureBarrierInfoPair barrierInfo = transientTextureBarriers[i];
 
             uint32_t textureIndex = barrierInfo.DstInfo.TextureId;
 
@@ -1064,13 +1195,76 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
             textureMemoryBarriers.push_back(barrier);
         }
 
-        for(uint32_t i = 0; bufferBarriers.size(); i++)
+        // --- Record Transient Buffers Barriers ---
+        for(uint32_t i = 0; transientBufferBarriers.size(); i++)
         {
-            BufferBarrierInfoPair barrierInfo = bufferBarriers[i];
+            BufferBarrierInfoPair barrierInfo = transientBufferBarriers[i];
 
             uint32_t bufferIndex = barrierInfo.DstInfo.BufferId;
 
             VkBuffer buffer = transientBuffers[frameIndex][bufferIndex].Buffer;
+
+            VkBufferMemoryBarrier2 barrier
+            {
+                .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                .srcStageMask = barrierInfo.SrcInfo.StageMask,
+                .srcAccessMask = barrierInfo.SrcInfo.AccessMask,
+                .dstStageMask = barrierInfo.DstInfo.StageMask,
+                .dstAccessMask = barrierInfo.DstInfo.AccessMask,
+                .buffer = buffer,
+                .offset = 0,
+                .size = VK_WHOLE_SIZE,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED
+            };
+
+            bufferMemoryBarriers.push_back(barrier);
+        }
+
+        // --- Record Persistent Textures Barriers ---
+        for(uint32_t i = 0; persistentTextureBarriers.size(); i++)
+        {
+            TextureBarrierInfoPair barrierInfo = persistentTextureBarriers[i];
+
+            uint32_t textureId = barrierInfo.DstInfo.TextureId;
+
+            VkImage image = MemoryRegistry::GetTexture(textureId).Image;
+            VkFormat format = GetVkImageFormat(MemoryRegistry::GetTextureInfo(textureId).Data.Format);
+            VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
+
+            VkImageMemoryBarrier2 barrier
+            {
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .srcStageMask = barrierInfo.SrcInfo.StageMask,
+                .srcAccessMask = barrierInfo.SrcInfo.AccessMask,
+                .dstStageMask = barrierInfo.DstInfo.StageMask,
+                .dstAccessMask = barrierInfo.DstInfo.AccessMask,
+                .oldLayout = barrierInfo.SrcInfo.Layout,
+                .newLayout = barrierInfo.DstInfo.Layout,
+                .image = image,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .subresourceRange
+                {
+                    .aspectMask = aspectMask,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1
+                }
+            };
+
+            textureMemoryBarriers.push_back(barrier);
+        }
+
+        // --- Record Persistent Buffers Barriers ---
+        for(uint32_t i = 0; persistentBufferBarriers.size(); i++)
+        {
+            BufferBarrierInfoPair barrierInfo = persistentBufferBarriers[i];
+
+            uint32_t bufferId = barrierInfo.DstInfo.BufferId;
+
+            VkBuffer buffer = MemoryRegistry::GetBuffer(bufferId).Buffer;
 
             VkBufferMemoryBarrier2 barrier
             {
@@ -1339,7 +1533,7 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass&
 
 void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
-    std::vector<std::pair<TransientTextureHandle, Usage>>& textures = pass.Textures;
+    std::vector<std::pair<TransientTextureHandle, Usage>>& textures = pass.transientTextures;
     std::vector<std::pair<TransientTextureHandle, LoadStoreOp>>& loadStoreOps = pass.loadStoreOps;
     std::vector<DrawCall>& drawCalls = pass.drawCalls;
 
@@ -2195,7 +2389,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureIn
         .Data.Sample = textureInfo.Sample
     };
 
-    requestedTextures.push_back(data);
+    transientRequestedTextures.push_back(data);
 
     return handle;
 }
@@ -2215,7 +2409,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture2D(TransientTextureIn
         .Data.Sample = textureInfo.Sample
     };
 
-    requestedTextures.push_back(data);
+    transientRequestedTextures.push_back(data);
     return handle;
 }
 
@@ -2234,7 +2428,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture3D(TransientTextureIn
         .Data.Sample = textureInfo.Sample
     };
 
-    requestedTextures.push_back(data);
+    transientRequestedTextures.push_back(data);
     return handle;
 }
 
@@ -2248,7 +2442,7 @@ TransientBufferHandle RenderGraph::RequestTransientBuffer(TransientBufferInfo bu
         .Data.Usage = static_cast<BufferUsage>(0)
     };
 
-    requestedBuffers.push_back(data);
+    transientRequestedBuffers.push_back(data);
     return handle;
 }
 
@@ -2256,8 +2450,12 @@ void RenderGraph::AddPass(GraphicsPass& pass)
 {
     Pass data
     {
-        .Buffers = pass.GetBuffers(),
-        .Textures = pass.GetTextures(),
+        .transientBuffers = pass.GetTransientBuffers(),
+        .transientTextures = pass.GetTransientTextures(),
+
+        .persistentBuffers = pass.GetPersistentBuffers(),
+        .persistentTextures = pass.GetPersistentTextures(),
+
         .loadStoreOps = pass.GetLoadStoreOperations(),
         .drawCalls = pass.GetDrawCalls()
     };
@@ -2269,8 +2467,11 @@ void RenderGraph::AddPass(TransferPass& pass)
 {
     Pass data
     {
-        .Buffers = pass.GetBuffers(),
-        .Textures = pass.GetTextures(),
+        .transientBuffers = pass.GetTransientBuffers(),
+        .transientTextures = pass.GetTransientTextures(),
+
+        .persistentBuffers = pass.GetPersistentBuffers(),
+        .persistentTextures = pass.GetPersistentTextures(),
 
         .transientBufferCopies = pass.GetTransientBufferCopies(),
         .transientTextureCopies = pass.GetTransientTextureCopies(),
@@ -2295,8 +2496,11 @@ void RenderGraph::AddPass(ComputePass& pass)
 {
     Pass data
     {
-        .Buffers = pass.GetBuffers(),
-        .Textures = pass.GetTextures()
+        .transientBuffers = pass.GetTransientBuffers(),
+        .transientTextures = pass.GetTransientTextures(),
+        
+        .persistentBuffers = pass.GetPersistentBuffers(),
+        .persistentTextures = pass.GetPersistentTextures()
 
         // To add compute
     };

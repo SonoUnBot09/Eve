@@ -44,6 +44,21 @@ namespace Eve::Graphics
                 VkAccessFlags2 AccessMask;
             };
 
+            struct PersistentTextureState
+            {
+                VkPipelineStageFlags2 StageMask;
+                VkAccessFlags2 AccessMask;
+                VkImageLayout Layout;
+                Usage Usage;
+            };
+
+            struct PersistentBufferState
+            {
+                VkPipelineStageFlags2 StageMask;
+                VkAccessFlags2 AccessMask;
+                Usage Usage;
+            };
+
         private:
 
             struct TextureBarrierInfoPair
@@ -60,8 +75,11 @@ namespace Eve::Graphics
 
             struct Pass
             {
-                std::vector<std::pair<TransientBufferHandle, Usage>> Buffers;
-                std::vector<std::pair<TransientTextureHandle, Usage>> Textures;
+                std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;
+                std::vector<std::pair<TransientTextureHandle, Usage>> transientTextures;
+
+                std::vector<std::pair<BufferHandle, Usage>> persistentBuffers;
+                std::vector<std::pair<TextureHandle, Usage>> persistentTextures;
 
                 std::vector<std::pair<TransientTextureHandle, LoadStoreOp>> loadStoreOps;
 
@@ -87,8 +105,11 @@ namespace Eve::Graphics
                 // --- Compute ---
 
 
-                std::vector<TextureBarrierInfoPair> texturesBarriers;
-                std::vector<BufferBarrierInfoPair> buffersBarriers;
+                std::vector<TextureBarrierInfoPair> transientTexturesBarriers;
+                std::vector<BufferBarrierInfoPair> transientBuffersBarriers;
+                std::vector<TextureBarrierInfoPair> persistentTexturesBarriers;
+                std::vector<BufferBarrierInfoPair> persistentBuffersBarriers;
+                
             };
 
             struct TexturesBucketPass
@@ -186,8 +207,8 @@ namespace Eve::Graphics
             static void RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
 
             // Input
-            inline static std::vector<TextureInfo> requestedTextures;
-            inline static std::vector<BufferInfo> requestedBuffers;
+            inline static std::vector<TextureInfo> transientRequestedTextures;
+            inline static std::vector<BufferInfo> transientRequestedBuffers;
             inline static std::vector<Pass> passes;
 
             inline static std::vector<std::vector<TexturesBucketPass>> texturesBucketPasses;
@@ -195,6 +216,9 @@ namespace Eve::Graphics
 
             inline static std::array<std::vector<TextureResource>, Eve::Settings::MAX_FRAMES_IN_FLIGHT> transientTextures;
             inline static std::array<std::vector<BufferResource>, Eve::Settings::MAX_FRAMES_IN_FLIGHT> transientBuffers;
+
+            inline static std::vector<PersistentTextureState> persistentTexturesState;
+            inline static std::vector<PersistentBufferState> persistentBuffersState;
 
             inline static std::vector<uint32_t> barriersOffsetPerTexture;
             inline static std::vector<std::pair<TextureBarrierInfo, uint32_t>> texturesBarriersInfo; // The second element in the pair is the sync point index
@@ -218,5 +242,7 @@ namespace Eve::Graphics
             inline static std::vector<VmaVirtualAllocation> texturesVirtualAllocs;
             inline static std::vector<VmaVirtualAllocation> buffersVirtualAllocs;
             inline static std::vector<MemorySlot> virtualMemorySlots;
+
+            friend class MemoryRegistry;
     };
 }
