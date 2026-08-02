@@ -13,19 +13,19 @@ namespace Eve::Graphics
 
     enum class Usage
     {
-        // Sampled
+        // --- Texture Sampled ---
         VERTEX_READ_TEXTURE_SAMPLED,
         FRAGMENT_READ_TEXTURE_SAMPLED,
         VERTEX_FRAGMENT_READ_TEXTURE_SAMPLED,
 
-        // Storage
+        // --- Texture Storage ---
         VERTEX_READ_TEXTURE_STORAGE,
         FRAGMENT_READ_TEXTURE_STORAGE,
         VERTEX_FRAGMENT_READ_TEXTURE_STORAGE,
         COMPUTE_READ_TEXTURE_STORAGE,
         COMPUTE_WRITE_TEXTURE_STORAGE,
 
-        // Buffers
+        // --- Buffers ---
         BUFFER_INDEX_READ_ONLY,
         VERTEX_READ_BUFFER_STORAGE,
         VERTEX_READ_BUFFER_UNIFORM,
@@ -186,8 +186,10 @@ namespace Eve::Graphics
             // Persistent
             void CopyBuffer(BufferHandle SrcBuffer, BufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset = 0, uint64_t DstOffset = 0);
             void CopyTexture(TextureHandle SrcTexture, TextureHandle DstTexture, Vec3Int Extent, Vec3Int SrcOffset = {0,0,0}, Vec3Int DstOffset = {0,0,0});
-            void CopyBufferToTexture(BufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent);
-            void CopyTextureToBuffer(TextureHandle SrcTexture, BufferHandle DstBuffer, Vec3Int SrcOffset, Vec3Int Extent, uint64_t DstOffset);
+            void CopyBufferToTexture(BufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent,
+                uint32_t BufferRowLenght = 0, uint32_t BufferHeightLenght = 0);
+            void CopyTextureToBuffer(TextureHandle SrcTexture, BufferHandle DstBuffer, Vec3Int SrcOffset, Vec3Int Extent, uint64_t DstOffset, 
+                uint32_t BufferRowLenght = 0, uint32_t BufferHeightLenght = 0);
 
             // Transient
             void UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t DstOffset = 0);
