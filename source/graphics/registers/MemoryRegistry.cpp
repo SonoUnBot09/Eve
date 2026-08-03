@@ -1,4 +1,5 @@
 #include "MemoryRegistry.hpp"
+#include "Eve/graphics/Buffer.hpp"
 #include "Eve/graphics/PassModule.hpp"
 #include <graphics/ResourceMapper.hpp>
 #include <graphics/GraphicsCore.hpp>
@@ -408,4 +409,31 @@ TransientBufferHandle MemoryRegistry::ReserveTransientBufferSlot()
     ResourceMapper::ScheduleBufferMapping(handle);
 
     return TransientBufferHandle{handle.Id};
+}
+
+void MemoryRegistry::ResizeBufferIfNeeded(BufferHandle &buffer, uint64_t requiredSize, bool indexBuffer)
+{
+    uint64_t currentSize = buffers[buffer.Id].AllocationInfo.size;
+
+    if(currentSize < requiredSize)
+    {
+        MemoryRegistry::DestroyBuffer(buffer);
+
+        BufferUsage bufferUsage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST;
+
+        if(indexBuffer)
+        {
+            bufferUsage |= BufferUsage::BUFFER_USAGE_INDEX;
+        }
+
+        BufferInfo bufferInfo
+        {
+            .Data.Size = requiredSize,
+            .Data.Usage = bufferUsage
+        };
+
+        BufferHandle newBufferHandle = MemoryRegistry::CreateGPUBuffer(bufferInfo);
+
+        buffer = newBufferHandle;
+    }
 }

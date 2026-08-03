@@ -64,6 +64,9 @@ namespace Eve::Graphics
             inline static SamplerInfo& GetSamplerInfo(uint32_t id) { return samplersInfo[id]; }
             inline static BufferInfo& GetBufferInfo(BufferHandle handle) { return buffersInfo[handle.Id]; }
             inline static BufferInfo& GetBufferInfo(uint32_t id) { return buffersInfo[id]; }
+
+            // --- Helpers ---
+            static void ResizeBufferIfNeeded(BufferHandle& buffer, uint64_t requiredSize, bool indexBuffer);
             
         private:
 

@@ -26,6 +26,9 @@ namespace Eve::Graphics
             static void AddPass(GraphicsPass& pass);
             static void AddPass(TransferPass& pass);
             static void AddPass(ComputePass& pass);
+            static void AddPass(GraphicsPass& pass, uint32_t index);
+            static void AddPass(TransferPass& pass, uint32_t index);
+            static void AddPass(ComputePass& pass, uint32_t index);
 
             static bool CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex);
 

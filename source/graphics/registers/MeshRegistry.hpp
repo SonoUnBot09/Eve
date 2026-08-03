@@ -9,16 +9,39 @@ namespace Eve::Graphics
     {
         public:
 
-            inline static void CreateMesh(CPUMesh& mesh);
-            inline static CPUMesh& GetMeshData(MeshHandle handle) { return meshData[handle.Id]; }
+            static MeshHandle CreateMesh();
+            static void DestroyMesh(MeshHandle handle);
+            inline static CPUMesh& GetCPUMesh(MeshHandle handle) { return cpuMeshes[handle.Id]; }
             inline static GraphicsMesh& GetGraphicsMesh(MeshHandle handle) { return graphicsMeshes[handle.Id]; } 
 
+            static void SetVertices(MeshHandle meshHandle, std::vector<Vec3>& verticies);
+            static void SetIndicies(MeshHandle meshHandle, std::vector<uint32_t>& indicies);
+            static void SetNormals(MeshHandle meshHandle, std::vector<Vec3>& normals);
+            static void SetColors(MeshHandle meshHandle, std::vector<Vec3>& colors);
+            static void SetUVs(MeshHandle meshHandle, std::vector<Vec2>& uvs);
+            static void SetTangents(MeshHandle meshHandle, std::vector<Vec4>& tangents);
+
+            static void ApplyMeshToGPU(MeshHandle meshHandle);
+
+            static void UploadMeshes();
         private:
 
-            static inline std::vector<CPUMesh> meshData;
-            static inline std::vector<GraphicsMesh> graphicsMeshes;
+            struct MeshBufferInfo
+            {
+                bool Vertex;
+                bool Index;
+                bool Normal;
+                bool Color;
+                bool UV;
+                bool Tangent;
+            };
 
-            TransferPass transferPass;
+            static inline std::vector<CPUMesh> cpuMeshes;                   static inline std::vector<uint32_t> generations;
+            static inline std::vector<GraphicsMesh> graphicsMeshes;         static inline std::vector<MeshBufferInfo> meshBuffersInfo; 
+
+            static inline std::vector<uint32_t> freeSlots;
+
+            inline static TransferPass transferPass;
 
     };
 }

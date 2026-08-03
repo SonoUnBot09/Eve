@@ -1969,7 +1969,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32
 
             GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(drawCall.ShaderHandle);
 
-            CPUMesh& cpuMesh = MeshRegistry::GetMeshData(drawCall.MeshHandle);
+            //CPUMesh& cpuMesh = MeshRegistry::GetCPUMesh(drawCall.MeshHandle);
             GraphicsMesh& graphicsMesh = MeshRegistry::GetGraphicsMesh(drawCall.MeshHandle);
             VkBuffer indexBuffer = MemoryRegistry::GetBuffer(graphicsMesh.IndexBuffer).Buffer;
 
@@ -1978,7 +1978,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32
             VkDeviceSize offset {0};
             vkCmdBindIndexBuffer(cmdBuffer, indexBuffer, offset, VK_INDEX_TYPE_UINT32);
 
-            vkCmdDrawIndexed(cmdBuffer, graphicsMesh.IndexCount, drawCall.instanceCount, 0, 0, 0);
+            vkCmdDrawIndexed(cmdBuffer, graphicsMesh.IndiciesCount, drawCall.instanceCount, 0, 0, 0);
         }
     }
     vkCmdEndRendering(cmdBuffer);
@@ -2733,4 +2733,66 @@ void RenderGraph::AddPass(ComputePass& pass)
         // To add compute
     };
     passes.push_back(data);
+}
+
+void RenderGraph::AddPass(GraphicsPass& pass, uint32_t index)
+{
+    Pass data
+    {
+        .transientBuffers = pass.GetTransientBuffers(),
+        .transientTextures = pass.GetTransientTextures(),
+
+        .persistentBuffers = pass.GetPersistentBuffers(),
+        .persistentTextures = pass.GetPersistentTextures(),
+
+        .loadStoreOps = pass.GetLoadStoreOperations(),
+        .drawCalls = pass.GetDrawCalls()
+    };
+
+    passes.insert(passes.cbegin() + index, data);
+}
+
+void RenderGraph::AddPass(TransferPass& pass, uint32_t index)
+{
+    Pass data
+    {
+        .transientBuffers = pass.GetTransientBuffers(),
+        .transientTextures = pass.GetTransientTextures(),
+
+        .persistentBuffers = pass.GetPersistentBuffers(),
+        .persistentTextures = pass.GetPersistentTextures(),
+
+        .transientBufferCopies = pass.GetTransientBufferCopies(),
+        .transientTextureCopies = pass.GetTransientTextureCopies(),
+        .transientBufferToTextureCopies = pass.GetTransientBufferToTextureCopies(),
+        .transientTextureToBufferCopies = pass.GetTransientTextureToBufferCopies(),
+
+        .persistentBufferCopies = pass.GetPersistentBufferCopies(),
+        .persistentTextureCopies = pass.GetPersistentTextureCopies(),
+        .persistentBufferToTextureCopies = pass.GetPersistentBufferToTextureCopies(),
+        .persistentTextureToBufferCopies = pass.GetPersistentTextureToBufferCopies(),
+
+        .transientBufferUploads = pass.GetTransientBufferUploads(),
+        .transientTextureUploads = pass.GetTransientTextureUploads(),
+        .persistentBufferUploads = pass.GetPersistentBufferUploads(),
+        .persistentTextureUploads = pass.GetPersistentTextureUploads()
+    };
+
+    passes.insert(passes.cbegin() + index, data);
+}
+
+void RenderGraph::AddPass(ComputePass& pass, uint32_t index)
+{
+    Pass data
+    {
+        .transientBuffers = pass.GetTransientBuffers(),
+        .transientTextures = pass.GetTransientTextures(),
+        
+        .persistentBuffers = pass.GetPersistentBuffers(),
+        .persistentTextures = pass.GetPersistentTextures()
+
+        // To add compute
+    };
+
+    passes.insert(passes.cbegin() + index, data);
 }

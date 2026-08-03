@@ -11,6 +11,15 @@ namespace Eve::Graphics
     {
         uint32_t Id;
         uint32_t Generation;
+
+        void SetVertices(std::vector<Vec3>& verticies);
+        void SetIndicies(std::vector<uint32_t>& indicies);
+        void SetNormals(std::vector<Vec3>& normals);
+        void SetColors(std::vector<Vec3>& colors);
+        void SetUVs(std::vector<Vec2>& uvs);
+        void SetTangents(std::vector<Vec4>& tangents);
+
+        void ApplyToGPU();
     };
 
     struct CPUMesh
@@ -34,7 +43,11 @@ namespace Eve::Graphics
         BufferHandle UVBuffer;
         BufferHandle TangentBuffer;
 
-        uint32_t VertexCount;
-        uint32_t IndexCount;
+        uint32_t VerticiesCount;
+        uint32_t IndiciesCount;
+        uint32_t NormalsCount;
+        uint32_t ColorsCount;
+        uint32_t UVsCount;
+        uint32_t TangentsCount;
     };
 }
