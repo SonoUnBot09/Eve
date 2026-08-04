@@ -673,7 +673,14 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
         texturesBarriersOffset += barriersCount;
         barriersOffsetPerTexture.push_back(texturesBarriersOffset);
 
-        if(firstPassIndex == -1) { continue; }
+        bool isPresentTexture = false;
+        if(textureId == presentTexture.Id)
+        {
+            usage |= TextureUsage::USAGE_SAMPLED;
+            isPresentTexture = true;
+        }
+
+        if(firstPassIndex == -1 && !isPresentTexture) { continue; }
 
         transientTextures[frameIndex][textureId].TextureInfo = transientRequestedTextures[textureId];
         transientTextures[frameIndex][textureId].TextureInfo.Data.Usage = usage;
@@ -1141,6 +1148,8 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
     barriersOffsetPerBuffer.clear();
     buffersBarriersInfo.clear();
 
+    presentTexture.Id = UINT32_MAX;
+
     return true;
 }
 
@@ -1323,6 +1332,171 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
         RecordDrawCalls(cmdBuffer, pass, frameIndex);
 
     }
+
+    // No need to create a pass to copy the colors into the swapchain
+    if(presentTexture.Id == UINT32_MAX) { return true; }
+
+    TextureResource& colorTexture = transientTextures[frameIndex][presentTexture.Id];
+
+    TextureBarrierInfo srcBarrierInfo
+    {
+        .StageMask = VK_PIPELINE_STAGE_2_NONE,
+        .AccessMask = VK_ACCESS_2_NONE,
+        .Layout = VK_IMAGE_LAYOUT_UNDEFINED
+    };
+
+    uint32_t offset = barriersOffsetPerTexture[presentTexture.Id];
+    uint32_t size = barriersOffsetPerTexture[presentTexture.Id + 1] - offset;
+    for(uint32_t i = 0; i < size; i++)
+    {
+        std::pair<TextureBarrierInfo, uint32_t>& barrierInfo = texturesBarriersInfo[i + offset];
+        if(barrierInfo.first.TextureId != presentTexture.Id) { continue; }
+
+        srcBarrierInfo = barrierInfo.first;
+    }
+
+    TextureHandle swapchainHandle = GraphicsCore::Swapchain.swapchainImagesHandles[frameIndex];
+
+    TextureObject& swapchainTexture = MemoryRegistry::GetTexture(swapchainHandle);
+
+    std::vector<VkImageMemoryBarrier2> barriers
+    {
+        VkImageMemoryBarrier2
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask = srcBarrierInfo.StageMask,
+            .srcAccessMask = srcBarrierInfo.AccessMask,
+            .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+            .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+            .oldLayout = srcBarrierInfo.Layout,
+            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = colorTexture.Image,
+            .subresourceRange
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        },
+        VkImageMemoryBarrier2
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+            .srcAccessMask = VK_ACCESS_2_NONE,
+            .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = swapchainTexture.Image,
+            .subresourceRange
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        }
+    };
+
+    VkDependencyInfo drawDep
+    {
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
+        .pImageMemoryBarriers = barriers.data()
+    };
+
+    vkCmdPipelineBarrier2(cmdBuffer, &drawDep);
+
+    VkRenderingAttachmentInfo colorAttachment
+    {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .imageView = swapchainTexture.ImageView,
+        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .clearValue {.color{.float32{
+            0, 
+            0, 
+            0, 
+            1.0}}}
+    };
+
+    VkRenderingInfo renderInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+        .renderArea
+        {
+            .offset {.x = 0, .y = 0},
+            .extent {.width = GraphicsCore::Swapchain.Width, .height = GraphicsCore::Swapchain.Height}
+        },
+        .layerCount = 1,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &colorAttachment
+    };
+
+    vkCmdBeginRendering(cmdBuffer, &renderInfo);
+    {
+
+        VkViewport viewport
+        {
+            .x = 0, .y = static_cast<float>(GraphicsCore::Swapchain.Height),
+            .width = static_cast<float>(GraphicsCore::Swapchain.Width),
+            .height =  -static_cast<float>(GraphicsCore::Swapchain.Height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f
+        };
+
+        VkRect2D scissor
+        {
+            .offset {.x = 0, .y = 0},
+            .extent {.width = GraphicsCore::Swapchain.Width, .height = GraphicsCore::Swapchain.Height}
+        };
+
+        vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
+
+        vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
+
+    }
+    vkCmdEndRendering(cmdBuffer);
+
+    VkImageMemoryBarrier2 presentBarrier
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+        .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_2_NONE,
+        .dstAccessMask = VK_ACCESS_2_NONE,
+        .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = swapchainTexture.Image,
+        .subresourceRange
+        {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+
+    VkDependencyInfo presentDep
+    {
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers = &presentBarrier
+    };
+
+    vkCmdPipelineBarrier2(cmdBuffer, &presentDep);
 
     return true;
 }
@@ -1764,7 +1938,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32
     std::vector<std::pair<TransientTextureHandle, Usage>>& textures = pass.transientTextures;
     std::vector<std::pair<TransientTextureHandle, LoadStoreOp>>& loadStoreOps = pass.loadStoreOps;
     std::vector<DrawCall>& drawCalls = pass.drawCalls;
-
+    
     // No draw calls
     if(drawCalls.empty()) { return; }
 
@@ -2795,4 +2969,9 @@ void RenderGraph::AddPass(ComputePass& pass, uint32_t index)
     };
 
     passes.insert(passes.cbegin() + index, data);
+}
+
+void RenderGraph::SetPresentTexture(TransientTextureHandle handle)
+{
+    presentTexture = handle;
 }

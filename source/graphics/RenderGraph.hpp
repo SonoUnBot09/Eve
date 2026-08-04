@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Eve/graphics/Texture.hpp"
 #include <algorithm>
 #include <ranges>
 #include <vector>
@@ -22,13 +23,15 @@ namespace Eve::Graphics
             static TransientTextureHandle RequestTransientTexture1D(TransientTextureInfo1D textureInfo);
             static TransientTextureHandle RequestTransientTexture2D(TransientTextureInfo2D textureInfo);
             static TransientTextureHandle RequestTransientTexture3D(TransientTextureInfo3D textureInfo);
-            static TransientBufferHandle RequestTransientBuffer(TransientBufferInfo bufferInfo);
+            static TransientBufferHandle RequestTransientBuffer(TransientBufferInfo bufferInfo);            
             static void AddPass(GraphicsPass& pass);
             static void AddPass(TransferPass& pass);
             static void AddPass(ComputePass& pass);
             static void AddPass(GraphicsPass& pass, uint32_t index);
             static void AddPass(TransferPass& pass, uint32_t index);
             static void AddPass(ComputePass& pass, uint32_t index);
+
+            static void SetPresentTexture(TransientTextureHandle handle);
 
             static bool CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex);
 
@@ -219,6 +222,8 @@ namespace Eve::Graphics
 
             inline static std::array<std::vector<TextureResource>, Eve::Settings::MAX_FRAMES_IN_FLIGHT> transientTextures;
             inline static std::array<std::vector<BufferResource>, Eve::Settings::MAX_FRAMES_IN_FLIGHT> transientBuffers;
+            
+            inline static TransientTextureHandle presentTexture;
 
             inline static std::vector<PersistentTextureState> persistentTexturesState;
             inline static std::vector<PersistentBufferState> persistentBuffersState;

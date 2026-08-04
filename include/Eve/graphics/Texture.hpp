@@ -31,7 +31,7 @@ namespace Eve::Graphics
             USAGE_COLOR_ATTACHMENT          = 1 << 2,
             USAGE_DEPTH_STENCIL_ATTACHMENT  = 1 << 3,
             USAGE_TRANSFER_SRC              = 1 << 4,
-            USAGE_TRANSFER_DST              = 1 << 5,
+            USAGE_TRANSFER_DST              = 1 << 5
         };
 
         enum class TextureLayout : uint16_t

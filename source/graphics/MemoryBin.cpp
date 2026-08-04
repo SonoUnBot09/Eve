@@ -8,8 +8,29 @@ using namespace Eve::Graphics;
 
 void MemoryBin::DestroyPendingResources()
 {
+
+    if(isGPUInIdle)
+    {
+        isGPUInIdle = false;
+
+        for(int32_t i = 0; i < buffersToDestroy.size(); i++)
+        {
+            buffersToDestroy[i].second = 0;
+        }
+
+        for(int32_t i = 0; i < texturesToDestroy.size(); i++)
+        {
+            texturesToDestroy[i].second = 0;
+        }
+
+        for(int32_t i = 0; i < samplersToDestroy.size(); i++)
+        {
+            samplersToDestroy[i].second = 0;
+        }
+    }
+
     // --- Buffer Destruction ---
-    for(uint32_t i = 0; i < buffersToDestroy.size(); i++)
+    for(int32_t i = buffersToDestroy.size(); i >= 0; i--)
     {
         if(buffersToDestroy[i].second > 0)
         {
@@ -25,7 +46,7 @@ void MemoryBin::DestroyPendingResources()
     }
 
     // --- Texture Destruction ---
-    for(uint32_t i = 0; i < texturesToDestroy.size(); i++)
+    for(int32_t i = texturesToDestroy.size(); i >= 0; i--)
     {
         if(texturesToDestroy[i].second > 0)
         {
@@ -43,7 +64,7 @@ void MemoryBin::DestroyPendingResources()
     }
 
     // --- Sampler Destruction ---
-    for(uint32_t i = 0; i < samplersToDestroy.size(); i++)
+    for(int32_t i = samplersToDestroy.size(); i >= 0; i--)
     {
         if(samplersToDestroy[i].second > 0)
         {
@@ -61,7 +82,7 @@ void MemoryBin::DestroyPendingResources()
 
 void MemoryBin::DestroyEverythingNow()
 {
-    for(uint32_t i = 0; i < buffersToDestroy.size(); i++)
+    for(int32_t i = buffersToDestroy.size(); i >= 0; i--)
     {
         BufferObject& buffer = buffersToDestroy[i].first;
 
@@ -70,7 +91,7 @@ void MemoryBin::DestroyEverythingNow()
         buffersToDestroy.erase(buffersToDestroy.begin() + i);
     }
 
-    for(uint32_t i = 0; i < texturesToDestroy.size(); i++)
+    for(int32_t i = texturesToDestroy.size(); i >= 0; i--)
     {
         TextureObject& texture = texturesToDestroy[i].first;
 
@@ -81,7 +102,7 @@ void MemoryBin::DestroyEverythingNow()
         texturesToDestroy.erase(texturesToDestroy.begin() + i);
     }
 
-    for(uint32_t i = 0; i < MemoryRegistry::buffers.size(); i++)
+    for(int32_t i = samplersToDestroy.size(); i >= 0; i--)
     {
         bool skip = false;
         for(uint32_t freeSlotIndex = 0; freeSlotIndex < MemoryRegistry::bufferFreeSlots.size(); freeSlotIndex++)
