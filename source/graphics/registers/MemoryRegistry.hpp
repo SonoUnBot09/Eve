@@ -2,6 +2,7 @@
 
 #include "Eve/graphics/Buffer.hpp"
 #include "Eve/graphics/Sampler.hpp"
+#include "Eve/graphics/Texture.hpp"
 #include <graphics/GraphicsCore.hpp>
 #include <graphics/helpers/AllocationHelper.hpp>
 
@@ -18,6 +19,7 @@ namespace Eve::Graphics
             static TextureHandle CreateTexture1D(TextureInfo1D textureInfo);
             static TextureHandle CreateTexture2D(TextureInfo2D textureInfo);
             static TextureHandle CreateTexture3D(TextureInfo3D textureInfo);
+            static TextureHandle CreateTextureCube(TextureInfo2D textureInfo);
 
             // --- Sampler Creation ---
             static SamplerHandle CreateSampler(SamplerInfo samplerInfo);
@@ -26,12 +28,15 @@ namespace Eve::Graphics
             static BufferHandle CreateGPUBuffer(BufferInfo bufferInfo);
             static BufferHandle CreateCPUBuffer(BufferInfo bufferInfo);
 
-            static TextureHandle ReserveTextureSlot(TextureObject& texture, TextureInfo& textureInfo);
+            static TextureHandle ReserveTextureSlot1D(TextureObject& texture, TextureInfo& textureInfo);
+            static TextureHandle ReserveTextureSlot2D(TextureObject& texture, TextureInfo& textureInfo);
+            static TextureHandle ReserveTextureSlot3D(TextureObject& texture, TextureInfo& textureInfo);
+            static TextureHandle ReserveTextureSlotCube(TextureObject& texture, TextureInfo& textureInfo);
             static SamplerHandle ReserveSamplerSlot(SamplerObject sampler, SamplerInfo& samplerInfo);
             static BufferHandle ReserveGPUBufferSlot(BufferObject& buffer, BufferInfo& bufferInfo); 
             static BufferHandle ReserveCPUBufferSlot(BufferObject& buffer);
 
-            static TransientTextureHandle ReserveTransientTextureSlot();
+            static TransientTextureHandle ReserveTransientTextureSlot(TextureType textureType);
             static TransientBufferHandle ReserveTransientBufferSlot(); 
 
             // --- Resource Destruction ---

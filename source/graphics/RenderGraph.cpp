@@ -364,24 +364,36 @@ namespace
 
     void CreateTransientTexture(TextureInfo textureInfo, VkImage& image, VkImageView& imageView)
     {
-
-        VkImageType imageType = VK_IMAGE_TYPE_2D;
-        VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
-        if(textureInfo.Data.Depth > 1)
+        VkImageType imageType;
+        VkImageViewType imageViewType;
+        VkImageCreateFlags flags = static_cast<VkImageCreateFlags>(0);
+        
+        switch (textureInfo.Data.TextureType) 
         {
-            imageType = VK_IMAGE_TYPE_3D;
-            imageViewType = VK_IMAGE_VIEW_TYPE_3D;
-        }
-        else if(textureInfo.Data.Height == 1)
-        {
-            imageType = VK_IMAGE_TYPE_1D;
-            imageViewType = VK_IMAGE_VIEW_TYPE_1D;
+            case (TextureType::TEXTURE_1D):
+                imageType = VK_IMAGE_TYPE_1D;
+                imageViewType = VK_IMAGE_VIEW_TYPE_1D;
+                break;
+            case (TextureType::TEXTURE_2D):
+                imageType = VK_IMAGE_TYPE_2D;
+                imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+                break;
+            case (TextureType::TEXTURE_3D):
+                imageType = VK_IMAGE_TYPE_3D;
+                imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+                break;
+            case (TextureType::TEXTURE_CUBE):
+                imageType = VK_IMAGE_TYPE_2D;
+                imageViewType = VK_IMAGE_VIEW_TYPE_CUBE;
+                flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+                break;
         }
 
         VkFormat format = GetVkImageFormat(textureInfo.Data.Format);
         VkImageCreateInfo imageCI
         {
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .flags = flags,
             .imageType = imageType,
             .format = format,
             .extent {.width = textureInfo.Data.Width, .height = textureInfo.Data.Height, .depth = textureInfo.Data.Depth},
@@ -499,7 +511,6 @@ namespace
             return true;
         }
     }
-
 
     uint32_t FindBestMemoryTypeIndex(VkMemoryRequirements2& memoryRequirements)
     {
@@ -1178,7 +1189,8 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
 
             uint32_t textureIndex = barrierInfo.DstInfo.TextureId;
 
-            VkImage image = transientTextures[frameIndex][textureIndex].Image;
+            TextureResource& texture = transientTextures[frameIndex][textureIndex];
+            VkImage image = texture.Image;
             VkFormat format = GetVkImageFormat(transientTextures[frameIndex][textureIndex].TextureInfo.Data.Format);
             VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
 
@@ -1200,7 +1212,7 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
                     .baseMipLevel = 0,
                     .levelCount = 1,
                     .baseArrayLayer = 0,
-                    .layerCount = 1
+                    .layerCount = texture.TextureInfo.Data.ArrayLayers
                 }
             };
 
@@ -1241,7 +1253,10 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
             uint32_t textureId = barrierInfo.DstInfo.TextureId;
 
             VkImage image = MemoryRegistry::GetTexture(textureId).Image;
-            VkFormat format = GetVkImageFormat(MemoryRegistry::GetTextureInfo(textureId).Data.Format);
+
+            TextureInfo& textureInfo = MemoryRegistry::GetTextureInfo(textureId);
+
+            VkFormat format = GetVkImageFormat(textureInfo.Data.Format);
             VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
 
             VkImageMemoryBarrier2 barrier
@@ -1262,7 +1277,7 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
                     .baseMipLevel = 0,
                     .levelCount = 1,
                     .baseArrayLayer = 0,
-                    .layerCount = 1
+                    .layerCount = textureInfo.Data.ArrayLayers
                 }
             };
 
@@ -1560,11 +1575,14 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& p
     {
         TextureCopy copyInfo = copies[i];
 
-        VkImage srcTexture = transientTextures[frameIndex][copyInfo.SrcTexture].Image;
-        VkImage dstTexture = transientTextures[frameIndex][copyInfo.DstTexture].Image;
+        TextureResource& srcTexture = transientTextures[frameIndex][copyInfo.SrcTexture];
+        TextureResource& dstTexture = transientTextures[frameIndex][copyInfo.DstTexture];
 
-        VkFormat srcFormat = GetVkImageFormat(transientTextures[frameIndex][copyInfo.SrcTexture].TextureInfo.Data.Format);
-        VkFormat dstFormat = GetVkImageFormat(transientTextures[frameIndex][copyInfo.DstTexture].TextureInfo.Data.Format);
+        VkImage srcImage = srcTexture.Image;
+        VkImage dstImage = dstTexture.Image;
+
+        VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Data.Format);
+        VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Data.Format);
 
         VkImageAspectFlags srcAspcetMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
@@ -1576,7 +1594,7 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& p
                 .aspectMask = srcAspcetMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = 1
+                .layerCount = srcTexture.TextureInfo.Data.ArrayLayers
             },
             .srcOffset {copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
 
@@ -1585,7 +1603,7 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& p
                 .aspectMask = dstAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = 1
+                .layerCount = dstTexture.TextureInfo.Data.ArrayLayers
             },
             .dstOffset {copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
 
@@ -1597,8 +1615,8 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& p
         };
 
         vkCmdCopyImage(cmdBuffer, 
-            srcTexture, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            dstTexture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
+            srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
     }
 
 }
@@ -1611,11 +1629,14 @@ void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& 
     {
         TextureCopy copyInfo = copies[i];
 
-        VkImage srcTexture = MemoryRegistry::GetTexture(copyInfo.SrcTexture).Image;
-        VkImage dstTexture = MemoryRegistry::GetTexture(copyInfo.DstTexture).Image;
+        TextureInfo& srcTexture = MemoryRegistry::GetTextureInfo(copyInfo.SrcTexture);
+        TextureInfo& dstTexture = MemoryRegistry::GetTextureInfo(copyInfo.DstTexture);
 
-        VkFormat srcFormat = GetVkImageFormat(MemoryRegistry::GetTextureInfo(copyInfo.SrcTexture).Data.Format);
-        VkFormat dstFormat = GetVkImageFormat(MemoryRegistry::GetTextureInfo(copyInfo.DstTexture).Data.Format);
+        VkImage srcImage = MemoryRegistry::GetTexture(copyInfo.SrcTexture).Image;
+        VkImage dstImage = MemoryRegistry::GetTexture(copyInfo.DstTexture).Image;
+
+        VkFormat srcFormat = GetVkImageFormat(srcTexture.Data.Format);
+        VkFormat dstFormat = GetVkImageFormat(dstTexture.Data.Format);
 
         VkImageAspectFlags srcAspcetMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
@@ -1627,7 +1648,7 @@ void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& 
                 .aspectMask = srcAspcetMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = 1
+                .layerCount = srcTexture.Data.ArrayLayers
             },
             .srcOffset {copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
 
@@ -1636,7 +1657,7 @@ void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& 
                 .aspectMask = dstAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = 1
+                .layerCount = dstTexture.Data.ArrayLayers
             },
             .dstOffset {copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
 
@@ -1648,8 +1669,8 @@ void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& 
         };
 
         vkCmdCopyImage(cmdBuffer, 
-            srcTexture, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            dstTexture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
+            srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
     }
 
 }
@@ -1662,10 +1683,12 @@ void RenderGraph::RecordTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer,
     {
         BufferToTextureCopy copyInfo = copies[i];
 
-        VkBuffer srcBuffer = transientBuffers[frameIndex][copyInfo.SrcBuffer].Buffer;
-        VkImage dstImage = transientTextures[frameIndex][copyInfo.DstTexture].Image;
+        TextureResource& dstTexture = transientTextures[frameIndex][copyInfo.DstTexture];
 
-        VkFormat dstFormat = GetVkImageFormat(transientTextures[frameIndex][copyInfo.DstTexture].TextureInfo.Data.Format);
+        VkBuffer srcBuffer = transientBuffers[frameIndex][copyInfo.SrcBuffer].Buffer;
+        VkImage dstImage = dstTexture.Image;
+
+        VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Data.Format);
 
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
 
@@ -1679,7 +1702,7 @@ void RenderGraph::RecordTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer,
                 .aspectMask = dstAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = 1
+                .layerCount = dstTexture.TextureInfo.Data.ArrayLayers
             },
             .imageOffset{copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
             .imageExtent{
@@ -1701,10 +1724,12 @@ void RenderGraph::RecordPersistentBufferToTextureCopy(VkCommandBuffer& cmdBuffer
     {
         BufferToTextureCopy copyInfo = copies[i];
 
+        TextureInfo& dstTexture = MemoryRegistry::GetTextureInfo(copyInfo.DstTexture);
+
         VkBuffer srcBuffer = MemoryRegistry::GetBuffer(copyInfo.SrcBuffer).Buffer;
         VkImage dstImage = MemoryRegistry::GetTexture(copyInfo.DstTexture).Image;
 
-        VkFormat dstFormat = GetVkImageFormat(MemoryRegistry::GetTextureInfo(copyInfo.DstTexture).Data.Format);
+        VkFormat dstFormat = GetVkImageFormat(dstTexture.Data.Format);
 
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
 
@@ -1718,7 +1743,7 @@ void RenderGraph::RecordPersistentBufferToTextureCopy(VkCommandBuffer& cmdBuffer
                 .aspectMask = dstAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = 1
+                .layerCount = dstTexture.Data.ArrayLayers
             },
             .imageOffset{copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
             .imageExtent{
@@ -1740,10 +1765,12 @@ void RenderGraph::RecordTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer,
     {
         TextureToBufferCopy copyInfo = copies[i];
 
-        VkImage srcTexture = transientTextures[frameIndex][copyInfo.SrcTexture].Image;
+        TextureResource& srcTexture = transientTextures[frameIndex][copyInfo.SrcTexture];
+
+        VkImage srcImage = srcTexture.Image;
         VkBuffer dstBuffer = transientBuffers[frameIndex][copyInfo.DstBuffer].Buffer;
 
-        VkFormat srcFormat = GetVkImageFormat(transientTextures[frameIndex][copyInfo.SrcTexture].TextureInfo.Data.Format);
+        VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Data.Format);
 
         VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
 
@@ -1757,7 +1784,7 @@ void RenderGraph::RecordTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer,
                 .aspectMask = srcAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = 1
+                .layerCount = srcTexture.TextureInfo.Data.ArrayLayers
             },
             .imageOffset{copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
             .imageExtent{
@@ -1766,7 +1793,7 @@ void RenderGraph::RecordTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer,
                 static_cast<uint32_t>(copyInfo.Extent.z)}
         };
 
-        vkCmdCopyImageToBuffer(cmdBuffer, srcTexture, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+        vkCmdCopyImageToBuffer(cmdBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
             dstBuffer, 1, &bufferImageCopy);
     }
 }
@@ -1779,10 +1806,12 @@ void RenderGraph::RecordPersistentTextureToBufferCopy(VkCommandBuffer& cmdBuffer
     {
         TextureToBufferCopy copyInfo = copies[i];
 
-        VkImage srcTexture = MemoryRegistry::GetTexture(copyInfo.SrcTexture).Image;
+        TextureInfo& srcTexture = MemoryRegistry::GetTextureInfo(copyInfo.SrcTexture);
+
+        VkImage srcImage = MemoryRegistry::GetTexture(copyInfo.SrcTexture).Image;
         VkBuffer dstBuffer = MemoryRegistry::GetBuffer(copyInfo.DstBuffer).Buffer;
 
-        VkFormat srcFormat = GetVkImageFormat(MemoryRegistry::GetTextureInfo(copyInfo.SrcTexture).Data.Format);
+        VkFormat srcFormat = GetVkImageFormat(srcTexture.Data.Format);
 
         VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
 
@@ -1796,7 +1825,7 @@ void RenderGraph::RecordPersistentTextureToBufferCopy(VkCommandBuffer& cmdBuffer
                 .aspectMask = srcAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = 1
+                .layerCount = srcTexture.Data.ArrayLayers
             },
             .imageOffset{copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
             .imageExtent{
@@ -1805,7 +1834,7 @@ void RenderGraph::RecordPersistentTextureToBufferCopy(VkCommandBuffer& cmdBuffer
                 static_cast<uint32_t>(copyInfo.Extent.z)}
         };
 
-        vkCmdCopyImageToBuffer(cmdBuffer, srcTexture, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+        vkCmdCopyImageToBuffer(cmdBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
             dstBuffer, 1, &bufferImageCopy);
     }
 }
@@ -1866,10 +1895,12 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass&
     {
         TextureUpload uploadInfo = uploads[i];
 
-        BufferObject& srcBuffer = MemoryRegistry::GetBuffer(uploadInfo.SrcBufferId);
-        TextureObject& dstTexture = MemoryRegistry::GetTexture(uploadInfo.DstTexture);
+        TextureResource& dstTexture = transientTextures[frameIndex][uploadInfo.DstTexture];
 
-        VkFormat format = GetVkImageFormat(transientTextures[frameIndex][uploadInfo.DstTexture].TextureInfo.Data.Format);
+        VkBuffer srcBuffer = MemoryRegistry::GetBuffer(uploadInfo.SrcBufferId).Buffer;
+        VkImage dstImage = MemoryRegistry::GetTexture(uploadInfo.DstTexture).Image;
+
+        VkFormat format = GetVkImageFormat(dstTexture.TextureInfo.Data.Format);
 
         VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
 
@@ -1883,7 +1914,7 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass&
                 .aspectMask = aspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = 1,
+                .layerCount = dstTexture.TextureInfo.Data.ArrayLayers,
             },
             .imageOffset {uploadInfo.DstOffset.x, uploadInfo.DstOffset.y, uploadInfo.DstOffset.z},
             .imageExtent {
@@ -1892,7 +1923,7 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass&
                 static_cast<uint32_t>(uploadInfo.Extent.z)}
         };
 
-        vkCmdCopyBufferToImage(cmdBuffer, srcBuffer.Buffer, dstTexture.Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        vkCmdCopyBufferToImage(cmdBuffer, srcBuffer, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &bufferImageCopy);
 
         MemoryRegistry::DestroyBuffer(uploadInfo.SrcBufferId);
@@ -1907,10 +1938,12 @@ void RenderGraph::RecordPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass
     {
         TextureUpload uploadInfo = uploads[i];
 
-        BufferObject& srcBuffer = MemoryRegistry::GetBuffer(uploadInfo.SrcBufferId);
-        TextureObject& dstTexture = MemoryRegistry::GetTexture(uploadInfo.DstTexture);
+        TextureInfo& dstTexture = MemoryRegistry::GetTextureInfo(uploadInfo.DstTexture);
 
-        VkFormat format = GetVkImageFormat(MemoryRegistry::GetTextureInfo(uploadInfo.DstTexture).Data.Format);
+        VkBuffer srcBuffer = MemoryRegistry::GetBuffer(uploadInfo.SrcBufferId).Buffer;
+        VkImage dstImage = MemoryRegistry::GetTexture(uploadInfo.DstTexture).Image;
+
+        VkFormat format = GetVkImageFormat(dstTexture.Data.Format);
 
         VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
 
@@ -1924,7 +1957,7 @@ void RenderGraph::RecordPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass
                 .aspectMask = aspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = 1,
+                .layerCount = dstTexture.Data.ArrayLayers,
             },
             .imageOffset {uploadInfo.DstOffset.x, uploadInfo.DstOffset.y, uploadInfo.DstOffset.z},
             .imageExtent {
@@ -1933,7 +1966,7 @@ void RenderGraph::RecordPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass
                 static_cast<uint32_t>(uploadInfo.Extent.z)}
         };
 
-        vkCmdCopyBufferToImage(cmdBuffer, srcBuffer.Buffer, dstTexture.Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        vkCmdCopyBufferToImage(cmdBuffer, srcBuffer, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &bufferImageCopy);
 
         MemoryRegistry::DestroyBuffer(uploadInfo.SrcBufferId);
@@ -2784,10 +2817,11 @@ void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
 
 TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureInfo1D textureInfo)
 {
-    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot();
+    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot(TextureType::TEXTURE_1D);
 
     TextureInfo data
     {
+        .Data.TextureType = TextureType::TEXTURE_1D,
         .Data.Width = textureInfo.Width, 
         .Data.Height = 1,
         .Data.Depth = 1,
@@ -2805,9 +2839,10 @@ TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureIn
 
 TransientTextureHandle RenderGraph::RequestTransientTexture2D(TransientTextureInfo2D textureInfo)
 {
-    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot();
+    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot(TextureType::TEXTURE_2D);
     TextureInfo data
     {
+        .Data.TextureType = TextureType::TEXTURE_2D,
         .Data.Width = textureInfo.Width, 
         .Data.Height = textureInfo.Height,
         .Data.Depth = 1,
@@ -2824,12 +2859,33 @@ TransientTextureHandle RenderGraph::RequestTransientTexture2D(TransientTextureIn
 
 TransientTextureHandle RenderGraph::RequestTransientTexture3D(TransientTextureInfo3D textureInfo)
 {
-    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot();
+    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot(TextureType::TEXTURE_3D);
     TextureInfo data
     {
+        .Data.TextureType = TextureType::TEXTURE_3D,
         .Data.Width = textureInfo.Width, 
         .Data.Height = textureInfo.Height,
         .Data.Depth = textureInfo.Depth,
+        .Data.ArrayLayers = textureInfo.ArrayLayers,
+        .Data.MipLevels = textureInfo.MipLevels,
+        .Data.Format = textureInfo.Format,
+        .Data.Usage = static_cast<TextureUsage>(0),
+        .Data.Sample = textureInfo.Sample
+    };
+
+    transientRequestedTextures.push_back(data);
+    return handle;
+}
+
+TransientTextureHandle RenderGraph::RequestTransientTextureCube(TransientTextureInfo2D textureInfo)
+{
+    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot(TextureType::TEXTURE_CUBE);
+    TextureInfo data
+    {
+        .Data.TextureType = TextureType::TEXTURE_3D,
+        .Data.Width = textureInfo.Width, 
+        .Data.Height = textureInfo.Height,
+        .Data.Depth = 1,
         .Data.ArrayLayers = textureInfo.ArrayLayers,
         .Data.MipLevels = textureInfo.MipLevels,
         .Data.Format = textureInfo.Format,

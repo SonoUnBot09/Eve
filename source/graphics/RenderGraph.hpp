@@ -23,6 +23,7 @@ namespace Eve::Graphics
             static TransientTextureHandle RequestTransientTexture1D(TransientTextureInfo1D textureInfo);
             static TransientTextureHandle RequestTransientTexture2D(TransientTextureInfo2D textureInfo);
             static TransientTextureHandle RequestTransientTexture3D(TransientTextureInfo3D textureInfo);
+            static TransientTextureHandle RequestTransientTextureCube(TransientTextureInfo2D textureInfo);
             static TransientBufferHandle RequestTransientBuffer(TransientBufferInfo bufferInfo);            
             static void AddPass(GraphicsPass& pass);
             static void AddPass(TransferPass& pass);

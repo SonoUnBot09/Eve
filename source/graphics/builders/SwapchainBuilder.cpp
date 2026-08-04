@@ -139,6 +139,8 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
         }
     }
 
+    Format format = swapchain.Format == VK_FORMAT_R8G8B8A8_SRGB ? Format::FORMAT_R8G8B8A8_SRGB : Format::FORMAT_B8G8R8A8_SRGB;
+
     for(uint32_t i = 0; i < imagesCount; i++)
     {
         TextureObject texture
@@ -149,19 +151,19 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
 
         TextureInfo textureInfo
         {
+            .Data.TextureType = TextureType::TEXTURE_2D,
             .Data.Width = swapchain.Width,
             .Data.Height = swapchain.Height,
             .Data.Depth = 1,
-            .Data.ArrayLayers = 1
+            .Data.ArrayLayers = 1,
+            .Data.Format = format,
+            .Data.MipLevels = 1
         };
 
-        TextureHandle handle = MemoryRegistry::ReserveTextureSlot(texture, textureInfo);
+        TextureHandle handle = MemoryRegistry::ReserveTextureSlot2D(texture, textureInfo);
 
         swapchain.swapchainImagesHandles.push_back(handle);
     }
-
-    
-    Format format = swapchain.Format == VK_FORMAT_R8G8B8A8_SRGB ? Format::FORMAT_R8G8B8A8_SRGB : Format::FORMAT_B8G8R8A8_SRGB;
 
     // TODO: Add the real shader path
     
@@ -284,6 +286,8 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
         }
     }
 
+    Format format = swapchain.Format == VK_FORMAT_R8G8B8A8_SRGB ? Format::FORMAT_R8G8B8A8_SRGB : Format::FORMAT_B8G8R8A8_SRGB;
+
     for(uint32_t i = 0; i < imagesCount; i++)
     {
         TextureObject texture
@@ -292,9 +296,17 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
             .ImageView = swapchainImageViews[i]
         };
 
-        TextureInfo dummy{};
-
-        TextureHandle handle = MemoryRegistry::ReserveTextureSlot(texture, dummy);
+        TextureInfo textureInfo
+        {
+            .Data.TextureType = TextureType::TEXTURE_2D,
+            .Data.Width = swapchain.Width,
+            .Data.Height = swapchain.Height,
+            .Data.Depth = 1,
+            .Data.ArrayLayers = 1,
+            .Data.Format = format,
+            .Data.MipLevels = 1
+        };
+        TextureHandle handle = MemoryRegistry::ReserveTextureSlot2D(texture, textureInfo);
 
         swapchain.swapchainImagesHandles.push_back(handle);
     }

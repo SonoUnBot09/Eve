@@ -9,38 +9,84 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
 {
     #pragma region Layout
 
-        std::vector<VkDescriptorSetLayoutBinding> bindingsLayout;
-        VkDescriptorSetLayoutBinding imagesDescriptor
+        std::vector<VkDescriptorSetLayoutBinding> bindingsLayout
         {
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            .descriptorCount = maxImagesCount,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+            // 1D Textures
+            VkDescriptorSetLayoutBinding
+            {
+                .binding = 0,
+                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount,
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
+            },
+
+            // 2D Textures
+            VkDescriptorSetLayoutBinding
+            {
+                .binding = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount,
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
+            },
+
+            // 3D Textures
+            VkDescriptorSetLayoutBinding
+            {
+                .binding = 2,
+                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount,
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
+            },
+
+            // Cubemaps
+            VkDescriptorSetLayoutBinding
+            {
+                .binding = 2,
+                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount,
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
+            },
+
+            // Samplers
+            VkDescriptorSetLayoutBinding
+            {
+                .binding = 3,
+                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+                .descriptorCount = maxSamplersCount,
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+            },
+
+            // Buffers
+            VkDescriptorSetLayoutBinding
+            {
+                .binding = 2,
+                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .descriptorCount = 1,
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
+            }
         };
 
-        VkDescriptorSetLayoutBinding samplersDescriptor
-        {
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-            .descriptorCount = maxSamplersCount,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
-        };
+        std::vector<VkDescriptorBindingFlags> bindingFlags(6);
+        bindingFlags[0] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        bindingFlags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        bindingFlags[2] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        bindingFlags[3] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        bindingFlags[4] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        bindingFlags[5] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 
-        VkDescriptorSetLayoutBinding buffersDescriptor
+        VkDescriptorSetLayoutBindingFlagsCreateInfo flagsCI
         {
-            .binding = 2,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+            .pNext = nullptr,
+            .bindingCount = static_cast<uint32_t>(bindingFlags.size()),
+            .pBindingFlags = bindingFlags.data()
         };
-
-        bindingsLayout.push_back(imagesDescriptor);
-        bindingsLayout.push_back(samplersDescriptor);
-        bindingsLayout.push_back(buffersDescriptor);
         
         VkDescriptorSetLayoutCreateInfo layoutCI
         {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = &flagsCI,
+            .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
             .bindingCount = static_cast<uint32_t>(bindingsLayout.size()),
             .pBindings = bindingsLayout.data()
         };
@@ -51,33 +97,55 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
 
     #pragma region Pool
 
-        std::vector<VkDescriptorPoolSize> poolSize;
-
-        VkDescriptorPoolSize imageDescriptorSize
+        std::vector<VkDescriptorPoolSize> poolSize
         {
-            .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
-        };
+            // Texture 1D
+            VkDescriptorPoolSize
+            {
+                .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
+            },
 
-        VkDescriptorPoolSize samplerDescriptorSize
-        {
-            .type = VK_DESCRIPTOR_TYPE_SAMPLER,
-            .descriptorCount = maxSamplersCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
-        };
+            // Texture 2D
+            VkDescriptorPoolSize
+            {
+                .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
+            },
 
-        VkDescriptorPoolSize bufferDescriptorSize
-        {
-            .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = 1 * Eve::Settings::MAX_FRAMES_IN_FLIGHT
-        };
+            // Texture 3D
+            VkDescriptorPoolSize
+            {
+                .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
+            },
 
-        poolSize.push_back(imageDescriptorSize);
-        poolSize.push_back(samplerDescriptorSize);
-        poolSize.push_back(bufferDescriptorSize);
+            // Texture Cubemap
+            VkDescriptorPoolSize
+            {
+                .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
+            },
+
+            // Samplers
+            VkDescriptorPoolSize
+            {
+                .type = VK_DESCRIPTOR_TYPE_SAMPLER,
+                .descriptorCount = maxSamplersCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
+            },
+
+            // Buffers
+            VkDescriptorPoolSize
+            {
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .descriptorCount = 1 * Eve::Settings::MAX_FRAMES_IN_FLIGHT
+            },
+        };
 
         VkDescriptorPoolCreateInfo poolCI
         {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
             .maxSets = Eve::Settings::MAX_FRAMES_IN_FLIGHT,
             .poolSizeCount = static_cast<uint32_t>(poolSize.size()),
             .pPoolSizes = poolSize.data()
@@ -127,7 +195,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             {
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet = sets[i],
-                .dstBinding = 2,
+                .dstBinding = 5,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -184,12 +252,51 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     copyRegions.clear();
 
     // Images erase
-    uint32_t imagesToErase = 0;
-    for(int32_t i = imagesToMap.size() - 1; i >= 0; i--)
+    uint32_t images1DToErase = 0;
+    for(int32_t i = images1DToMap.size() - 1; i >= 0; i--)
     {
-        if(imagesToMap[i].second > 0)
+        if(images1DToMap[i].second <= 0)
         {
-            imagesToErase++;
+            images1DToErase++;
+        }
+        else 
+        {
+            break;
+        }
+    }
+
+    uint32_t images2DToErase = 0;
+    for(int32_t i = images2DToMap.size() - 1; i >= 0; i--)
+    {
+        if(images2DToMap[i].second <= 0)
+        {
+            images2DToErase++;
+        }
+        else 
+        {
+            break;
+        }
+    }
+
+    uint32_t images3DToErase = 0;
+    for(int32_t i = images3DToMap.size() - 1; i >= 0; i--)
+    {
+        if(images3DToMap[i].second <= 0)
+        {
+            images3DToErase++;
+        }
+        else 
+        {
+            break;
+        }
+    }
+
+    uint32_t imagesCubeToErase = 0;
+    for(int32_t i = imagesCubeToMap.size() - 1; i >= 0; i--)
+    {
+        if(imagesCubeToMap[i].second <= 0)
+        {
+            imagesCubeToErase++;
         }
         else 
         {
@@ -201,7 +308,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t samplersToErase = 0;
     for(int32_t i = samplersToMap.size() - 1; i >= 0; i--)
     {
-        if(samplersToMap[i].second > 0)
+        if(samplersToMap[i].second <= 0)
         {
             samplersToErase++;
         }
@@ -215,7 +322,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t buffersToErase = 0;
     for(int32_t i = buffersToMap.size() - 1; i >= 0; i--)
     {
-        if(buffersToMap[i].second > 0)
+        if(buffersToMap[i].second <= 0)
         {
             buffersToErase++;
         }
@@ -226,20 +333,36 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     }
 
     // Erase
-    imagesToMap.erase(imagesToMap.cend() - imagesToErase, imagesToMap.cend());
+    images1DToMap.erase(images1DToMap.cend() - images1DToErase, images1DToMap.cend());
+    images2DToMap.erase(images2DToMap.cend() - images2DToErase, images2DToMap.cend());
+    images3DToMap.erase(images3DToMap.cend() - images3DToErase, images3DToMap.cend());
+    imagesCubeToMap.erase(imagesCubeToMap.cend() - imagesCubeToErase, imagesCubeToMap.cend());
     samplersToMap.erase(samplersToMap.cend() - samplersToErase, samplersToMap.cend());
     buffersToMap.erase(buffersToMap.cend() - buffersToErase, buffersToMap.cend());
 
+
+    std::vector<VkDescriptorImageInfo> images1DInfo;
+    std::vector<VkDescriptorImageInfo> images2DInfo;
+    std::vector<VkDescriptorImageInfo> images3DInfo;
+    std::vector<VkDescriptorImageInfo> imagesCubeInfo;
+    std::vector<VkDescriptorImageInfo> samplersInfo;
+
+    images1DInfo.reserve(images1DToMap.size());
+    images1DInfo.reserve(images2DToMap.size());
+    images1DInfo.reserve(images3DToMap.size());
+    images1DInfo.reserve(imagesCubeToMap.size());
+    samplersInfo.reserve(samplersToMap.size());
+
     // Images
-    for(uint32_t i = 0; i < imagesToMap.size(); i++)
+    for(uint32_t i = 0; i < images1DToMap.size(); i++)
     {
-        uint32_t framesToLive = imagesToMap[i].second;
+        uint32_t framesToLive = images1DToMap[i].second;
 
         if(framesToLive == 0) { continue; }
 
-        imagesToMap[i].second--;
+        images1DToMap[i].second--;
 
-        TextureHandle handle = imagesToMap[i].first;
+        TextureHandle handle = images1DToMap[i].first;
 
         TextureObject& image = MemoryRegistry::GetTexture(handle);
 
@@ -249,6 +372,113 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
             .sampler = VK_NULL_HANDLE
         };
+
+        images1DInfo.push_back(imageInfo);
+
+        VkWriteDescriptorSet writeInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = sets[frameIndex],
+            .dstBinding = 0,
+            .dstArrayElement = handle.Id,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .pImageInfo = &imageInfo
+        };
+
+        descriptorSetWrites.emplace_back(writeInfo);
+    }
+
+    for(uint32_t i = 0; i < images2DToMap.size(); i++)
+    {
+        uint32_t framesToLive = images2DToMap[i].second;
+
+        if(framesToLive == 0) { continue; }
+
+        images2DToMap[i].second--;
+
+        TextureHandle handle = images2DToMap[i].first;
+
+        TextureObject& image = MemoryRegistry::GetTexture(handle);
+
+        VkDescriptorImageInfo imageInfo
+        {
+            .imageView = image.ImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .sampler = VK_NULL_HANDLE
+        };
+
+        images1DInfo.push_back(imageInfo);
+
+        VkWriteDescriptorSet writeInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = sets[frameIndex],
+            .dstBinding = 0,
+            .dstArrayElement = handle.Id,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .pImageInfo = &imageInfo
+        };
+
+        descriptorSetWrites.emplace_back(writeInfo);
+    }
+
+    for(uint32_t i = 0; i < images3DToMap.size(); i++)
+    {
+        uint32_t framesToLive = images3DToMap[i].second;
+
+        if(framesToLive == 0) { continue; }
+
+        images3DToMap[i].second--;
+
+        TextureHandle handle = images3DToMap[i].first;
+
+        TextureObject& image = MemoryRegistry::GetTexture(handle);
+
+        VkDescriptorImageInfo imageInfo
+        {
+            .imageView = image.ImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .sampler = VK_NULL_HANDLE
+        };
+
+        images1DInfo.push_back(imageInfo);
+
+        VkWriteDescriptorSet writeInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = sets[frameIndex],
+            .dstBinding = 0,
+            .dstArrayElement = handle.Id,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .pImageInfo = &imageInfo
+        };
+
+        descriptorSetWrites.emplace_back(writeInfo);
+    }
+
+    for(uint32_t i = 0; i < imagesCubeToMap.size(); i++)
+    {
+        uint32_t framesToLive = imagesCubeToMap[i].second;
+
+        if(framesToLive == 0) { continue; }
+
+        imagesCubeToMap[i].second--;
+
+        TextureHandle handle = imagesCubeToMap[i].first;
+
+        TextureObject& image = MemoryRegistry::GetTexture(handle);
+
+        VkDescriptorImageInfo imageInfo
+        {
+            .imageView = image.ImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .sampler = VK_NULL_HANDLE
+        };
+
+        images1DInfo.push_back(imageInfo);
 
         VkWriteDescriptorSet writeInfo
         {
@@ -283,6 +513,8 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .imageView = VK_NULL_HANDLE,
             .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
+
+        samplersInfo.push_back(imageInfo);
 
         VkWriteDescriptorSet writeInfo
         {
@@ -344,7 +576,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         return false; 
     }
 
-    memcpy(stagingBuffers[frameIndex].AllocationInfo.pMappedData, buffersAddress.data(), buffersAddress.size());
+    memcpy(stagingBuffers[frameIndex].AllocationInfo.pMappedData, buffersAddress.data(), buffersAddress.size() * sizeof(uint64_t));
 
     vkCmdCopyBuffer
     (
@@ -362,7 +594,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
         .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
         .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-        .dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
         .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
         .buffer = MemoryRegistry::GetBuffer(BDABuffers[frameIndex]).Buffer,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
@@ -384,20 +616,71 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     return true;
 }
 
-void ResourceMapper::ScheduleImageMapping(TextureHandle handle)
+void ResourceMapper::ScheduleImageMapping1D(TextureHandle handle)
 {
     std::lock_guard<std::mutex> lock(imagesMutex);
 
-    if(imageToMapFreeSlots.empty())
+    if(image1DToMapFreeSlots.empty())
     {
-        imagesToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+        images1DToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
     }
     else 
     {
-        uint32_t index = imageToMapFreeSlots.back();
-        imageToMapFreeSlots.pop_back();
+        uint32_t index = image1DToMapFreeSlots.back();
+        image1DToMapFreeSlots.pop_back();
 
-        imagesToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+        images1DToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+    }
+}
+
+void ResourceMapper::ScheduleImageMapping2D(TextureHandle handle)
+{
+    std::lock_guard<std::mutex> lock(imagesMutex);
+
+    if(image2DToMapFreeSlots.empty())
+    {
+        images2DToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+    }
+    else 
+    {
+        uint32_t index = image2DToMapFreeSlots.back();
+        image2DToMapFreeSlots.pop_back();
+
+        images2DToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+    }
+}
+
+void ResourceMapper::ScheduleImageMapping3D(TextureHandle handle)
+{
+    std::lock_guard<std::mutex> lock(imagesMutex);
+
+    if(image3DToMapFreeSlots.empty())
+    {
+        images3DToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+    }
+    else 
+    {
+        uint32_t index = image3DToMapFreeSlots.back();
+        image3DToMapFreeSlots.pop_back();
+
+        images3DToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+    }
+}
+
+void ResourceMapper::ScheduleImageMappingCube(TextureHandle handle)
+{
+    std::lock_guard<std::mutex> lock(imagesMutex);
+
+    if(imageCubeToMapFreeSlots.empty())
+    {
+        imagesCubeToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+    }
+    else 
+    {
+        uint32_t index = imageCubeToMapFreeSlots.back();
+        imageCubeToMapFreeSlots.pop_back();
+
+        imagesCubeToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
     }
 }
 

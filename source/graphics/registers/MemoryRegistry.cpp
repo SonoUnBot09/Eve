@@ -1,6 +1,7 @@
 #include "MemoryRegistry.hpp"
 #include "Eve/graphics/Buffer.hpp"
 #include "Eve/graphics/PassModule.hpp"
+#include "Eve/graphics/Texture.hpp"
 #include <graphics/ResourceMapper.hpp>
 #include <graphics/GraphicsCore.hpp>
 #include <graphics/MemoryBin.hpp>
@@ -28,7 +29,7 @@ TextureHandle MemoryRegistry::CreateTexture1D(TextureInfo1D textureInfo)
         .Data.Usage = textureInfo.Usage
     };
 
-    TextureHandle handle = ReserveTextureSlot(texture, info);
+    TextureHandle handle = ReserveTextureSlot1D(texture, info);
 
     return handle;
 }
@@ -50,7 +51,7 @@ TextureHandle MemoryRegistry::CreateTexture2D(TextureInfo2D textureInfo)
         .Data.Usage = textureInfo.Usage
     };
 
-    TextureHandle handle = ReserveTextureSlot(texture, info);
+    TextureHandle handle = ReserveTextureSlot2D(texture, info);
 
     return handle;
 }
@@ -72,7 +73,29 @@ TextureHandle MemoryRegistry::CreateTexture3D(TextureInfo3D textureInfo)
         .Data.Usage = textureInfo.Usage
     };
 
-    TextureHandle handle = ReserveTextureSlot(texture, info);
+    TextureHandle handle = ReserveTextureSlot3D(texture, info);
+
+    return handle;
+}
+
+TextureHandle MemoryRegistry::CreateTextureCube(TextureInfo2D textureInfo)
+{
+    TextureObject texture {};
+    Helpers::AllocateTextureCube(textureInfo, texture);
+
+    TextureInfo info
+    {
+        .Data.Width = textureInfo.Width,
+        .Data.Height = textureInfo.Height,
+        .Data.Depth = 1,
+        .Data.ArrayLayers = textureInfo.ArrayLayers,
+        .Data.Format = textureInfo.Format,
+        .Data.MipLevels = textureInfo.MipLevels,
+        .Data.Sample = textureInfo.Sample,
+        .Data.Usage = textureInfo.Usage
+    };
+
+    TextureHandle handle = ReserveTextureSlotCube(texture, info);
 
     return handle;
 }
@@ -174,7 +197,7 @@ void MemoryRegistry::DestroySampler(uint32_t id)
     FreeSamplerSlot(id);
 }
 
-TextureHandle MemoryRegistry::ReserveTextureSlot(TextureObject& texture, TextureInfo& textureInfo)
+TextureHandle MemoryRegistry::ReserveTextureSlot1D(TextureObject& texture, TextureInfo& textureInfo)
 {
     TextureHandle handle;
     if(imageFreeSlots.empty()) 
@@ -222,9 +245,168 @@ TextureHandle MemoryRegistry::ReserveTextureSlot(TextureObject& texture, Texture
         };
     }
 
-    ResourceMapper::ScheduleImageMapping(handle);
+    ResourceMapper::ScheduleImageMapping1D(handle);
 
 
+
+    return handle;
+}
+
+TextureHandle MemoryRegistry::ReserveTextureSlot2D(TextureObject& texture, TextureInfo& textureInfo)
+{
+    TextureHandle handle;
+    if(imageFreeSlots.empty()) 
+    {
+        uint32_t size = textures.size(); 
+
+        textureGenerations.resize(size + 1);
+
+        handle.Id = size;
+        handle.Generation = textureGenerations[handle.Id];
+
+        textureGenerations[handle.Id]++;
+
+        textures.push_back(texture);
+        texturesInfo.push_back(textureInfo);
+
+        // --- Update the Render Graph with the new resource state ---
+        RenderGraph::persistentTexturesState.push_back(RenderGraph::PersistentTextureState
+        {
+            .StageMask = VK_PIPELINE_STAGE_2_NONE,
+            .AccessMask = VK_ACCESS_2_NONE,
+            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .Usage = static_cast<Usage>(0)
+        });
+    }
+    else 
+    {
+        handle.Id = imageFreeSlots.back();
+        handle.Generation = textureGenerations[handle.Id];
+
+        textureGenerations[handle.Id]++;
+
+        imageFreeSlots.pop_back();
+
+        textures[handle.Id] = texture;
+        texturesInfo[handle.Id] = textureInfo;
+
+        // --- Update the Render Graph with the new resource state ---
+        RenderGraph::persistentTexturesState[handle.Id] = RenderGraph::PersistentTextureState
+        {
+            .StageMask = VK_PIPELINE_STAGE_2_NONE,
+            .AccessMask = VK_ACCESS_2_NONE,
+            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .Usage = static_cast<Usage>(0)
+        };
+    }
+
+    ResourceMapper::ScheduleImageMapping2D(handle);
+
+    return handle;
+}
+
+TextureHandle MemoryRegistry::ReserveTextureSlot3D(TextureObject& texture, TextureInfo& textureInfo)
+{
+    TextureHandle handle;
+    if(imageFreeSlots.empty()) 
+    {
+        uint32_t size = textures.size(); 
+
+        textureGenerations.resize(size + 1);
+
+        handle.Id = size;
+        handle.Generation = textureGenerations[handle.Id];
+
+        textureGenerations[handle.Id]++;
+
+        textures.push_back(texture);
+        texturesInfo.push_back(textureInfo);
+
+        // --- Update the Render Graph with the new resource state ---
+        RenderGraph::persistentTexturesState.push_back(RenderGraph::PersistentTextureState
+        {
+            .StageMask = VK_PIPELINE_STAGE_2_NONE,
+            .AccessMask = VK_ACCESS_2_NONE,
+            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .Usage = static_cast<Usage>(0)
+        });
+    }
+    else 
+    {
+        handle.Id = imageFreeSlots.back();
+        handle.Generation = textureGenerations[handle.Id];
+
+        textureGenerations[handle.Id]++;
+
+        imageFreeSlots.pop_back();
+
+        textures[handle.Id] = texture;
+        texturesInfo[handle.Id] = textureInfo;
+
+        // --- Update the Render Graph with the new resource state ---
+        RenderGraph::persistentTexturesState[handle.Id] = RenderGraph::PersistentTextureState
+        {
+            .StageMask = VK_PIPELINE_STAGE_2_NONE,
+            .AccessMask = VK_ACCESS_2_NONE,
+            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .Usage = static_cast<Usage>(0)
+        };
+    }
+
+    ResourceMapper::ScheduleImageMapping3D(handle);
+
+    return handle;
+}
+
+TextureHandle MemoryRegistry::ReserveTextureSlotCube(TextureObject& texture, TextureInfo& textureInfo)
+{
+    TextureHandle handle;
+    if(imageFreeSlots.empty()) 
+    {
+        uint32_t size = textures.size(); 
+
+        textureGenerations.resize(size + 1);
+
+        handle.Id = size;
+        handle.Generation = textureGenerations[handle.Id];
+
+        textureGenerations[handle.Id]++;
+
+        textures.push_back(texture);
+        texturesInfo.push_back(textureInfo);
+
+        // --- Update the Render Graph with the new resource state ---
+        RenderGraph::persistentTexturesState.push_back(RenderGraph::PersistentTextureState
+        {
+            .StageMask = VK_PIPELINE_STAGE_2_NONE,
+            .AccessMask = VK_ACCESS_2_NONE,
+            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .Usage = static_cast<Usage>(0)
+        });
+    }
+    else 
+    {
+        handle.Id = imageFreeSlots.back();
+        handle.Generation = textureGenerations[handle.Id];
+
+        textureGenerations[handle.Id]++;
+
+        imageFreeSlots.pop_back();
+
+        textures[handle.Id] = texture;
+        texturesInfo[handle.Id] = textureInfo;
+
+        // --- Update the Render Graph with the new resource state ---
+        RenderGraph::persistentTexturesState[handle.Id] = RenderGraph::PersistentTextureState
+        {
+            .StageMask = VK_PIPELINE_STAGE_2_NONE,
+            .AccessMask = VK_ACCESS_2_NONE,
+            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .Usage = static_cast<Usage>(0)
+        };
+    }
+
+    ResourceMapper::ScheduleImageMappingCube(handle);
 
     return handle;
 }
@@ -349,7 +531,7 @@ BufferHandle MemoryRegistry::ReserveCPUBufferSlot(BufferObject& buffer)
     return handle;
 }
 
-TransientTextureHandle MemoryRegistry::ReserveTransientTextureSlot()
+TransientTextureHandle MemoryRegistry::ReserveTransientTextureSlot(TextureType textureType)
 {
     TextureHandle handle;
     TextureObject texture {0, 0, 0, 0};
@@ -375,8 +557,26 @@ TransientTextureHandle MemoryRegistry::ReserveTransientTextureSlot()
         textures[handle.Id] = texture;
     }
 
-    ResourceMapper::ScheduleImageMapping(handle);
+    switch(textureType)
+    {
+        case(TextureType::TEXTURE_1D) :
+            ResourceMapper::ScheduleImageMapping1D(handle);
+            break;
 
+        case(TextureType::TEXTURE_2D) :
+        ResourceMapper::ScheduleImageMapping2D(handle);
+        break;
+
+        case(TextureType::TEXTURE_3D) :
+        ResourceMapper::ScheduleImageMapping3D(handle);
+        break;
+
+        case(TextureType::TEXTURE_CUBE) :
+        ResourceMapper::ScheduleImageMappingCube(handle);
+        break;
+
+    }
+    
     return TransientTextureHandle{handle.Id};
 }
 

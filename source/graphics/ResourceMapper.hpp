@@ -23,7 +23,10 @@ namespace Eve::Graphics
             static void CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t maxSamplersCount, uint32_t maxBuffersCount);
             static void DestroyGlobalDescriptor();        
             
-            static void ScheduleImageMapping(TextureHandle handle);
+            static void ScheduleImageMapping1D(TextureHandle handle);
+            static void ScheduleImageMapping2D(TextureHandle handle);
+            static void ScheduleImageMapping3D(TextureHandle handle);
+            static void ScheduleImageMappingCube(TextureHandle handle);
             static void ScheduleSamplerMapping(SamplerHandle handle);
             static void ScheduleBufferMapping(BufferHandle handle);
 
@@ -47,11 +50,17 @@ namespace Eve::Graphics
             inline static std::mutex imagesMutex;
             inline static std::mutex samplersMutex;
             inline static std::mutex buffersMutex;
-            inline static std::vector<std::pair<TextureHandle, uint32_t>> imagesToMap;
+            inline static std::vector<std::pair<TextureHandle, uint32_t>> images1DToMap;
+            inline static std::vector<std::pair<TextureHandle, uint32_t>> images2DToMap;
+            inline static std::vector<std::pair<TextureHandle, uint32_t>> images3DToMap;
+            inline static std::vector<std::pair<TextureHandle, uint32_t>> imagesCubeToMap;
             inline static std::vector<std::pair<SamplerHandle, uint32_t>> samplersToMap;
             inline static std::vector<std::pair<BufferHandle, uint32_t>> buffersToMap;
 
-            inline static std::vector<uint32_t> imageToMapFreeSlots;
+            inline static std::vector<uint32_t> image1DToMapFreeSlots;
+            inline static std::vector<uint32_t> image2DToMapFreeSlots;
+            inline static std::vector<uint32_t> image3DToMapFreeSlots;
+            inline static std::vector<uint32_t> imageCubeToMapFreeSlots;
             inline static std::vector<uint32_t> samplerToMapFreeSlots;
             inline static std::vector<uint32_t> bufferToMapFreeSlots;
     };

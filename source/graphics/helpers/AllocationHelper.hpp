@@ -206,4 +206,50 @@ namespace Eve::Graphics::Helpers
 
         vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
     }
+
+    static inline void AllocateTextureCube(TextureInfo2D textureInfo, TextureObject& texture)
+    {
+        VkFormat format = GetVkImageFormat(textureInfo.Format);
+        VkImageCreateInfo imageCI
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = format,
+            .extent {.width = textureInfo.Width, .height = textureInfo.Width, .depth = 1},
+            .mipLevels = textureInfo.MipLevels,
+            .arrayLayers = 6,
+            .samples = GetVkImageSamplesCount(textureInfo.Sample),
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = GetVkImageUsage(textureInfo.Usage),
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+
+        VmaAllocationCreateInfo imageAllocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+        };
+
+        vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
+            &texture.Image, &texture.Allocation, &texture.AllocationInfo);
+        
+        VkImageViewCreateInfo imageViewCI
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = texture.Image,
+            .viewType = VK_IMAGE_VIEW_TYPE_CUBE,
+            .format = format,
+            .subresourceRange
+            {
+                .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
+                .baseMipLevel = 0,
+                .levelCount = textureInfo.MipLevels,
+                .baseArrayLayer = 0,
+                .layerCount = textureInfo.ArrayLayers
+            }
+        };
+
+        vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
+    }
 }

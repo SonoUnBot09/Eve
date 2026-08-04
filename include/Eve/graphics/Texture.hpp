@@ -10,18 +10,8 @@ namespace Eve::Graphics
         {
             TEXTURE_1D,
             TEXTURE_2D,
-            TEXTURE_3D  
-        };
-
-        enum class TextureViewType : uint16_t
-        {
-            IMAGE_VIEW_TYPE_1D,
-            IMAGE_VIEW_TYPE_2D,
-            IMAGE_VIEW_TYPE_3D ,
-            IMAGE_VIEW_TYPE_CUBE,
-            IMAGE_VIEW_TYPE_1D_ARRAY,
-            IMAGE_VIEW_TYPE_2D_ARRAY,
-            IMAGE_VIEW_TYPE_CUBE_ARRAY
+            TEXTURE_3D,
+            TEXTURE_CUBE 
         };
 
         enum class TextureUsage : uint16_t
@@ -260,6 +250,7 @@ namespace Eve::Graphics
     {
         struct Data
         {
+            TextureType TextureType;
             uint32_t Width, Height, Depth;
             uint32_t ArrayLayers;
             uint32_t MipLevels;
