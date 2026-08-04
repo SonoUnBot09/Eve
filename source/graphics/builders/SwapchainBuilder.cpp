@@ -1,7 +1,9 @@
 #include <graphics/GraphicsCore.hpp>
 #include "SwapchainBuilder.hpp"
+#include "Eve/graphics/Geometry.hpp"
 #include "graphics/Resources.hpp"
 #include "graphics/registers/MemoryRegistry.hpp"
+#include "graphics/registers/ShaderRegistry.hpp"
 #include <graphics/MemoryBin.hpp>
 
 #include <EveSettings.hpp>
@@ -157,6 +159,31 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
 
         swapchain.swapchainImagesHandles.push_back(handle);
     }
+
+    
+    Format format = swapchain.Format == VK_FORMAT_R8G8B8A8_SRGB ? Format::FORMAT_R8G8B8A8_SRGB : Format::FORMAT_B8G8R8A8_SRGB;
+
+    // TODO: Add the real shader path
+    
+    ShaderInfo shaderInfo
+    {
+        .VertOffset = 0,
+        .VertStride = 0,
+        .FragOffset = 0,
+        .FragStride = 0,
+        .Topology = Topology::TOPOLOGY_TRIANGLE_LIST,
+        .PolygonMode = PolygonMode::POLYGON_MODE_FILL,
+        .CullMode = CullMode::CULL_MODE_NONE,
+        .LineWidth = 1,
+        .DepthTest = false,
+        .DepthWrite = false,
+        .StencilTest = false,
+        .CompareOp = DepthTest::DEPTH_COMPARE_LESS,
+        .samplesCount = TextureSample::SAMPLE_1,
+        .ColorFormat = format
+    };
+
+    swapchain.shader = ShaderRegistry::CreateGraphicsShader(shaderInfo);
 
     return true;
 }

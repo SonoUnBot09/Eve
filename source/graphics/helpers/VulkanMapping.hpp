@@ -332,10 +332,6 @@ namespace Eve::Graphics
     {
         return imageFormatLUT[static_cast<uint32_t>(format)];
     }
-    static inline uint32_t GetVkImageFormatSize(Format format)
-    {
-        return imageFormatSizeLUT[static_cast<uint32_t>(format)];
-    }
     static inline VkSampleCountFlagBits GetVkImageSamplesCount(TextureSample sample)
     {
         return imageSampleCountLUT[static_cast<uint32_t>(sample)];

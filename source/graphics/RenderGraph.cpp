@@ -5,6 +5,7 @@
 #include <graphics/registers/MemoryRegistry.hpp>
 #include "Resources.hpp"
 #include "builders/ShaderObject.hpp"
+#include "graphics/builders/ShaderObject.hpp"
 #include "graphics/helpers/VulkanMapping.hpp"
 #include <graphics/registers/MeshRegistry.hpp>
 #include <cstdint>
@@ -1463,6 +1464,10 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
 
         vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
         vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
+
+        GraphicsShaderObject shaderObject = ShaderRegistry::GetShaderObject(GraphicsCore::Swapchain.shader);
+
+        vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderObject.Pipeline);
 
         vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
 

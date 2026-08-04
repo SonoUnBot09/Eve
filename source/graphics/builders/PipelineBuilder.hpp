@@ -17,7 +17,7 @@ namespace Eve::Graphics
     {
         public:
 
-            bool BuildGraphicsPipeline(ShaderInfo pipelineInfo,  GraphicsShaderObject& pipeline);
+            static bool BuildGraphicsPipeline(ShaderInfo shaderInfo,  GraphicsShaderObject& pipeline);
 
         private:
 

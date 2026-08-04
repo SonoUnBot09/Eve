@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <Eve/graphics/Texture.hpp>
+#include <Eve/graphics/ShaderHandle.hpp>
 
 namespace Eve::Graphics
 {
@@ -11,5 +12,6 @@ namespace Eve::Graphics
         VkSwapchainKHR Swapchain = nullptr;
         VkFormat Format;
         std::vector<TextureHandle> swapchainImagesHandles;
+        ShaderHandle shader;
     };
 }
