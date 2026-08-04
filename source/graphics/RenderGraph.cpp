@@ -584,6 +584,8 @@ namespace
 
 bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 {
+    MeshRegistry::UploadMeshes();
+    
     UpdateTexturesPool(frameIndex);
     UpdateBuffersPool(frameIndex);
 
