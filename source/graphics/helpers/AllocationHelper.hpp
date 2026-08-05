@@ -28,6 +28,7 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo bufferAllocInfo
         {
+            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
@@ -47,6 +48,7 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo bufferAllocInfo
         {
+            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST
         };
 
@@ -92,6 +94,7 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo imageAllocInfo
         {
+            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
@@ -137,6 +140,7 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo imageAllocInfo
         {
+            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
@@ -182,6 +186,7 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo imageAllocInfo
         {
+            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
@@ -228,6 +233,7 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo imageAllocInfo
         {
+            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 

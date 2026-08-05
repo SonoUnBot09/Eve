@@ -28,16 +28,6 @@ namespace Eve::Graphics
             static BufferHandle CreateGPUBuffer(BufferInfo bufferInfo);
             static BufferHandle CreateCPUBuffer(BufferInfo bufferInfo);
 
-            static TextureHandle ReserveTextureSlot1D(TextureObject& texture, TextureInfo& textureInfo);
-            static TextureHandle ReserveTextureSlot2D(TextureObject& texture, TextureInfo& textureInfo);
-            static TextureHandle ReserveTextureSlot3D(TextureObject& texture, TextureInfo& textureInfo);
-            static TextureHandle ReserveTextureSlotCube(TextureObject& texture, TextureInfo& textureInfo);
-            static SamplerHandle ReserveSamplerSlot(SamplerObject sampler, SamplerInfo& samplerInfo);
-            static BufferHandle ReserveGPUBufferSlot(BufferObject& buffer, BufferInfo& bufferInfo); 
-            static BufferHandle ReserveCPUBufferSlot(BufferObject& buffer);
-
-            static TransientTextureHandle ReserveTransientTextureSlot(TextureType textureType);
-            static TransientBufferHandle ReserveTransientBufferSlot(); 
 
             // --- Resource Destruction ---
             static void DestroyBuffer(BufferHandle handle);
@@ -47,15 +37,7 @@ namespace Eve::Graphics
             static void DestroyTexture(uint32_t id);
             static void DestroySampler(uint32_t id);
 
-            static void FreeTextureSlot(TextureHandle handle) { imageFreeSlots.push_back(handle.Id); }
-            static void FreeTextureSlot(TransientTextureHandle handle) { imageFreeSlots.push_back(handle.Id); }
-            static void FreeTextureSlot(uint32_t id) { imageFreeSlots.push_back(id); }
-            static void FreeBufferSlot(BufferHandle handle) { bufferFreeSlots.push_back(handle.Id); }
-            static void FreeBufferSlot(TransientBufferHandle handle) { bufferFreeSlots.push_back(handle.Id); }
-            static void FreeBufferSlot(uint32_t id) { bufferFreeSlots.push_back(id); }
-            static void FreeSamplerSlot(SamplerHandle handle) { samplerFreeSlots.push_back(handle.Id); }
-            static void FreeSamplerSlot(uint32_t id) { samplerFreeSlots.push_back(id); }
-
+            // --- Getters ---
             inline static TextureObject& GetTexture(TextureHandle handle) { return textures[handle.Id]; }
             inline static SamplerObject GetSampler(SamplerHandle handle) { return samplers[handle.Id]; }
             inline static BufferObject& GetBuffer(BufferHandle handle) { return buffers[handle.Id]; }
@@ -75,18 +57,15 @@ namespace Eve::Graphics
             
         private:
 
-            inline static std::vector<TextureObject> textures;      inline static std::vector<uint32_t> textureGenerations;
-            inline static std::vector<SamplerObject> samplers;      inline static std::vector<uint32_t> samplerGenerations;
-            inline static std::vector<BufferObject> buffers;        inline static std::vector<uint32_t> bufferGenerations;
+            inline static std::vector<TextureObject> textures;
+            inline static std::vector<SamplerObject> samplers;
+            inline static std::vector<BufferObject> buffers;
 
             inline static std::vector<TextureInfo> texturesInfo;
             inline static std::vector<SamplerInfo> samplersInfo;
             inline static std::vector<BufferInfo> buffersInfo;
 
-            inline static std::vector<uint32_t> imageFreeSlots;
-            inline static std::vector<uint32_t> samplerFreeSlots;
-            inline static std::vector<uint32_t> bufferFreeSlots;
-
             friend class MemoryBin;
+            friend class RenderGraph;
     };
 }

@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
+#include <Eve/graphics/PassModule.hpp>
 
 namespace Eve::Graphics
 {
@@ -23,6 +24,21 @@ namespace Eve::Graphics
         VkBuffer Buffer;
         VmaAllocation Allocation;
         VmaAllocationInfo AllocationInfo;
+    };
+
+    struct TextureState
+    {
+        VkPipelineStageFlags2 StageMask;
+        VkAccessFlags2 AccessMask;
+        VkImageLayout Layout;
+        Usage Usage;
+    };
+
+    struct BufferState
+    {
+        VkPipelineStageFlags2 StageMask;
+        VkAccessFlags2 AccessMask;
+        Usage Usage;
     };
 
     struct CommandBufferHandle

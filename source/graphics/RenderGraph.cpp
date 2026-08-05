@@ -1,3 +1,4 @@
+#include "Eve/graphics/Buffer.hpp"
 #include "Eve/graphics/Mesh.hpp"
 #include "Eve/graphics/PassModule.hpp"
 #include "Eve/graphics/Texture.hpp"
@@ -7,6 +8,7 @@
 #include "builders/ShaderObject.hpp"
 #include "graphics/builders/ShaderObject.hpp"
 #include "graphics/helpers/VulkanMapping.hpp"
+#include "registers/ResourceRegistry.hpp"
 #include <graphics/registers/MeshRegistry.hpp>
 #include <cstdint>
 #include <graphics/RenderGraph.hpp>
@@ -138,6 +140,36 @@ namespace
             default:
                 return true;
         }
+    }
+
+    bool NeedTextureDescriptor(TextureUsage usage)
+    {
+        if((usage & TextureUsage::USAGE_SAMPLED) == TextureUsage::USAGE_SAMPLED)
+        {
+            return true;
+        }
+
+        if((usage & TextureUsage::USAGE_STORAGE) == TextureUsage::USAGE_STORAGE)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    bool NeedBufferDescriptor(BufferUsage usage)
+    {
+        if((usage & BufferUsage::BUFFER_USAGE_UNIFORM) == BufferUsage::BUFFER_USAGE_UNIFORM)
+        {
+            return true;
+        }
+
+        if((usage & BufferUsage::BUFFER_USAGE_STORAGE) == BufferUsage::BUFFER_USAGE_STORAGE)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     RenderGraph::TextureBarrierInfo CalculateTextureBarrierInfo(Usage usage)
@@ -430,6 +462,7 @@ namespace
         };
 
         vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &imageView);
+
     }
 
     void CreateTransientBuffer(BufferInfo bufferInfo, VkBuffer buffer)
@@ -596,6 +629,9 @@ namespace
 
 bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 {
+    MemoryRegistry::textures.resize(ResourceRegistry::textureResourcesPeakIndex);
+    MemoryRegistry::buffers.resize(ResourceRegistry::bufferResourcesPeakIndex);
+
     MeshRegistry::UploadMeshes();
     
     UpdateTexturesPool(frameIndex);
@@ -703,6 +739,13 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 
         texturesBucketPasses[bucketIndex][firstPassIndex].TexturesToCreate.emplace_back(textureId);
         texturesBucketPasses[bucketIndex][lastPassIndex].TexturesToDestroy.emplace_back(textureId);
+
+        bool shouldBeMapped = NeedTextureDescriptor(usage);
+
+        if(shouldBeMapped)
+        {
+            ResourceMapper::ScheduleImageMapping({textureId, 0}, transientTextures[frameIndex][textureId].TextureInfo);
+        }
     }
     uint32_t buffersBarriersOffset = 0;
     barriersOffsetPerBuffer.push_back(buffersBarriersOffset);
@@ -779,6 +822,13 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 
         buffersBucketPasses[bucketIndex][firstPassIndex].BuffersToCreate.emplace_back(bufferId);
         buffersBucketPasses[bucketIndex][lastPassIndex].BuffersToDestroy.emplace_back(bufferId);
+
+        bool shouldBeMapped = NeedBufferDescriptor(usage);
+
+        if(shouldBeMapped)
+        {
+            ResourceMapper::ScheduleBufferMapping({bufferId, 0});
+        }
 
     }
 
@@ -1069,6 +1119,18 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
                 resource.TextureInfo.MemoryInfo.Offset, resource.Image, nullptr);
 
             resource.PooledImage = false;
+
+            TransientTextureHandle handle = transientRequestedTextureHandles[textureId];
+
+            MemoryRegistry::textures[handle.Id].Image = resource.Image;
+            MemoryRegistry::textures[handle.Id].ImageView = resource.ImageView;
+
+            bool shouldBeMapped = NeedTextureDescriptor(resource.TextureInfo.Data.Usage);
+
+            if(shouldBeMapped)
+            {
+                ResourceMapper::ScheduleImageMapping({handle.Id,0}, transientTextures[frameIndex][textureId].TextureInfo);
+            }
         }
 
         // Insert barriers in their sync points
@@ -1125,6 +1187,17 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
                 resource.BufferInfo.MemoryInfo.Offset, resource.Buffer, nullptr);
 
             resource.PooledBuffer = false;
+
+            TransientBufferHandle handle = transientRequestedBufferHandles[bufferId];
+
+            MemoryRegistry::buffers[handle.Id].Buffer = resource.Buffer;
+
+            bool shouldBeMapped = NeedBufferDescriptor(resource.BufferInfo.Data.Usage);
+
+            if(shouldBeMapped)
+            {
+                ResourceMapper::ScheduleBufferMapping({handle.Id,0});
+            }
         }
 
         // Insert barriers in their sync points
@@ -2696,7 +2769,7 @@ void RenderGraph::UpdateTexturesPool(const uint32_t frameIndex)
     {
         TextureResource& data = transientTextures[frameIndex][i];
 
-        MemoryRegistry::FreeTextureSlot(static_cast<TransientTextureHandle>(i));
+        ResourceRegistry::FreeTextureSlot(i);
         if(data.PooledImage) { continue; }
 
         data.FramesCount = 10; // TODO: Set with a valid frame delay
@@ -2776,7 +2849,7 @@ void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
     {
         BufferResource& data = transientBuffers[frameIndex][i];
 
-        MemoryRegistry::FreeBufferSlot(static_cast<TransientBufferHandle>(i));
+        ResourceRegistry::FreeBufferSlot(i);
 
         if(data.PooledBuffer) { continue; }
 
@@ -2817,7 +2890,7 @@ void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
 
 TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureInfo1D textureInfo)
 {
-    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot(TextureType::TEXTURE_1D);
+    TransientTextureHandle handle = ResourceRegistry::RequestTransientTextureSlot();
 
     TextureInfo data
     {
@@ -2833,13 +2906,14 @@ TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureIn
     };
 
     transientRequestedTextures.push_back(data);
+    transientRequestedTextureHandles.push_back(handle);
 
     return handle;
 }
 
 TransientTextureHandle RenderGraph::RequestTransientTexture2D(TransientTextureInfo2D textureInfo)
 {
-    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot(TextureType::TEXTURE_2D);
+    TransientTextureHandle handle = ResourceRegistry::RequestTransientTextureSlot();
     TextureInfo data
     {
         .Data.TextureType = TextureType::TEXTURE_2D,
@@ -2854,12 +2928,14 @@ TransientTextureHandle RenderGraph::RequestTransientTexture2D(TransientTextureIn
     };
 
     transientRequestedTextures.push_back(data);
+    transientRequestedTextureHandles.push_back(handle);
+
     return handle;
 }
 
 TransientTextureHandle RenderGraph::RequestTransientTexture3D(TransientTextureInfo3D textureInfo)
 {
-    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot(TextureType::TEXTURE_3D);
+    TransientTextureHandle handle = ResourceRegistry::RequestTransientTextureSlot();
     TextureInfo data
     {
         .Data.TextureType = TextureType::TEXTURE_3D,
@@ -2874,12 +2950,14 @@ TransientTextureHandle RenderGraph::RequestTransientTexture3D(TransientTextureIn
     };
 
     transientRequestedTextures.push_back(data);
+    transientRequestedTextureHandles.push_back(handle);
+
     return handle;
 }
 
 TransientTextureHandle RenderGraph::RequestTransientTextureCube(TransientTextureInfo2D textureInfo)
 {
-    TransientTextureHandle handle = MemoryRegistry::ReserveTransientTextureSlot(TextureType::TEXTURE_CUBE);
+    TransientTextureHandle handle = ResourceRegistry::RequestTransientTextureSlot();
     TextureInfo data
     {
         .Data.TextureType = TextureType::TEXTURE_3D,
@@ -2894,12 +2972,14 @@ TransientTextureHandle RenderGraph::RequestTransientTextureCube(TransientTexture
     };
 
     transientRequestedTextures.push_back(data);
+    transientRequestedTextureHandles.push_back(handle);
+
     return handle;
 }
 
 TransientBufferHandle RenderGraph::RequestTransientBuffer(TransientBufferInfo bufferInfo)
 {
-    TransientBufferHandle handle = MemoryRegistry::ReserveTransientBufferSlot();
+    TransientBufferHandle handle = ResourceRegistry::RequestTransientBufferSlot();
 
     BufferInfo data
     {
@@ -2908,6 +2988,8 @@ TransientBufferHandle RenderGraph::RequestTransientBuffer(TransientBufferInfo bu
     };
 
     transientRequestedBuffers.push_back(data);
+    transientRequestedBufferHandles.push_back(handle);
+
     return handle;
 }
 

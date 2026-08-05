@@ -3,6 +3,7 @@
 #include "GraphicsCore.hpp"
 #include <graphics/registers/MemoryRegistry.hpp>
 #include "Resources.hpp"
+#include "registers/ResourceRegistry.hpp"
 
 using namespace Eve::Graphics;
 
@@ -104,28 +105,14 @@ void MemoryBin::DestroyEverythingNow()
 
     for(int32_t i = samplersToDestroy.size(); i >= 0; i--)
     {
-        bool skip = false;
-        for(uint32_t freeSlotIndex = 0; freeSlotIndex < MemoryRegistry::bufferFreeSlots.size(); freeSlotIndex++)
-        {
-            if(freeSlotIndex == i) {skip = true; break;}
-        }
+        SamplerObject sampler = MemoryRegistry::samplers[i];
 
-        if(skip == true) { continue; }
-
-        BufferObject buffer = MemoryRegistry::buffers[i];
-
-        vmaDestroyBuffer(GraphicsCore::Context.Allocator, buffer.Buffer, buffer.Allocation);
+        vkDestroySampler(GraphicsCore::Context.Device, sampler.Sampler, nullptr);
     }
 
     for(uint32_t i = 0; i < MemoryRegistry::textures.size(); i++)
     {
-        bool skip = false;
-        for(uint32_t freeSlotIndex = 0; freeSlotIndex < MemoryRegistry::imageFreeSlots.size(); freeSlotIndex++)
-        {
-            if(freeSlotIndex == i) {skip = true; break;}
-        }
-
-        if(skip == true) { continue; }
+        if(ResourceRegistry::persistentTextures[i] == false) { continue; }
 
         TextureObject texture = MemoryRegistry::textures[i];
 
@@ -134,10 +121,20 @@ void MemoryBin::DestroyEverythingNow()
         vmaDestroyImage(GraphicsCore::Context.Allocator, texture.Image, texture.Allocation);
     }
 
+    for(uint32_t i = 0; i < MemoryRegistry::buffers.size(); i++)
+    {
+        if(ResourceRegistry::persistentBuffers[i] == false) { continue; }
+
+        BufferObject buffer = MemoryRegistry::buffers[i];
+
+        vmaDestroyBuffer(GraphicsCore::Context.Allocator, buffer.Buffer, buffer.Allocation);
+    }
+
+
     for(uint32_t i = 0; i < MemoryRegistry::samplers.size(); i++)
     {
-        bool skip = false;
-        for(uint32_t freeSlotIndex = 0; freeSlotIndex < MemoryRegistry::samplerFreeSlots.size(); freeSlotIndex++)
+        bool skip = true;
+        for(uint32_t freeSlotIndex = 0; freeSlotIndex < ResourceRegistry::samplerFreeSlots.size(); freeSlotIndex++)
         {
             if(freeSlotIndex == i) {skip = true; break;}
         }
@@ -153,9 +150,9 @@ void MemoryBin::DestroyEverythingNow()
     MemoryRegistry::textures.clear();
     MemoryRegistry::samplers.clear();
 
-    MemoryRegistry::bufferFreeSlots.clear();
-    MemoryRegistry::imageFreeSlots.clear();
-    MemoryRegistry::samplerFreeSlots.clear();
+    MemoryRegistry::buffersInfo.clear();
+    MemoryRegistry::texturesInfo.clear();
+    MemoryRegistry::samplersInfo.clear();
 }
 
 void MemoryBin::DestroyBuffer(BufferObject buffer)

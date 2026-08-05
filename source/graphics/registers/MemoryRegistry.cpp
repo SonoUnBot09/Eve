@@ -2,6 +2,7 @@
 #include "Eve/graphics/Buffer.hpp"
 #include "Eve/graphics/PassModule.hpp"
 #include "Eve/graphics/Texture.hpp"
+#include "ResourceRegistry.hpp"
 #include <graphics/ResourceMapper.hpp>
 #include <graphics/GraphicsCore.hpp>
 #include <graphics/MemoryBin.hpp>
@@ -9,6 +10,8 @@
 #include <graphics/helpers/AllocationHelper.hpp>
 #include <graphics/helpers/VulkanMapping.hpp>
 #include <graphics/RenderGraph.hpp>
+#include "ResourceRegistry.hpp"
+#include "ResourceTracker.hpp"
 
 using namespace Eve::Graphics;
 
@@ -19,6 +22,7 @@ TextureHandle MemoryRegistry::CreateTexture1D(TextureInfo1D textureInfo)
 
     TextureInfo info
     {
+        .Data.TextureType = TextureType::TEXTURE_1D,
         .Data.Width = textureInfo.Width,
         .Data.Height = 1,
         .Data.Depth = 1,
@@ -29,7 +33,15 @@ TextureHandle MemoryRegistry::CreateTexture1D(TextureInfo1D textureInfo)
         .Data.Usage = textureInfo.Usage
     };
 
-    TextureHandle handle = ReserveTextureSlot1D(texture, info);
+    TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
+
+    ResourceMapper::ScheduleImageMapping(handle, info);
+
+    textures.resize(ResourceRegistry::textureResourcesPeakIndex);
+    texturesInfo.resize(ResourceRegistry::textureResourcesPeakIndex);
+
+    textures[handle.Id] = texture;
+    texturesInfo[handle.Id] = info;
 
     return handle;
 }
@@ -41,6 +53,7 @@ TextureHandle MemoryRegistry::CreateTexture2D(TextureInfo2D textureInfo)
 
     TextureInfo info
     {
+        .Data.TextureType = TextureType::TEXTURE_2D,
         .Data.Width = textureInfo.Width,
         .Data.Height = textureInfo.Height,
         .Data.Depth = 1,
@@ -51,7 +64,15 @@ TextureHandle MemoryRegistry::CreateTexture2D(TextureInfo2D textureInfo)
         .Data.Usage = textureInfo.Usage
     };
 
-    TextureHandle handle = ReserveTextureSlot2D(texture, info);
+    TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
+
+    ResourceMapper::ScheduleImageMapping(handle, info);
+
+    textures.resize(ResourceRegistry::textureResourcesPeakIndex);
+    texturesInfo.resize(ResourceRegistry::textureResourcesPeakIndex);
+
+    textures[handle.Id] = texture;
+    texturesInfo[handle.Id] = info;
 
     return handle;
 }
@@ -63,6 +84,7 @@ TextureHandle MemoryRegistry::CreateTexture3D(TextureInfo3D textureInfo)
 
     TextureInfo info
     {
+        .Data.TextureType = TextureType::TEXTURE_3D,
         .Data.Width = textureInfo.Width,
         .Data.Height = textureInfo.Height,
         .Data.Depth = textureInfo.Depth,
@@ -73,7 +95,16 @@ TextureHandle MemoryRegistry::CreateTexture3D(TextureInfo3D textureInfo)
         .Data.Usage = textureInfo.Usage
     };
 
-    TextureHandle handle = ReserveTextureSlot3D(texture, info);
+    TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
+
+    ResourceMapper::ScheduleImageMapping(handle, info);
+
+
+    textures.resize(ResourceRegistry::textureResourcesPeakIndex);
+    texturesInfo.resize(ResourceRegistry::textureResourcesPeakIndex);
+
+    textures[handle.Id] = texture;
+    texturesInfo[handle.Id] = info;
 
     return handle;
 }
@@ -85,6 +116,7 @@ TextureHandle MemoryRegistry::CreateTextureCube(TextureInfo2D textureInfo)
 
     TextureInfo info
     {
+        .Data.TextureType = TextureType::TEXTURE_CUBE,
         .Data.Width = textureInfo.Width,
         .Data.Height = textureInfo.Height,
         .Data.Depth = 1,
@@ -95,7 +127,16 @@ TextureHandle MemoryRegistry::CreateTextureCube(TextureInfo2D textureInfo)
         .Data.Usage = textureInfo.Usage
     };
 
-    TextureHandle handle = ReserveTextureSlotCube(texture, info);
+    TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
+
+    ResourceMapper::ScheduleImageMapping(handle, info);
+
+
+    textures.resize(ResourceRegistry::textureResourcesPeakIndex);
+    texturesInfo.resize(ResourceRegistry::textureResourcesPeakIndex);
+
+    textures[handle.Id] = texture;
+    texturesInfo[handle.Id] = info;
 
     return handle;
 }
@@ -112,7 +153,15 @@ SamplerHandle MemoryRegistry::CreateSampler(SamplerInfo samplerInfo)
         .MipmapMode = samplerInfo.MipmapMode
     };
 
-    SamplerHandle handle = ReserveSamplerSlot(sampler, info);
+    SamplerHandle handle = ResourceRegistry::RequestPersistentSamplerSlot();
+
+    ResourceMapper::ScheduleSamplerMapping(handle);
+
+    samplers.resize(ResourceRegistry::samplerResourcesPeakIndex);
+    samplersInfo.resize(ResourceRegistry::samplerResourcesPeakIndex);
+
+    samplers[handle.Id] = sampler;
+    samplersInfo[handle.Id] = info;
 
     return handle;
 }
@@ -128,7 +177,17 @@ BufferHandle MemoryRegistry::CreateGPUBuffer(BufferInfo bufferInfo)
         .Data.Usage = bufferInfo.Data.Usage
     };
 
-    BufferHandle handle = ReserveGPUBufferSlot(buffer, info);
+    BufferHandle handle = ResourceRegistry::RequestPersistentBufferSlot();
+    
+    ResourceTracker::RegisterBufferState(handle);
+
+    ResourceMapper::ScheduleBufferMapping(handle);
+
+    buffers.resize(ResourceRegistry::bufferResourcesPeakIndex);
+    buffersInfo.resize(ResourceRegistry::bufferResourcesPeakIndex);
+
+    buffers[handle.Id] = buffer;
+    buffersInfo[handle.Id] = info;
 
     return handle;
 }
@@ -138,7 +197,21 @@ BufferHandle MemoryRegistry::CreateCPUBuffer(BufferInfo bufferInfo)
     BufferObject buffer {};
     Helpers::AllocateCPUBuffer(bufferInfo, buffer);
 
-    BufferHandle handle = ReserveCPUBufferSlot(buffer);
+    BufferInfo info
+    {
+        .Data.Size = bufferInfo.Data.Size,
+        .Data.Usage = bufferInfo.Data.Usage
+    };
+
+    BufferHandle handle = ResourceRegistry::RequestPersistentBufferSlot();
+    
+    ResourceTracker::RegisterBufferState(handle);
+
+    buffers.resize(ResourceRegistry::bufferResourcesPeakIndex);
+    buffersInfo.resize(ResourceRegistry::bufferResourcesPeakIndex);
+
+    buffers[handle.Id] = buffer;
+    buffersInfo[handle.Id] = info;
 
     return handle;
 }
@@ -149,7 +222,7 @@ void MemoryRegistry::DestroyBuffer(BufferHandle handle)
 
     MemoryBin::DestroyBuffer(buffer);
 
-    FreeBufferSlot(handle);
+    ResourceRegistry::FreeBufferSlot(handle);
 }
 
 void MemoryRegistry::DestroyTexture(TextureHandle handle)
@@ -158,7 +231,7 @@ void MemoryRegistry::DestroyTexture(TextureHandle handle)
 
     MemoryBin::DestroyTexture(texture);
 
-    FreeTextureSlot(handle);
+    ResourceRegistry::FreeTextureSlot(handle);
 }
 
 void MemoryRegistry::DestroySampler(SamplerHandle handle)
@@ -167,7 +240,7 @@ void MemoryRegistry::DestroySampler(SamplerHandle handle)
 
     MemoryBin::DestroySampler(sampler);
 
-    FreeSamplerSlot(handle);
+    ResourceRegistry::FreeSamplerSlot(handle);
 }
 
 void MemoryRegistry::DestroyBuffer(uint32_t id)
@@ -176,7 +249,7 @@ void MemoryRegistry::DestroyBuffer(uint32_t id)
 
     MemoryBin::DestroyBuffer(buffer);
 
-    FreeBufferSlot(id);
+    ResourceRegistry::FreeBufferSlot(id);
 }
 
 void MemoryRegistry::DestroyTexture(uint32_t id)
@@ -185,7 +258,7 @@ void MemoryRegistry::DestroyTexture(uint32_t id)
 
     MemoryBin::DestroyTexture(texture);
 
-    FreeTextureSlot(id);
+    ResourceRegistry::FreeTextureSlot(id);
 }
 
 void MemoryRegistry::DestroySampler(uint32_t id)
@@ -194,421 +267,7 @@ void MemoryRegistry::DestroySampler(uint32_t id)
 
     MemoryBin::DestroySampler(sampler);
 
-    FreeSamplerSlot(id);
-}
-
-TextureHandle MemoryRegistry::ReserveTextureSlot1D(TextureObject& texture, TextureInfo& textureInfo)
-{
-    TextureHandle handle;
-    if(imageFreeSlots.empty()) 
-    {
-        uint32_t size = textures.size(); 
-
-        textureGenerations.resize(size + 1);
-
-        handle.Id = size;
-        handle.Generation = textureGenerations[handle.Id];
-
-        textureGenerations[handle.Id]++;
-
-        textures.push_back(texture);
-        texturesInfo.push_back(textureInfo);
-
-        // --- Update the Render Graph with the new resource state ---
-        RenderGraph::persistentTexturesState.push_back(RenderGraph::PersistentTextureState
-        {
-            .StageMask = VK_PIPELINE_STAGE_2_NONE,
-            .AccessMask = VK_ACCESS_2_NONE,
-            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .Usage = static_cast<Usage>(0)
-        });
-    }
-    else 
-    {
-        handle.Id = imageFreeSlots.back();
-        handle.Generation = textureGenerations[handle.Id];
-
-        textureGenerations[handle.Id]++;
-
-        imageFreeSlots.pop_back();
-
-        textures[handle.Id] = texture;
-        texturesInfo[handle.Id] = textureInfo;
-
-        // --- Update the Render Graph with the new resource state ---
-        RenderGraph::persistentTexturesState[handle.Id] = RenderGraph::PersistentTextureState
-        {
-            .StageMask = VK_PIPELINE_STAGE_2_NONE,
-            .AccessMask = VK_ACCESS_2_NONE,
-            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .Usage = static_cast<Usage>(0)
-        };
-    }
-
-    ResourceMapper::ScheduleImageMapping1D(handle);
-
-
-
-    return handle;
-}
-
-TextureHandle MemoryRegistry::ReserveTextureSlot2D(TextureObject& texture, TextureInfo& textureInfo)
-{
-    TextureHandle handle;
-    if(imageFreeSlots.empty()) 
-    {
-        uint32_t size = textures.size(); 
-
-        textureGenerations.resize(size + 1);
-
-        handle.Id = size;
-        handle.Generation = textureGenerations[handle.Id];
-
-        textureGenerations[handle.Id]++;
-
-        textures.push_back(texture);
-        texturesInfo.push_back(textureInfo);
-
-        // --- Update the Render Graph with the new resource state ---
-        RenderGraph::persistentTexturesState.push_back(RenderGraph::PersistentTextureState
-        {
-            .StageMask = VK_PIPELINE_STAGE_2_NONE,
-            .AccessMask = VK_ACCESS_2_NONE,
-            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .Usage = static_cast<Usage>(0)
-        });
-    }
-    else 
-    {
-        handle.Id = imageFreeSlots.back();
-        handle.Generation = textureGenerations[handle.Id];
-
-        textureGenerations[handle.Id]++;
-
-        imageFreeSlots.pop_back();
-
-        textures[handle.Id] = texture;
-        texturesInfo[handle.Id] = textureInfo;
-
-        // --- Update the Render Graph with the new resource state ---
-        RenderGraph::persistentTexturesState[handle.Id] = RenderGraph::PersistentTextureState
-        {
-            .StageMask = VK_PIPELINE_STAGE_2_NONE,
-            .AccessMask = VK_ACCESS_2_NONE,
-            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .Usage = static_cast<Usage>(0)
-        };
-    }
-
-    ResourceMapper::ScheduleImageMapping2D(handle);
-
-    return handle;
-}
-
-TextureHandle MemoryRegistry::ReserveTextureSlot3D(TextureObject& texture, TextureInfo& textureInfo)
-{
-    TextureHandle handle;
-    if(imageFreeSlots.empty()) 
-    {
-        uint32_t size = textures.size(); 
-
-        textureGenerations.resize(size + 1);
-
-        handle.Id = size;
-        handle.Generation = textureGenerations[handle.Id];
-
-        textureGenerations[handle.Id]++;
-
-        textures.push_back(texture);
-        texturesInfo.push_back(textureInfo);
-
-        // --- Update the Render Graph with the new resource state ---
-        RenderGraph::persistentTexturesState.push_back(RenderGraph::PersistentTextureState
-        {
-            .StageMask = VK_PIPELINE_STAGE_2_NONE,
-            .AccessMask = VK_ACCESS_2_NONE,
-            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .Usage = static_cast<Usage>(0)
-        });
-    }
-    else 
-    {
-        handle.Id = imageFreeSlots.back();
-        handle.Generation = textureGenerations[handle.Id];
-
-        textureGenerations[handle.Id]++;
-
-        imageFreeSlots.pop_back();
-
-        textures[handle.Id] = texture;
-        texturesInfo[handle.Id] = textureInfo;
-
-        // --- Update the Render Graph with the new resource state ---
-        RenderGraph::persistentTexturesState[handle.Id] = RenderGraph::PersistentTextureState
-        {
-            .StageMask = VK_PIPELINE_STAGE_2_NONE,
-            .AccessMask = VK_ACCESS_2_NONE,
-            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .Usage = static_cast<Usage>(0)
-        };
-    }
-
-    ResourceMapper::ScheduleImageMapping3D(handle);
-
-    return handle;
-}
-
-TextureHandle MemoryRegistry::ReserveTextureSlotCube(TextureObject& texture, TextureInfo& textureInfo)
-{
-    TextureHandle handle;
-    if(imageFreeSlots.empty()) 
-    {
-        uint32_t size = textures.size(); 
-
-        textureGenerations.resize(size + 1);
-
-        handle.Id = size;
-        handle.Generation = textureGenerations[handle.Id];
-
-        textureGenerations[handle.Id]++;
-
-        textures.push_back(texture);
-        texturesInfo.push_back(textureInfo);
-
-        // --- Update the Render Graph with the new resource state ---
-        RenderGraph::persistentTexturesState.push_back(RenderGraph::PersistentTextureState
-        {
-            .StageMask = VK_PIPELINE_STAGE_2_NONE,
-            .AccessMask = VK_ACCESS_2_NONE,
-            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .Usage = static_cast<Usage>(0)
-        });
-    }
-    else 
-    {
-        handle.Id = imageFreeSlots.back();
-        handle.Generation = textureGenerations[handle.Id];
-
-        textureGenerations[handle.Id]++;
-
-        imageFreeSlots.pop_back();
-
-        textures[handle.Id] = texture;
-        texturesInfo[handle.Id] = textureInfo;
-
-        // --- Update the Render Graph with the new resource state ---
-        RenderGraph::persistentTexturesState[handle.Id] = RenderGraph::PersistentTextureState
-        {
-            .StageMask = VK_PIPELINE_STAGE_2_NONE,
-            .AccessMask = VK_ACCESS_2_NONE,
-            .Layout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .Usage = static_cast<Usage>(0)
-        };
-    }
-
-    ResourceMapper::ScheduleImageMappingCube(handle);
-
-    return handle;
-}
-
-SamplerHandle MemoryRegistry::ReserveSamplerSlot(SamplerObject sampler, SamplerInfo& samplerInfo)
-{
-    SamplerHandle handle;
-    if(samplerFreeSlots.empty()) 
-    {
-        uint32_t size = samplers.size(); 
-
-        samplerGenerations.resize(size + 1);
-
-        handle.Id = size;
-        handle.Generation = samplerGenerations[handle.Id];
-
-        samplerGenerations[handle.Id]++;
-
-        samplers.push_back(sampler);
-        samplersInfo.push_back(samplerInfo);
-    }
-    else 
-    {
-        handle.Id = samplerFreeSlots.back();
-        handle.Generation = samplerGenerations[handle.Id];
-
-        samplerGenerations[handle.Id]++;
-
-        samplerFreeSlots.pop_back();
-
-        samplers[handle.Id] = sampler;
-        samplersInfo[handle.Id] = samplerInfo;
-    }
-
-    ResourceMapper::ScheduleSamplerMapping(handle);
-
-    return handle;
-}
-
-BufferHandle MemoryRegistry::ReserveGPUBufferSlot(BufferObject& buffer, BufferInfo& bufferInfo)
-{
-    BufferHandle handle;
-    if(bufferFreeSlots.empty()) 
-    {
-        uint32_t size = buffers.size(); 
-
-        bufferGenerations.resize(size + 1);
-
-        handle.Id = size;
-        handle.Generation = bufferGenerations[handle.Id];
-
-        bufferGenerations[handle.Id]++;
-
-        buffers.push_back(buffer);
-        buffersInfo.push_back(bufferInfo);
-
-        // --- Update the Render Graph with the new resource state ---
-        RenderGraph::persistentBuffersState.push_back(RenderGraph::PersistentBufferState
-        {
-            .StageMask = VK_PIPELINE_STAGE_2_NONE,
-            .AccessMask = VK_ACCESS_2_NONE,
-            .Usage = static_cast<Usage>(0)
-        });
-    }
-    else 
-    {
-        handle.Id = bufferFreeSlots.back();
-        handle.Generation = bufferGenerations[handle.Id];
-
-        bufferGenerations[handle.Id]++;
-
-        bufferFreeSlots.pop_back();
-
-        buffers[handle.Id] = buffer;
-        buffersInfo[handle.Id] = bufferInfo;
-
-        // --- Update the Render Graph with the new resource state ---
-        RenderGraph::persistentBuffersState[handle.Id] = RenderGraph::PersistentBufferState
-        {
-            .StageMask = VK_PIPELINE_STAGE_2_NONE,
-            .AccessMask = VK_ACCESS_2_NONE,
-            .Usage = static_cast<Usage>(0)
-        };
-    }
-
-    ResourceMapper::ScheduleBufferMapping(handle);
-
-    return handle;
-}
-
-BufferHandle MemoryRegistry::ReserveCPUBufferSlot(BufferObject& buffer)
-{
-    BufferHandle handle;
-    if(bufferFreeSlots.empty()) 
-    {
-        uint32_t size = buffers.size(); 
-
-        bufferGenerations.resize(size + 1);
-
-        handle.Id = size;
-        handle.Generation = bufferGenerations[handle.Id];
-
-        bufferGenerations[handle.Id]++;
-
-        buffers.push_back(buffer);
-        
-        BufferInfo dummyInfo {};
-        buffersInfo.push_back(dummyInfo);
-    }
-    else 
-    {
-        handle.Id = bufferFreeSlots.back();
-        handle.Generation = bufferGenerations[handle.Id];
-
-        bufferGenerations[handle.Id]++;
-
-        bufferFreeSlots.pop_back();
-
-        buffers[handle.Id] = buffer;
-    }
-
-    return handle;
-}
-
-TransientTextureHandle MemoryRegistry::ReserveTransientTextureSlot(TextureType textureType)
-{
-    TextureHandle handle;
-    TextureObject texture {0, 0, 0, 0};
-    if(imageFreeSlots.empty()) 
-    {
-        uint32_t size = textures.size(); 
-
-        textureGenerations.resize(size + 1);
-
-        handle.Id = size;
-
-        textures.push_back(texture);
-
-        TextureInfo dummyInfo{};
-        texturesInfo.push_back(dummyInfo);
-    }
-    else 
-    {
-        handle.Id = imageFreeSlots.back();
-
-        imageFreeSlots.pop_back();
-
-        textures[handle.Id] = texture;
-    }
-
-    switch(textureType)
-    {
-        case(TextureType::TEXTURE_1D) :
-            ResourceMapper::ScheduleImageMapping1D(handle);
-            break;
-
-        case(TextureType::TEXTURE_2D) :
-        ResourceMapper::ScheduleImageMapping2D(handle);
-        break;
-
-        case(TextureType::TEXTURE_3D) :
-        ResourceMapper::ScheduleImageMapping3D(handle);
-        break;
-
-        case(TextureType::TEXTURE_CUBE) :
-        ResourceMapper::ScheduleImageMappingCube(handle);
-        break;
-
-    }
-    
-    return TransientTextureHandle{handle.Id};
-}
-
-TransientBufferHandle MemoryRegistry::ReserveTransientBufferSlot()
-{
-    BufferHandle handle;
-    BufferObject buffer{0,0,0};
-    if(bufferFreeSlots.empty()) 
-    {
-        uint32_t size = buffers.size(); 
-
-        bufferGenerations.resize(size + 1);
-
-        handle.Id = size;
-
-        buffers.push_back(buffer);
-
-        BufferInfo dummyInfo{};
-        buffersInfo.push_back(dummyInfo);
-    }
-    else 
-    {
-        handle.Id = bufferFreeSlots.back();
-
-        bufferFreeSlots.pop_back();
-
-        buffers[handle.Id] = buffer;
-    }
-
-    ResourceMapper::ScheduleBufferMapping(handle);
-
-    return TransientBufferHandle{handle.Id};
+    ResourceRegistry::FreeSamplerSlot(id);
 }
 
 void MemoryRegistry::ResizeBufferIfNeeded(BufferHandle &buffer, uint64_t requiredSize, bool indexBuffer)

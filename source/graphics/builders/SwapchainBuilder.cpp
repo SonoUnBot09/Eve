@@ -3,6 +3,7 @@
 #include "Eve/graphics/Geometry.hpp"
 #include "graphics/Resources.hpp"
 #include "graphics/registers/MemoryRegistry.hpp"
+#include "graphics/registers/ResourceRegistry.hpp"
 #include "graphics/registers/ShaderRegistry.hpp"
 #include <graphics/MemoryBin.hpp>
 
@@ -160,7 +161,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
             .Data.MipLevels = 1
         };
 
-        TextureHandle handle = MemoryRegistry::ReserveTextureSlot2D(texture, textureInfo);
+        TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
 
         swapchain.swapchainImagesHandles.push_back(handle);
     }
@@ -306,7 +307,7 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
             .Data.Format = format,
             .Data.MipLevels = 1
         };
-        TextureHandle handle = MemoryRegistry::ReserveTextureSlot2D(texture, textureInfo);
+        TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
 
         swapchain.swapchainImagesHandles.push_back(handle);
     }
@@ -321,7 +322,7 @@ void SwapchainBuilder::Destroy(Swapchain& swapchain)
         TextureObject& texture = MemoryRegistry::GetTexture(handle);
         vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
 
-        MemoryRegistry::FreeTextureSlot(handle);
+        ResourceRegistry::FreeTextureSlot(handle);
     }
     swapchain.swapchainImagesHandles.clear();
 

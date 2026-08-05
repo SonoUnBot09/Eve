@@ -215,7 +215,9 @@ namespace Eve::Graphics
 
             // Input
             inline static std::vector<TextureInfo> transientRequestedTextures;
+            inline static std::vector<TransientTextureHandle> transientRequestedTextureHandles;
             inline static std::vector<BufferInfo> transientRequestedBuffers;
+            inline static std::vector<TransientBufferHandle> transientRequestedBufferHandles;
             inline static std::vector<Pass> passes;
 
             inline static std::vector<std::vector<TexturesBucketPass>> texturesBucketPasses;

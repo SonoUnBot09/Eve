@@ -1,9 +1,33 @@
 #include <graphics/ResourceMapper.hpp>
+#include "Eve/graphics/Texture.hpp"
 #include "EveSettings.hpp"
 #include "Resources.hpp"
 #include <graphics/helpers/VulkanMapping.hpp>
 
 using namespace Eve::Graphics;
+
+namespace 
+{
+    bool IsSampled(TextureUsage usage)
+    {
+        if((usage & TextureUsage::USAGE_SAMPLED) == TextureUsage::USAGE_SAMPLED)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    bool IsStorage(TextureUsage usage)
+    {
+        if((usage & TextureUsage::USAGE_STORAGE) == TextureUsage::USAGE_STORAGE)
+        {
+            return true;
+        }
+
+        return false;
+    }
+}
 
 void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t maxSamplersCount, uint32_t maxBuffersCount)
 {
@@ -19,12 +43,26 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
                 .descriptorCount = maxImagesCount,
                 .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
             },
+            VkDescriptorSetLayoutBinding
+            {
+                .binding = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                .descriptorCount = maxImagesCount,
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
+            },
 
             // 2D Textures
             VkDescriptorSetLayoutBinding
             {
-                .binding = 1,
+                .binding = 2,
                 .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount,
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
+            },
+            VkDescriptorSetLayoutBinding
+            {
+                .binding = 3,
+                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                 .descriptorCount = maxImagesCount,
                 .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
             },
@@ -32,8 +70,15 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             // 3D Textures
             VkDescriptorSetLayoutBinding
             {
-                .binding = 2,
+                .binding = 4,
                 .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount,
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
+            },
+            VkDescriptorSetLayoutBinding
+            {
+                .binding = 5,
+                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                 .descriptorCount = maxImagesCount,
                 .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
             },
@@ -41,8 +86,15 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             // Cubemaps
             VkDescriptorSetLayoutBinding
             {
-                .binding = 2,
+                .binding = 6,
                 .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount,
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
+            },
+            VkDescriptorSetLayoutBinding
+            {
+                .binding = 7,
+                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                 .descriptorCount = maxImagesCount,
                 .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
             },
@@ -50,29 +102,33 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             // Samplers
             VkDescriptorSetLayoutBinding
             {
-                .binding = 3,
+                .binding = 8,
                 .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
                 .descriptorCount = maxSamplersCount,
-                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
             },
 
             // Buffers
             VkDescriptorSetLayoutBinding
             {
-                .binding = 2,
+                .binding = 9,
                 .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                 .descriptorCount = 1,
                 .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT
             }
         };
 
-        std::vector<VkDescriptorBindingFlags> bindingFlags(6);
+        std::vector<VkDescriptorBindingFlags> bindingFlags(10);
         bindingFlags[0] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
         bindingFlags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
         bindingFlags[2] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
         bindingFlags[3] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
         bindingFlags[4] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-        bindingFlags[5] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        bindingFlags[5] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        bindingFlags[6] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        bindingFlags[7] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        bindingFlags[8] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        bindingFlags[9] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo flagsCI
         {
@@ -105,11 +161,21 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
                 .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                 .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
             },
+            VkDescriptorPoolSize
+            {
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
+            },
 
             // Texture 2D
             VkDescriptorPoolSize
             {
                 .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
+            },
+            VkDescriptorPoolSize
+            {
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                 .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
             },
 
@@ -119,11 +185,21 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
                 .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                 .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
             },
+            VkDescriptorPoolSize
+            {
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
+            },
 
             // Texture Cubemap
             VkDescriptorPoolSize
             {
                 .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
+            },
+            VkDescriptorPoolSize
+            {
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                 .descriptorCount = maxImagesCount * Eve::Settings::MAX_FRAMES_IN_FLIGHT
             },
 
@@ -137,7 +213,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             // Buffers
             VkDescriptorPoolSize
             {
-                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                 .descriptorCount = 1 * Eve::Settings::MAX_FRAMES_IN_FLIGHT
             },
         };
@@ -170,7 +246,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
         vkAllocateDescriptorSets(GraphicsCore::Context.Device, &setAllocInfo, sets.data());
 
         std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.reserve(Eve::Settings::MAX_FRAMES_IN_FLIGHT);
+        descriptorWrites.reserve(Eve::Settings::MAX_FRAMES_IN_FLIGHT * 2);
 
         for (uint32_t i = 0; i < Eve::Settings::MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -195,7 +271,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             {
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet = sets[i],
-                .dstBinding = 5,
+                .dstBinding = 9,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -251,13 +327,25 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     buffersAddress.clear();
     copyRegions.clear();
 
-    // Images erase
-    uint32_t images1DToErase = 0;
-    for(int32_t i = images1DToMap.size() - 1; i >= 0; i--)
+    // --- Texture 1D Erase ---
+    uint32_t imagesSampled1DToErase = 0;
+    for(int32_t i = imagesSampled1DToMap.size() - 1; i >= 0; i--)
     {
-        if(images1DToMap[i].second <= 0)
+        if(imagesSampled1DToMap[i].second <= 0)
         {
-            images1DToErase++;
+            imagesSampled1DToErase++;
+        }
+        else 
+        {
+            break;
+        }
+    }
+    uint32_t imagesStorage1DToErase = 0;
+    for(int32_t i = imagesStorage1DToMap.size() - 1; i >= 0; i--)
+    {
+        if(imagesStorage1DToMap[i].second <= 0)
+        {
+            imagesStorage1DToErase++;
         }
         else 
         {
@@ -265,12 +353,25 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         }
     }
 
-    uint32_t images2DToErase = 0;
-    for(int32_t i = images2DToMap.size() - 1; i >= 0; i--)
+    // --- Texture 2D Erase ---
+    uint32_t imagesSampled2DToErase = 0;
+    for(int32_t i = imagesSampled2DToMap.size() - 1; i >= 0; i--)
     {
-        if(images2DToMap[i].second <= 0)
+        if(imagesSampled2DToMap[i].second <= 0)
         {
-            images2DToErase++;
+            imagesSampled2DToErase++;
+        }
+        else 
+        {
+            break;
+        }
+    }
+    uint32_t imagesStorage2DToErase = 0;
+    for(int32_t i = imagesStorage2DToMap.size() - 1; i >= 0; i--)
+    {
+        if(imagesStorage2DToMap[i].second <= 0)
+        {
+            imagesStorage2DToErase++;
         }
         else 
         {
@@ -278,12 +379,25 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         }
     }
 
-    uint32_t images3DToErase = 0;
-    for(int32_t i = images3DToMap.size() - 1; i >= 0; i--)
+    // --- Texture 3D Erase ---
+    uint32_t imagesSampled3DToErase = 0;
+    for(int32_t i = imagesSampled3DToMap.size() - 1; i >= 0; i--)
     {
-        if(images3DToMap[i].second <= 0)
+        if(imagesSampled3DToMap[i].second <= 0)
         {
-            images3DToErase++;
+            imagesSampled3DToErase++;
+        }
+        else 
+        {
+            break;
+        }
+    }
+    uint32_t imagesStorage3DToErase = 0;
+    for(int32_t i = imagesStorage3DToMap.size() - 1; i >= 0; i--)
+    {
+        if(imagesStorage3DToMap[i].second <= 0)
+        {
+            imagesStorage3DToErase++;
         }
         else 
         {
@@ -291,12 +405,25 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         }
     }
 
-    uint32_t imagesCubeToErase = 0;
-    for(int32_t i = imagesCubeToMap.size() - 1; i >= 0; i--)
+    // --- Texture Cube Erase ---
+    uint32_t imagesSampledCubeToErase = 0;
+    for(int32_t i = imagesSampledCubeToMap.size() - 1; i >= 0; i--)
     {
-        if(imagesCubeToMap[i].second <= 0)
+        if(imagesSampledCubeToMap[i].second <= 0)
         {
-            imagesCubeToErase++;
+            imagesSampledCubeToErase++;
+        }
+        else 
+        {
+            break;
+        }
+    }
+    uint32_t imagesStorageCubeToErase = 0;
+    for(int32_t i = imagesStorageCubeToMap.size() - 1; i >= 0; i--)
+    {
+        if(imagesStorageCubeToMap[i].second <= 0)
+        {
+            imagesStorageCubeToErase++;
         }
         else 
         {
@@ -304,7 +431,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         }
     }
 
-    // Sampler erase
+    // --- Sampler Erase ---
     uint32_t samplersToErase = 0;
     for(int32_t i = samplersToMap.size() - 1; i >= 0; i--)
     {
@@ -318,7 +445,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         }
     }
 
-    // Buffer erase
+    // --- Buffer Erase ---
     uint32_t buffersToErase = 0;
     for(int32_t i = buffersToMap.size() - 1; i >= 0; i--)
     {
@@ -332,37 +459,49 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         }
     }
 
-    // Erase
-    images1DToMap.erase(images1DToMap.cend() - images1DToErase, images1DToMap.cend());
-    images2DToMap.erase(images2DToMap.cend() - images2DToErase, images2DToMap.cend());
-    images3DToMap.erase(images3DToMap.cend() - images3DToErase, images3DToMap.cend());
-    imagesCubeToMap.erase(imagesCubeToMap.cend() - imagesCubeToErase, imagesCubeToMap.cend());
+    // --- Erase ---
+    imagesSampled1DToMap.erase(imagesSampled1DToMap.cend() - imagesSampled1DToErase, imagesSampled1DToMap.cend());
+    imagesStorage1DToMap.erase(imagesStorage1DToMap.cend() - imagesStorage1DToErase, imagesStorage1DToMap.cend());
+    imagesSampled2DToMap.erase(imagesSampled2DToMap.cend() - imagesSampled2DToErase, imagesSampled2DToMap.cend());
+    imagesStorage2DToMap.erase(imagesStorage2DToMap.cend() - imagesStorage2DToErase, imagesStorage2DToMap.cend());
+    imagesSampled3DToMap.erase(imagesSampled3DToMap.cend() - imagesSampled3DToErase, imagesSampled3DToMap.cend());
+    imagesStorage3DToMap.erase(imagesStorage3DToMap.cend() - imagesStorage3DToErase, imagesStorage3DToMap.cend());
+    imagesSampledCubeToMap.erase(imagesSampledCubeToMap.cend() - imagesSampledCubeToErase, imagesSampledCubeToMap.cend());
+    imagesStorageCubeToMap.erase(imagesStorageCubeToMap.cend() - imagesStorageCubeToErase, imagesStorageCubeToMap.cend());
     samplersToMap.erase(samplersToMap.cend() - samplersToErase, samplersToMap.cend());
     buffersToMap.erase(buffersToMap.cend() - buffersToErase, buffersToMap.cend());
 
 
-    std::vector<VkDescriptorImageInfo> images1DInfo;
-    std::vector<VkDescriptorImageInfo> images2DInfo;
-    std::vector<VkDescriptorImageInfo> images3DInfo;
-    std::vector<VkDescriptorImageInfo> imagesCubeInfo;
+    std::vector<VkDescriptorImageInfo> imagesSampled1DInfo;
+    std::vector<VkDescriptorImageInfo> imagesStorage1DInfo;
+    std::vector<VkDescriptorImageInfo> imagesSampled2DInfo;
+    std::vector<VkDescriptorImageInfo> imagesStorage2DInfo;
+    std::vector<VkDescriptorImageInfo> imagesSampled3DInfo;
+    std::vector<VkDescriptorImageInfo> imagesStorage3DInfo;
+    std::vector<VkDescriptorImageInfo> imagesSampledCubeInfo;
+    std::vector<VkDescriptorImageInfo> imagesStorageCubeInfo;
     std::vector<VkDescriptorImageInfo> samplersInfo;
 
-    images1DInfo.reserve(images1DToMap.size());
-    images1DInfo.reserve(images2DToMap.size());
-    images1DInfo.reserve(images3DToMap.size());
-    images1DInfo.reserve(imagesCubeToMap.size());
+    imagesSampled1DInfo.reserve(imagesSampled1DToMap.size());
+    imagesStorage1DInfo.reserve(imagesStorage1DToMap.size());
+    imagesSampled2DInfo.reserve(imagesSampled2DToMap.size());
+    imagesStorage2DInfo.reserve(imagesStorage2DToMap.size());
+    imagesSampled3DInfo.reserve(imagesSampled3DToMap.size());
+    imagesStorage3DInfo.reserve(imagesStorage3DToMap.size());
+    imagesSampledCubeInfo.reserve(imagesSampledCubeToMap.size());
+    imagesStorageCubeInfo.reserve(imagesStorageCubeToMap.size());
     samplersInfo.reserve(samplersToMap.size());
 
-    // Images
-    for(uint32_t i = 0; i < images1DToMap.size(); i++)
+    // --- Textures 1D ---
+    for(uint32_t i = 0; i < imagesSampled1DToMap.size(); i++)
     {
-        uint32_t framesToLive = images1DToMap[i].second;
+        uint32_t framesToLive = imagesSampled1DToMap[i].second;
 
         if(framesToLive == 0) { continue; }
 
-        images1DToMap[i].second--;
+        imagesSampled1DToMap[i].second--;
 
-        TextureHandle handle = images1DToMap[i].first;
+        TextureHandle handle = imagesSampled1DToMap[i].first;
 
         TextureObject& image = MemoryRegistry::GetTexture(handle);
 
@@ -373,7 +512,41 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .sampler = VK_NULL_HANDLE
         };
 
-        images1DInfo.push_back(imageInfo);
+        imagesSampled1DInfo.push_back(imageInfo);
+
+        VkWriteDescriptorSet writeInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = sets[frameIndex],
+            .dstBinding = 0,
+            .dstArrayElement = handle.Id,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .pImageInfo = &imageInfo
+        };
+
+        descriptorSetWrites.emplace_back(writeInfo);
+    }
+    for(uint32_t i = 0; i < imagesStorage1DToMap.size(); i++)
+    {
+        uint32_t framesToLive = imagesStorage1DToMap[i].second;
+
+        if(framesToLive == 0) { continue; }
+
+        imagesStorage1DToMap[i].second--;
+
+        TextureHandle handle = imagesStorage1DToMap[i].first;
+
+        TextureObject& image = MemoryRegistry::GetTexture(handle);
+
+        VkDescriptorImageInfo imageInfo
+        {
+            .imageView = image.ImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .sampler = VK_NULL_HANDLE
+        };
+
+        imagesStorage1DInfo.push_back(imageInfo);
 
         VkWriteDescriptorSet writeInfo
         {
@@ -389,15 +562,16 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         descriptorSetWrites.emplace_back(writeInfo);
     }
 
-    for(uint32_t i = 0; i < images2DToMap.size(); i++)
+    // --- Textures 2D ---
+    for(uint32_t i = 0; i < imagesSampled2DToMap.size(); i++)
     {
-        uint32_t framesToLive = images2DToMap[i].second;
+        uint32_t framesToLive = imagesSampled2DToMap[i].second;
 
         if(framesToLive == 0) { continue; }
 
-        images2DToMap[i].second--;
+        imagesSampled2DToMap[i].second--;
 
-        TextureHandle handle = images2DToMap[i].first;
+        TextureHandle handle = imagesSampled2DToMap[i].first;
 
         TextureObject& image = MemoryRegistry::GetTexture(handle);
 
@@ -408,7 +582,41 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .sampler = VK_NULL_HANDLE
         };
 
-        images1DInfo.push_back(imageInfo);
+        imagesSampled2DInfo.push_back(imageInfo);
+
+        VkWriteDescriptorSet writeInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = sets[frameIndex],
+            .dstBinding = 0,
+            .dstArrayElement = handle.Id,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .pImageInfo = &imageInfo
+        };
+
+        descriptorSetWrites.emplace_back(writeInfo);
+    }
+    for(uint32_t i = 0; i < imagesStorage2DToMap.size(); i++)
+    {
+        uint32_t framesToLive = imagesStorage2DToMap[i].second;
+
+        if(framesToLive == 0) { continue; }
+
+        imagesStorage2DToMap[i].second--;
+
+        TextureHandle handle = imagesStorage2DToMap[i].first;
+
+        TextureObject& image = MemoryRegistry::GetTexture(handle);
+
+        VkDescriptorImageInfo imageInfo
+        {
+            .imageView = image.ImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .sampler = VK_NULL_HANDLE
+        };
+
+        imagesStorage2DInfo.push_back(imageInfo);
 
         VkWriteDescriptorSet writeInfo
         {
@@ -424,15 +632,16 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         descriptorSetWrites.emplace_back(writeInfo);
     }
 
-    for(uint32_t i = 0; i < images3DToMap.size(); i++)
+    // --- Textures 3D ---
+    for(uint32_t i = 0; i < imagesSampled3DToMap.size(); i++)
     {
-        uint32_t framesToLive = images3DToMap[i].second;
+        uint32_t framesToLive = imagesSampled3DToMap[i].second;
 
         if(framesToLive == 0) { continue; }
 
-        images3DToMap[i].second--;
+        imagesSampled3DToMap[i].second--;
 
-        TextureHandle handle = images3DToMap[i].first;
+        TextureHandle handle = imagesSampled3DToMap[i].first;
 
         TextureObject& image = MemoryRegistry::GetTexture(handle);
 
@@ -443,7 +652,41 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .sampler = VK_NULL_HANDLE
         };
 
-        images1DInfo.push_back(imageInfo);
+        imagesSampled3DInfo.push_back(imageInfo);
+
+        VkWriteDescriptorSet writeInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = sets[frameIndex],
+            .dstBinding = 0,
+            .dstArrayElement = handle.Id,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .pImageInfo = &imageInfo
+        };
+
+        descriptorSetWrites.emplace_back(writeInfo);
+    }
+    for(uint32_t i = 0; i < imagesStorage3DToMap.size(); i++)
+    {
+        uint32_t framesToLive = imagesStorage3DToMap[i].second;
+
+        if(framesToLive == 0) { continue; }
+
+        imagesStorage3DToMap[i].second--;
+
+        TextureHandle handle = imagesStorage3DToMap[i].first;
+
+        TextureObject& image = MemoryRegistry::GetTexture(handle);
+
+        VkDescriptorImageInfo imageInfo
+        {
+            .imageView = image.ImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .sampler = VK_NULL_HANDLE
+        };
+
+        imagesStorage3DInfo.push_back(imageInfo);
 
         VkWriteDescriptorSet writeInfo
         {
@@ -459,15 +702,16 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         descriptorSetWrites.emplace_back(writeInfo);
     }
 
-    for(uint32_t i = 0; i < imagesCubeToMap.size(); i++)
+    // --- Textures Cube ---
+    for(uint32_t i = 0; i < imagesSampledCubeToMap.size(); i++)
     {
-        uint32_t framesToLive = imagesCubeToMap[i].second;
+        uint32_t framesToLive = imagesSampledCubeToMap[i].second;
 
         if(framesToLive == 0) { continue; }
 
-        imagesCubeToMap[i].second--;
+        imagesSampledCubeToMap[i].second--;
 
-        TextureHandle handle = imagesCubeToMap[i].first;
+        TextureHandle handle = imagesSampledCubeToMap[i].first;
 
         TextureObject& image = MemoryRegistry::GetTexture(handle);
 
@@ -478,7 +722,41 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .sampler = VK_NULL_HANDLE
         };
 
-        images1DInfo.push_back(imageInfo);
+        imagesSampledCubeInfo.push_back(imageInfo);
+
+        VkWriteDescriptorSet writeInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = sets[frameIndex],
+            .dstBinding = 0,
+            .dstArrayElement = handle.Id,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .pImageInfo = &imageInfo
+        };
+
+        descriptorSetWrites.emplace_back(writeInfo);
+    }
+    for(uint32_t i = 0; i < imagesStorageCubeToMap.size(); i++)
+    {
+        uint32_t framesToLive = imagesStorageCubeToMap[i].second;
+
+        if(framesToLive == 0) { continue; }
+
+        imagesStorageCubeToMap[i].second--;
+
+        TextureHandle handle = imagesStorageCubeToMap[i].first;
+
+        TextureObject& image = MemoryRegistry::GetTexture(handle);
+
+        VkDescriptorImageInfo imageInfo
+        {
+            .imageView = image.ImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .sampler = VK_NULL_HANDLE
+        };
+
+        imagesStorageCubeInfo.push_back(imageInfo);
 
         VkWriteDescriptorSet writeInfo
         {
@@ -494,7 +772,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         descriptorSetWrites.emplace_back(writeInfo);
     }
 
-    // Samplers
+    // --- Samplers ---
     for(uint32_t i = 0; i < samplersToMap.size(); i++)
     {
         uint32_t framesToLive = samplersToMap[i].second;
@@ -530,7 +808,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         descriptorSetWrites.emplace_back(writeInfo);
     }
 
-    // Buffers
+    // --- Buffers ---
     for (uint32_t i = 0; i < buffersToMap.size(); i++)
     {
         uint32_t framesToLive = buffersToMap[i].second;
@@ -616,72 +894,43 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     return true;
 }
 
-void ResourceMapper::ScheduleImageMapping1D(TextureHandle handle)
+
+void ResourceMapper::ScheduleImageMapping(TextureHandle handle, TextureInfo& textureInfo)
 {
     std::lock_guard<std::mutex> lock(imagesMutex);
 
-    if(image1DToMapFreeSlots.empty())
+    std::vector<std::pair<TextureHandle, uint32_t>>& sampledImagesToMap = GetSampledVector(textureInfo.Data.TextureType);
+    std::vector<std::pair<TextureHandle, uint32_t>>& storageImagesToMap = GetStorageVector(textureInfo.Data.TextureType);
+    std::vector<uint32_t>& freeSampledSlots = GetFreeSampledSlotsVector(textureInfo.Data.TextureType);
+    std::vector<uint32_t>& freeStorageSlots = GetFreeStorageSlotsVector(textureInfo.Data.TextureType);
+
+    bool sampled = IsSampled(textureInfo.Data.Usage);
+    bool storage = IsStorage(textureInfo.Data.Usage);
+
+    if(sampled && freeSampledSlots.empty())
     {
-        images1DToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+        sampledImagesToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
     }
-    else 
+    else if(sampled)
     {
-        uint32_t index = image1DToMapFreeSlots.back();
-        image1DToMapFreeSlots.pop_back();
+        uint32_t index = freeSampledSlots.back();
+        freeSampledSlots.pop_back();
 
-        images1DToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+        sampledImagesToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
     }
-}
 
-void ResourceMapper::ScheduleImageMapping2D(TextureHandle handle)
-{
-    std::lock_guard<std::mutex> lock(imagesMutex);
-
-    if(image2DToMapFreeSlots.empty())
+    if(storage && freeStorageSlots.empty())
     {
-        images2DToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+        storageImagesToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
     }
-    else 
+    else if(storage)
     {
-        uint32_t index = image2DToMapFreeSlots.back();
-        image2DToMapFreeSlots.pop_back();
+        uint32_t index = freeStorageSlots.back();
+        freeStorageSlots.pop_back();
 
-        images2DToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+        storageImagesToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
     }
-}
 
-void ResourceMapper::ScheduleImageMapping3D(TextureHandle handle)
-{
-    std::lock_guard<std::mutex> lock(imagesMutex);
-
-    if(image3DToMapFreeSlots.empty())
-    {
-        images3DToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
-    }
-    else 
-    {
-        uint32_t index = image3DToMapFreeSlots.back();
-        image3DToMapFreeSlots.pop_back();
-
-        images3DToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
-    }
-}
-
-void ResourceMapper::ScheduleImageMappingCube(TextureHandle handle)
-{
-    std::lock_guard<std::mutex> lock(imagesMutex);
-
-    if(imageCubeToMapFreeSlots.empty())
-    {
-        imagesCubeToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
-    }
-    else 
-    {
-        uint32_t index = imageCubeToMapFreeSlots.back();
-        imageCubeToMapFreeSlots.pop_back();
-
-        imagesCubeToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
-    }
 }
 
 void ResourceMapper::ScheduleSamplerMapping(SamplerHandle handle)
@@ -715,5 +964,81 @@ void ResourceMapper::ScheduleBufferMapping(BufferHandle handle)
         bufferToMapFreeSlots.pop_back();
         
         buffersToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+    }
+}
+
+std::vector<std::pair<TextureHandle, uint32_t>>& ResourceMapper::GetSampledVector(TextureType textureType)
+{
+    switch(textureType)
+    {
+        case(TextureType::TEXTURE_1D) :
+            return imagesSampled1DToMap;
+            break;
+        case(TextureType::TEXTURE_2D) :
+            return imagesSampled2DToMap;
+            break;
+        case(TextureType::TEXTURE_3D) :
+            return imagesSampled3DToMap;
+            break;
+        case(TextureType::TEXTURE_CUBE) :
+            return imagesSampledCubeToMap;
+            break;
+    }
+}
+
+std::vector<std::pair<TextureHandle, uint32_t>>& ResourceMapper::GetStorageVector(TextureType textureType)
+{
+    switch(textureType)
+    {
+        case(TextureType::TEXTURE_1D) :
+            return imagesStorage1DToMap;
+            break;
+        case(TextureType::TEXTURE_2D) :
+            return imagesStorage2DToMap;
+            break;
+        case(TextureType::TEXTURE_3D) :
+            return imagesStorage3DToMap;
+            break;
+        case(TextureType::TEXTURE_CUBE) :
+            return imagesStorageCubeToMap;
+            break;
+    }
+}
+
+std::vector<uint32_t>& ResourceMapper::GetFreeSampledSlotsVector(TextureType textureType)
+{
+    switch(textureType)
+    {
+        case(TextureType::TEXTURE_1D) :
+            return imageSampled1DToMapFreeSlots;
+            break;
+        case(TextureType::TEXTURE_2D) :
+            return imageSampled2DToMapFreeSlots;
+            break;
+        case(TextureType::TEXTURE_3D) :
+            return imageSampled3DToMapFreeSlots;
+            break;
+        case(TextureType::TEXTURE_CUBE) :
+            return imageSampledCubeToMapFreeSlots;
+            break;
+    }
+}
+
+std::vector<uint32_t>& ResourceMapper::GetFreeStorageSlotsVector(TextureType textureType)
+{
+    switch(textureType)
+    {
+        case(TextureType::TEXTURE_1D) :
+            return imageStorage1DToMapFreeSlots;
+            break;
+        case(TextureType::TEXTURE_2D) :
+            return imageStorage2DToMapFreeSlots;
+            break;
+        case(TextureType::TEXTURE_3D) :
+            return imageStorage3DToMapFreeSlots;
+            break;
+        case(TextureType::TEXTURE_CUBE) :
+            return imageStorageCubeToMapFreeSlots;
+            break;
     }
 }
