@@ -226,7 +226,9 @@ bool ContextBuilder::CreateDevice(Context& context)
     if(!availableFeatures13.dynamicRendering || !availableFeatures13.synchronization2 || !availableFeatures12.timelineSemaphore || 
        !availableFeatures.features.fillModeNonSolid || !availableFeatures12.bufferDeviceAddress || !availableFeatures12.descriptorBindingPartiallyBound ||
        !availableFeatures12.descriptorBindingVariableDescriptorCount || !availableFeatures12.runtimeDescriptorArray || 
-       !availableFeatures12.shaderSampledImageArrayNonUniformIndexing)
+       !availableFeatures12.shaderSampledImageArrayNonUniformIndexing || !availableFeatures12.descriptorBindingSampledImageUpdateAfterBind ||
+       !availableFeatures12.descriptorBindingStorageImageUpdateAfterBind || !availableFeatures12.descriptorBindingUniformBufferUpdateAfterBind ||
+       !availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind)
     {
         printError("Available device features do not respect application features requirement");
     }
@@ -254,7 +256,11 @@ bool ContextBuilder::CreateDevice(Context& context)
         .descriptorBindingPartiallyBound = VK_TRUE,
         .descriptorBindingVariableDescriptorCount = VK_TRUE,
         .runtimeDescriptorArray = VK_TRUE,
-        .shaderSampledImageArrayNonUniformIndexing = VK_TRUE
+        .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
+        .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
+        .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
+        .descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
+        .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE
     };
 
     VkPhysicalDeviceFeatures2 features

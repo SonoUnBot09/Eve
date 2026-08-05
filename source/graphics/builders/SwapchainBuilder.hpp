@@ -13,8 +13,6 @@ namespace Eve::Graphics
 
             static void Destroy(Swapchain& swapchain);
         private:
-            inline static std::vector<VkImage> swapchainImages;
-            inline static std::vector<VkImageView> swapchainImageViews;
         
             inline static VkFormat chooseFormat = VK_FORMAT_UNDEFINED;
             inline static uint32_t swapchainImagesCount = 0;

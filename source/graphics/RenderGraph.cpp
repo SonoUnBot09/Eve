@@ -1446,9 +1446,8 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
         srcBarrierInfo = barrierInfo.first;
     }
 
-    TextureHandle swapchainHandle = GraphicsCore::Swapchain.swapchainImagesHandles[frameIndex];
-
-    TextureObject& swapchainTexture = MemoryRegistry::GetTexture(swapchainHandle);
+    VkImage swapchainImage = GraphicsCore::Swapchain.swapchainImages[frameIndex];
+    VkImageView swapchainImageView = GraphicsCore::Swapchain.swapchainImageViews[frameIndex];
 
     std::vector<VkImageMemoryBarrier2> barriers
     {
@@ -1484,7 +1483,7 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = swapchainTexture.Image,
+            .image = swapchainImage,
             .subresourceRange
             {
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -1508,7 +1507,7 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
     VkRenderingAttachmentInfo colorAttachment
     {
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView = swapchainTexture.ImageView,
+        .imageView = swapchainImageView,
         .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -1573,7 +1572,7 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
         .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .image = swapchainTexture.Image,
+        .image = swapchainImage,
         .subresourceRange
         {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,

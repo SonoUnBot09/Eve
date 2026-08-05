@@ -111,16 +111,16 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
     // Swapchain images
     uint32_t imagesCount = 0;
     vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, nullptr);
-    swapchainImages.resize(imagesCount);
-    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, swapchainImages.data());
+    swapchain.swapchainImages.resize(imagesCount);
+    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, swapchain.swapchainImages.data());
 
-   swapchainImageViews.resize(imagesCount);
+    swapchain.swapchainImageViews.resize(imagesCount);
     for(int i = 0; i < imagesCount; i++)
     {
         VkImageViewCreateInfo imageViewCI
         {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image = swapchainImages[i],
+            .image = swapchain.swapchainImages[i],
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .format = chooseFormat,
             .subresourceRange
@@ -133,7 +133,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
             }
         };
 
-        if(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchainImageViews[i]) != VK_SUCCESS)
+        if(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchain.swapchainImageViews[i]) != VK_SUCCESS)
         {
             printError("Unable to create swapchain image views");
             return false;
@@ -141,30 +141,6 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
     }
 
     Format format = swapchain.Format == VK_FORMAT_R8G8B8A8_SRGB ? Format::FORMAT_R8G8B8A8_SRGB : Format::FORMAT_B8G8R8A8_SRGB;
-
-    for(uint32_t i = 0; i < imagesCount; i++)
-    {
-        TextureObject texture
-        {
-            .Image = swapchainImages[i],
-            .ImageView = swapchainImageViews[i]
-        };
-
-        TextureInfo textureInfo
-        {
-            .Data.TextureType = TextureType::TEXTURE_2D,
-            .Data.Width = swapchain.Width,
-            .Data.Height = swapchain.Height,
-            .Data.Depth = 1,
-            .Data.ArrayLayers = 1,
-            .Data.Format = format,
-            .Data.MipLevels = 1
-        };
-
-        TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
-
-        swapchain.swapchainImagesHandles.push_back(handle);
-    }
 
     // TODO: Add the real shader path
     
@@ -186,7 +162,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
         .ColorFormat = format
     };
 
-    swapchain.shader = ShaderRegistry::CreateGraphicsShader(shaderInfo);
+    //swapchain.shader = ShaderRegistry::CreateGraphicsShader(shaderInfo);
 
     return true;
 }
@@ -258,16 +234,16 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
     // Swapchain images
     uint32_t imagesCount = 0;
     vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, nullptr);
-    swapchainImages.resize(imagesCount);
-    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, swapchainImages.data());
+    swapchain.swapchainImages.resize(imagesCount);
+    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, swapchain.swapchainImages.data());
 
-    swapchainImageViews.resize(imagesCount);
+    swapchain.swapchainImageViews.resize(imagesCount);
     for(int i = 0; i < imagesCount; i++)
     {
         VkImageViewCreateInfo imageViewCI
         {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image = swapchainImages[i],
+            .image = swapchain.swapchainImages[i],
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .format = chooseFormat,
             .subresourceRange
@@ -280,36 +256,11 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
             }
         };
 
-        if(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchainImageViews[i]) != VK_SUCCESS)
+        if(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchain.swapchainImageViews[i]) != VK_SUCCESS)
         {
             printError("Unable to create swapchain image views");
             return false;
         }
-    }
-
-    Format format = swapchain.Format == VK_FORMAT_R8G8B8A8_SRGB ? Format::FORMAT_R8G8B8A8_SRGB : Format::FORMAT_B8G8R8A8_SRGB;
-
-    for(uint32_t i = 0; i < imagesCount; i++)
-    {
-        TextureObject texture
-        {
-            .Image = swapchainImages[i],
-            .ImageView = swapchainImageViews[i]
-        };
-
-        TextureInfo textureInfo
-        {
-            .Data.TextureType = TextureType::TEXTURE_2D,
-            .Data.Width = swapchain.Width,
-            .Data.Height = swapchain.Height,
-            .Data.Depth = 1,
-            .Data.ArrayLayers = 1,
-            .Data.Format = format,
-            .Data.MipLevels = 1
-        };
-        TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
-
-        swapchain.swapchainImagesHandles.push_back(handle);
     }
 
     return true;
@@ -317,14 +268,14 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
 
 void SwapchainBuilder::Destroy(Swapchain& swapchain)
 {
-    for (TextureHandle handle : swapchain.swapchainImagesHandles)
+    for (uint32_t i = 0; i < swapchain.swapchainImages.size(); i++)
     {
-        TextureObject& texture = MemoryRegistry::GetTexture(handle);
-        vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
+        swapchain.swapchainImages[i] = nullptr;
+        vkDestroyImageView(GraphicsCore::Context.Device, swapchain.swapchainImageViews[i], nullptr);
 
-        ResourceRegistry::FreeTextureSlot(handle);
     }
-    swapchain.swapchainImagesHandles.clear();
+    swapchain.swapchainImages.clear();
+    swapchain.swapchainImageViews.clear();
 
     if(swapchain.Swapchain)
     {

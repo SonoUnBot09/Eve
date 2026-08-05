@@ -1,4 +1,5 @@
 #include "MemoryBin.hpp"
+#include "Eve/Debug.hpp"
 #include "EveSettings.hpp"
 #include "GraphicsCore.hpp"
 #include <graphics/registers/MemoryRegistry.hpp>
@@ -31,7 +32,7 @@ void MemoryBin::DestroyPendingResources()
     }
 
     // --- Buffer Destruction ---
-    for(int32_t i = buffersToDestroy.size(); i >= 0; i--)
+    for(int32_t i = buffersToDestroy.size() - 1; i >= 0; i--)
     {
         if(buffersToDestroy[i].second > 0)
         {
@@ -47,7 +48,7 @@ void MemoryBin::DestroyPendingResources()
     }
 
     // --- Texture Destruction ---
-    for(int32_t i = texturesToDestroy.size(); i >= 0; i--)
+    for(int32_t i = texturesToDestroy.size() - 1; i >= 0; i--)
     {
         if(texturesToDestroy[i].second > 0)
         {
@@ -65,7 +66,7 @@ void MemoryBin::DestroyPendingResources()
     }
 
     // --- Sampler Destruction ---
-    for(int32_t i = samplersToDestroy.size(); i >= 0; i--)
+    for(int32_t i = samplersToDestroy.size() - 1; i >= 0; i--)
     {
         if(samplersToDestroy[i].second > 0)
         {
@@ -83,7 +84,7 @@ void MemoryBin::DestroyPendingResources()
 
 void MemoryBin::DestroyEverythingNow()
 {
-    for(int32_t i = buffersToDestroy.size(); i >= 0; i--)
+    for(int32_t i = buffersToDestroy.size() - 1; i >= 0; i--)
     {
         BufferObject& buffer = buffersToDestroy[i].first;
 
@@ -92,7 +93,7 @@ void MemoryBin::DestroyEverythingNow()
         buffersToDestroy.erase(buffersToDestroy.begin() + i);
     }
 
-    for(int32_t i = texturesToDestroy.size(); i >= 0; i--)
+    for(int32_t i = texturesToDestroy.size() - 1; i >= 0; i--)
     {
         TextureObject& texture = texturesToDestroy[i].first;
 
@@ -103,7 +104,7 @@ void MemoryBin::DestroyEverythingNow()
         texturesToDestroy.erase(texturesToDestroy.begin() + i);
     }
 
-    for(int32_t i = samplersToDestroy.size(); i >= 0; i--)
+    for(int32_t i = samplersToDestroy.size() - 1; i >= 0; i--)
     {
         SamplerObject sampler = MemoryRegistry::samplers[i];
 
@@ -129,7 +130,6 @@ void MemoryBin::DestroyEverythingNow()
 
         vmaDestroyBuffer(GraphicsCore::Context.Allocator, buffer.Buffer, buffer.Allocation);
     }
-
 
     for(uint32_t i = 0; i < MemoryRegistry::samplers.size(); i++)
     {

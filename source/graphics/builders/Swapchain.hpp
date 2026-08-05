@@ -11,7 +11,8 @@ namespace Eve::Graphics
         uint32_t Width, Height;
         VkSwapchainKHR Swapchain = nullptr;
         VkFormat Format;
-        std::vector<TextureHandle> swapchainImagesHandles;
+        std::vector<VkImage> swapchainImages;
+        std::vector<VkImageView> swapchainImageViews;
         ShaderHandle shader;
     };
 }

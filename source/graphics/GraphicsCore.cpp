@@ -35,9 +35,11 @@ void GraphicsCore::Destroy()
 
     ResourceMapper::DestroyGlobalDescriptor();
 
-    MemoryBin::DestroyEverythingNow();
-
+    std::cout << "A" <<std::endl;
     SwapchainBuilder::Destroy(Swapchain);
+    std::cout << "B" <<std::endl;
+    MemoryBin::DestroyEverythingNow();
+    std::cout << "C" <<std::endl;
 
     if(Context.Allocator)
     {

@@ -213,7 +213,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             // Buffers
             VkDescriptorPoolSize
             {
-                .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                 .descriptorCount = 1 * Eve::Settings::MAX_FRAMES_IN_FLIGHT
             },
         };
