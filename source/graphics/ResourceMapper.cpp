@@ -1,7 +1,7 @@
 #include <graphics/ResourceMapper.hpp>
-#include "Eve/graphics/Texture.hpp"
 #include "EveSettings.hpp"
 #include "Resources.hpp"
+#include "graphics/registers/MemoryRegistry.hpp"
 #include <graphics/helpers/VulkanMapping.hpp>
 
 using namespace Eve::Graphics;
@@ -252,8 +252,8 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
         {
             BufferInfo bufferInfo
             {
-                .Data.Size = maxBuffersCount * sizeof(uint64_t),
-                .Data.Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_DST
+                .Size = maxBuffersCount * sizeof(uint64_t),
+                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_DST
             };
 
             BufferHandle handle = MemoryRegistry::CreateGPUBuffer(bufferInfo);
@@ -292,8 +292,8 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
         {
             BufferInfo bufferInfo
             {
-                .Data.Size = maxBuffersCount * sizeof(uint64_t),
-                .Data.Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+                .Size = maxBuffersCount * sizeof(uint64_t),
+                .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
             };
 
             BufferHandle handle = MemoryRegistry::CreateCPUBuffer(bufferInfo);
@@ -331,7 +331,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t imagesSampled1DToErase = 0;
     for(int32_t i = imagesSampled1DToMap.size() - 1; i >= 0; i--)
     {
-        if(imagesSampled1DToMap[i].second <= 0)
+        if(imagesSampled1DToMap[i].Countdown <= 0)
         {
             imagesSampled1DToErase++;
         }
@@ -343,7 +343,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t imagesStorage1DToErase = 0;
     for(int32_t i = imagesStorage1DToMap.size() - 1; i >= 0; i--)
     {
-        if(imagesStorage1DToMap[i].second <= 0)
+        if(imagesStorage1DToMap[i].Countdown <= 0)
         {
             imagesStorage1DToErase++;
         }
@@ -357,7 +357,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t imagesSampled2DToErase = 0;
     for(int32_t i = imagesSampled2DToMap.size() - 1; i >= 0; i--)
     {
-        if(imagesSampled2DToMap[i].second <= 0)
+        if(imagesSampled2DToMap[i].Countdown <= 0)
         {
             imagesSampled2DToErase++;
         }
@@ -369,7 +369,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t imagesStorage2DToErase = 0;
     for(int32_t i = imagesStorage2DToMap.size() - 1; i >= 0; i--)
     {
-        if(imagesStorage2DToMap[i].second <= 0)
+        if(imagesStorage2DToMap[i].Countdown <= 0)
         {
             imagesStorage2DToErase++;
         }
@@ -383,7 +383,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t imagesSampled3DToErase = 0;
     for(int32_t i = imagesSampled3DToMap.size() - 1; i >= 0; i--)
     {
-        if(imagesSampled3DToMap[i].second <= 0)
+        if(imagesSampled3DToMap[i].Countdown <= 0)
         {
             imagesSampled3DToErase++;
         }
@@ -395,7 +395,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t imagesStorage3DToErase = 0;
     for(int32_t i = imagesStorage3DToMap.size() - 1; i >= 0; i--)
     {
-        if(imagesStorage3DToMap[i].second <= 0)
+        if(imagesStorage3DToMap[i].Countdown <= 0)
         {
             imagesStorage3DToErase++;
         }
@@ -409,7 +409,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t imagesSampledCubeToErase = 0;
     for(int32_t i = imagesSampledCubeToMap.size() - 1; i >= 0; i--)
     {
-        if(imagesSampledCubeToMap[i].second <= 0)
+        if(imagesSampledCubeToMap[i].Countdown <= 0)
         {
             imagesSampledCubeToErase++;
         }
@@ -421,7 +421,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t imagesStorageCubeToErase = 0;
     for(int32_t i = imagesStorageCubeToMap.size() - 1; i >= 0; i--)
     {
-        if(imagesStorageCubeToMap[i].second <= 0)
+        if(imagesStorageCubeToMap[i].Countdown <= 0)
         {
             imagesStorageCubeToErase++;
         }
@@ -435,7 +435,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t samplersToErase = 0;
     for(int32_t i = samplersToMap.size() - 1; i >= 0; i--)
     {
-        if(samplersToMap[i].second <= 0)
+        if(samplersToMap[i].Countdown <= 0)
         {
             samplersToErase++;
         }
@@ -449,7 +449,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     uint32_t buffersToErase = 0;
     for(int32_t i = buffersToMap.size() - 1; i >= 0; i--)
     {
-        if(buffersToMap[i].second <= 0)
+        if(buffersToMap[i].Countdown <= 0)
         {
             buffersToErase++;
         }
@@ -495,19 +495,15 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     // --- Textures 1D ---
     for(uint32_t i = 0; i < imagesSampled1DToMap.size(); i++)
     {
-        uint32_t framesToLive = imagesSampled1DToMap[i].second;
+        TextureToMap& resource = imagesSampled1DToMap[i];
 
-        if(framesToLive == 0) { continue; }
+        if(resource.Countdown == 0) { continue; }
 
-        imagesSampled1DToMap[i].second--;
-
-        TextureHandle handle = imagesSampled1DToMap[i].first;
-
-        TextureObject& image = MemoryRegistry::GetTexture(handle);
+        resource.Countdown--;
 
         VkDescriptorImageInfo imageInfo
         {
-            .imageView = image.ImageView,
+            .imageView = resource.ImageView,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
             .sampler = VK_NULL_HANDLE
         };
@@ -519,7 +515,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = sets[frameIndex],
             .dstBinding = 0,
-            .dstArrayElement = handle.Id,
+            .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
             .pImageInfo = &imageInfo
@@ -529,20 +525,16 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     }
     for(uint32_t i = 0; i < imagesStorage1DToMap.size(); i++)
     {
-        uint32_t framesToLive = imagesStorage1DToMap[i].second;
+        TextureToMap& resource = imagesStorage1DToMap[i];
 
-        if(framesToLive == 0) { continue; }
+        if(resource.Countdown == 0) { continue; }
 
-        imagesStorage1DToMap[i].second--;
-
-        TextureHandle handle = imagesStorage1DToMap[i].first;
-
-        TextureObject& image = MemoryRegistry::GetTexture(handle);
+        resource.Countdown--;
 
         VkDescriptorImageInfo imageInfo
         {
-            .imageView = image.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .imageView = resource.ImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
             .sampler = VK_NULL_HANDLE
         };
 
@@ -552,10 +544,10 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = sets[frameIndex],
-            .dstBinding = 0,
-            .dstArrayElement = handle.Id,
+            .dstBinding = 1,
+            .dstArrayElement = resource.Id,
             .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
             .pImageInfo = &imageInfo
         };
 
@@ -565,19 +557,15 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     // --- Textures 2D ---
     for(uint32_t i = 0; i < imagesSampled2DToMap.size(); i++)
     {
-        uint32_t framesToLive = imagesSampled2DToMap[i].second;
+        TextureToMap& resource = imagesSampled2DToMap[i];
 
-        if(framesToLive == 0) { continue; }
+        if(resource.Countdown == 0) { continue; }
 
-        imagesSampled2DToMap[i].second--;
-
-        TextureHandle handle = imagesSampled2DToMap[i].first;
-
-        TextureObject& image = MemoryRegistry::GetTexture(handle);
+        resource.Countdown--;
 
         VkDescriptorImageInfo imageInfo
         {
-            .imageView = image.ImageView,
+            .imageView = resource.ImageView,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
             .sampler = VK_NULL_HANDLE
         };
@@ -588,8 +576,8 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = sets[frameIndex],
-            .dstBinding = 0,
-            .dstArrayElement = handle.Id,
+            .dstBinding = 2,
+            .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
             .pImageInfo = &imageInfo
@@ -599,20 +587,16 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     }
     for(uint32_t i = 0; i < imagesStorage2DToMap.size(); i++)
     {
-        uint32_t framesToLive = imagesStorage2DToMap[i].second;
+        TextureToMap& resource = imagesStorage2DToMap[i];
 
-        if(framesToLive == 0) { continue; }
+        if(resource.Countdown == 0) { continue; }
 
-        imagesStorage2DToMap[i].second--;
-
-        TextureHandle handle = imagesStorage2DToMap[i].first;
-
-        TextureObject& image = MemoryRegistry::GetTexture(handle);
+        resource.Countdown--;
 
         VkDescriptorImageInfo imageInfo
         {
-            .imageView = image.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .imageView = resource.ImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
             .sampler = VK_NULL_HANDLE
         };
 
@@ -622,10 +606,10 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = sets[frameIndex],
-            .dstBinding = 0,
-            .dstArrayElement = handle.Id,
+            .dstBinding = 3,
+            .dstArrayElement = resource.Id,
             .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
             .pImageInfo = &imageInfo
         };
 
@@ -635,19 +619,15 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     // --- Textures 3D ---
     for(uint32_t i = 0; i < imagesSampled3DToMap.size(); i++)
     {
-        uint32_t framesToLive = imagesSampled3DToMap[i].second;
+        TextureToMap& resource = imagesSampled3DToMap[i];
 
-        if(framesToLive == 0) { continue; }
+        if(resource.Countdown == 0) { continue; }
 
-        imagesSampled3DToMap[i].second--;
-
-        TextureHandle handle = imagesSampled3DToMap[i].first;
-
-        TextureObject& image = MemoryRegistry::GetTexture(handle);
+        resource.Countdown--;
 
         VkDescriptorImageInfo imageInfo
         {
-            .imageView = image.ImageView,
+            .imageView = resource.ImageView,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
             .sampler = VK_NULL_HANDLE
         };
@@ -658,8 +638,8 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = sets[frameIndex],
-            .dstBinding = 0,
-            .dstArrayElement = handle.Id,
+            .dstBinding = 4,
+            .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
             .pImageInfo = &imageInfo
@@ -669,20 +649,16 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     }
     for(uint32_t i = 0; i < imagesStorage3DToMap.size(); i++)
     {
-        uint32_t framesToLive = imagesStorage3DToMap[i].second;
+        TextureToMap& resource = imagesStorage3DToMap[i];
 
-        if(framesToLive == 0) { continue; }
+        if(resource.Countdown == 0) { continue; }
 
-        imagesStorage3DToMap[i].second--;
-
-        TextureHandle handle = imagesStorage3DToMap[i].first;
-
-        TextureObject& image = MemoryRegistry::GetTexture(handle);
+        resource.Countdown--;
 
         VkDescriptorImageInfo imageInfo
         {
-            .imageView = image.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .imageView = resource.ImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
             .sampler = VK_NULL_HANDLE
         };
 
@@ -692,10 +668,10 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = sets[frameIndex],
-            .dstBinding = 0,
-            .dstArrayElement = handle.Id,
+            .dstBinding = 5,
+            .dstArrayElement = resource.Id,
             .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
             .pImageInfo = &imageInfo
         };
 
@@ -705,19 +681,15 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     // --- Textures Cube ---
     for(uint32_t i = 0; i < imagesSampledCubeToMap.size(); i++)
     {
-        uint32_t framesToLive = imagesSampledCubeToMap[i].second;
+        TextureToMap& resource = imagesSampledCubeToMap[i];
 
-        if(framesToLive == 0) { continue; }
+        if(resource.Countdown == 0) { continue; }
 
-        imagesSampledCubeToMap[i].second--;
-
-        TextureHandle handle = imagesSampledCubeToMap[i].first;
-
-        TextureObject& image = MemoryRegistry::GetTexture(handle);
+        resource.Countdown--;
 
         VkDescriptorImageInfo imageInfo
         {
-            .imageView = image.ImageView,
+            .imageView = resource.ImageView,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
             .sampler = VK_NULL_HANDLE
         };
@@ -728,8 +700,8 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = sets[frameIndex],
-            .dstBinding = 0,
-            .dstArrayElement = handle.Id,
+            .dstBinding = 6,
+            .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
             .pImageInfo = &imageInfo
@@ -739,20 +711,16 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     }
     for(uint32_t i = 0; i < imagesStorageCubeToMap.size(); i++)
     {
-        uint32_t framesToLive = imagesStorageCubeToMap[i].second;
+        TextureToMap& resource = imagesStorageCubeToMap[i];
 
-        if(framesToLive == 0) { continue; }
+        if(resource.Countdown == 0) { continue; }
 
-        imagesStorageCubeToMap[i].second--;
-
-        TextureHandle handle = imagesStorageCubeToMap[i].first;
-
-        TextureObject& image = MemoryRegistry::GetTexture(handle);
+        resource.Countdown--;
 
         VkDescriptorImageInfo imageInfo
         {
-            .imageView = image.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+            .imageView = resource.ImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
             .sampler = VK_NULL_HANDLE
         };
 
@@ -762,10 +730,10 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = sets[frameIndex],
-            .dstBinding = 0,
-            .dstArrayElement = handle.Id,
+            .dstBinding = 7,
+            .dstArrayElement = resource.Id,
             .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
             .pImageInfo = &imageInfo
         };
 
@@ -775,19 +743,15 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     // --- Samplers ---
     for(uint32_t i = 0; i < samplersToMap.size(); i++)
     {
-        uint32_t framesToLive = samplersToMap[i].second;
+        SamplerToMap resource = samplersToMap[i];
 
-        if(framesToLive == 0) { continue; }
+        if(resource.Countdown == 0) { continue; }
 
-        samplersToMap[i].second--;
-
-        SamplerHandle handle = samplersToMap[i].first;
-
-        SamplerObject sampler = MemoryRegistry::GetSampler(handle);
+        resource.Countdown--;
 
         VkDescriptorImageInfo imageInfo
         {
-            .sampler = sampler.Sampler,
+            .sampler = resource.Sampler,
             .imageView = VK_NULL_HANDLE,
             .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
@@ -798,8 +762,8 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = sets[frameIndex],
-            .dstBinding = 1,
-            .dstArrayElement = handle.Id,
+            .dstBinding = 8,
+            .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
             .pImageInfo = &imageInfo
@@ -811,20 +775,16 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     // --- Buffers ---
     for (uint32_t i = 0; i < buffersToMap.size(); i++)
     {
-        uint32_t framesToLive = buffersToMap[i].second;
+        BufferToMap resource = buffersToMap[i];
 
-        if(framesToLive == 0) { continue; }
+        if(resource.Countdown == 0) { continue; }
 
-        buffersToMap[i].second--;
-
-        BufferHandle handle = buffersToMap[i].first;
-
-        BufferObject& buffer = MemoryRegistry::GetBuffer(handle);
+        resource.Countdown--;
 
         VkBufferDeviceAddressInfo addressInfo
         {
             .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-            .buffer = buffer.Buffer
+            .buffer = resource.Buffer
         };
 
         VkDeviceAddress address = vkGetBufferDeviceAddress(GraphicsCore::Context.Device, &addressInfo);
@@ -834,7 +794,7 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         VkBufferCopy region
         {
             .srcOffset = i * sizeof(uint64_t),
-            .dstOffset = handle.Id * sizeof(uint64_t),
+            .dstOffset = resource.Id * sizeof(uint64_t),
             .size = sizeof(uint64_t)
         };
 
@@ -894,80 +854,167 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     return true;
 }
 
-
-void ResourceMapper::ScheduleImageMapping(TextureHandle handle, TextureInfo& textureInfo)
+void  ResourceMapper::ScheduleImageMapping(TextureHandle handle, VkImageView imageView, TextureInfo& textureInfo)
 {
     std::lock_guard<std::mutex> lock(imagesMutex);
 
-    std::vector<std::pair<TextureHandle, uint32_t>>& sampledImagesToMap = GetSampledVector(textureInfo.Data.TextureType);
-    std::vector<std::pair<TextureHandle, uint32_t>>& storageImagesToMap = GetStorageVector(textureInfo.Data.TextureType);
-    std::vector<uint32_t>& freeSampledSlots = GetFreeSampledSlotsVector(textureInfo.Data.TextureType);
-    std::vector<uint32_t>& freeStorageSlots = GetFreeStorageSlotsVector(textureInfo.Data.TextureType);
+    std::vector<TextureToMap>& sampledImagesToMap = GetSampledVector(textureInfo.TextureType);
+    std::vector<TextureToMap>& storageImagesToMap = GetStorageVector(textureInfo.TextureType);
+    std::vector<uint32_t>& freeSampledSlots = GetFreeSampledSlotsVector(textureInfo.TextureType);
+    std::vector<uint32_t>& freeStorageSlots = GetFreeStorageSlotsVector(textureInfo.TextureType);
 
-    bool sampled = IsSampled(textureInfo.Data.Usage);
-    bool storage = IsStorage(textureInfo.Data.Usage);
+    bool sampled = IsSampled(textureInfo.Usage);
+    bool storage = IsStorage(textureInfo.Usage);
+
+    TextureToMap resource
+    {
+        .ImageView = imageView,
+        .Id = handle.Id,
+        .Countdown = Eve::Settings::MAX_FRAMES_IN_FLIGHT
+    };
 
     if(sampled && freeSampledSlots.empty())
     {
-        sampledImagesToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+        sampledImagesToMap.push_back(resource);
     }
     else if(sampled)
     {
         uint32_t index = freeSampledSlots.back();
         freeSampledSlots.pop_back();
 
-        sampledImagesToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+        sampledImagesToMap[index] = resource;
     }
 
     if(storage && freeStorageSlots.empty())
     {
-        storageImagesToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+        storageImagesToMap.push_back(resource);
     }
     else if(storage)
     {
         uint32_t index = freeStorageSlots.back();
         freeStorageSlots.pop_back();
 
-        storageImagesToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+        storageImagesToMap[index] = resource;
     }
-
 }
 
-void ResourceMapper::ScheduleSamplerMapping(SamplerHandle handle)
+void  ResourceMapper::ScheduleImageMapping(TransientTextureHandle handle, VkImageView imageView, TextureInfo& textureInfo)
+{
+    std::lock_guard<std::mutex> lock(imagesMutex);
+
+    std::vector<TextureToMap>& sampledImagesToMap = GetSampledVector(textureInfo.TextureType);
+    std::vector<TextureToMap>& storageImagesToMap = GetStorageVector(textureInfo.TextureType);
+    std::vector<uint32_t>& freeSampledSlots = GetFreeSampledSlotsVector(textureInfo.TextureType);
+    std::vector<uint32_t>& freeStorageSlots = GetFreeStorageSlotsVector(textureInfo.TextureType);
+
+    bool sampled = IsSampled(textureInfo.Usage);
+    bool storage = IsStorage(textureInfo.Usage);
+
+    TextureToMap resource
+    {
+        .ImageView = imageView,
+        .Id = handle.Id,
+        .Countdown = Eve::Settings::MAX_FRAMES_IN_FLIGHT
+    };
+
+    if(sampled && freeSampledSlots.empty())
+    {
+        sampledImagesToMap.push_back(resource);
+    }
+    else if(sampled)
+    {
+        uint32_t index = freeSampledSlots.back();
+        freeSampledSlots.pop_back();
+
+        sampledImagesToMap[index] = resource;
+    }
+
+    if(storage && freeStorageSlots.empty())
+    {
+        storageImagesToMap.push_back(resource);
+    }
+    else if(storage)
+    {
+        uint32_t index = freeStorageSlots.back();
+        freeStorageSlots.pop_back();
+
+        storageImagesToMap[index] = resource;
+    }
+}
+
+void ResourceMapper::ScheduleSamplerMapping(SamplerHandle handle, VkSampler sampler)
 {
     std::lock_guard<std::mutex> lock(samplersMutex);
 
+    SamplerToMap resource
+    {
+        .Sampler = sampler,
+        .Id = handle.Id,
+        .Countdown = Eve::Settings::MAX_FRAMES_IN_FLIGHT
+    };
+
     if(samplerToMapFreeSlots.empty())
     {
-        samplersToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+        samplersToMap.push_back(resource);
     }
     else 
     {
         uint32_t index = samplerToMapFreeSlots.back();
         samplerToMapFreeSlots.pop_back();
         
-        samplersToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+        samplersToMap[index] = resource;
     }
 }
 
-void ResourceMapper::ScheduleBufferMapping(BufferHandle handle)
+void ResourceMapper::ScheduleBufferMapping(BufferHandle handle, VkBuffer buffer)
 {
     std::lock_guard<std::mutex> lock(buffersMutex);
 
+    BufferToMap resource
+    {
+        .Buffer = buffer,
+        .Id = handle.Id,
+        .Countdown = Eve::Settings::MAX_FRAMES_IN_FLIGHT
+    };
+
     if(bufferToMapFreeSlots.empty())
     {
-        buffersToMap.push_back({handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+        buffersToMap.push_back(resource);
     }
     else 
     {
         uint32_t index = bufferToMapFreeSlots.back();
         bufferToMapFreeSlots.pop_back();
         
-        buffersToMap[index] = {handle, Eve::Settings::MAX_FRAMES_IN_FLIGHT};
+        buffersToMap[index] = resource;
     }
 }
 
-std::vector<std::pair<TextureHandle, uint32_t>>& ResourceMapper::GetSampledVector(TextureType textureType)
+void ResourceMapper::ScheduleBufferMapping(TransientBufferHandle handle, VkBuffer buffer)
+{
+    std::lock_guard<std::mutex> lock(buffersMutex);
+
+    BufferToMap resource
+    {
+        .Buffer = buffer,
+        .Id = handle.Id,
+        .Countdown = Eve::Settings::MAX_FRAMES_IN_FLIGHT
+    };
+
+    if(bufferToMapFreeSlots.empty())
+    {
+        buffersToMap.push_back(resource);
+    }
+    else 
+    {
+        uint32_t index = bufferToMapFreeSlots.back();
+        bufferToMapFreeSlots.pop_back();
+        
+        buffersToMap[index] = resource;
+    }
+}
+
+std::vector<ResourceMapper::TextureToMap>& ResourceMapper::GetSampledVector(TextureType textureType)
 {
     switch(textureType)
     {
@@ -986,7 +1033,7 @@ std::vector<std::pair<TextureHandle, uint32_t>>& ResourceMapper::GetSampledVecto
     }
 }
 
-std::vector<std::pair<TextureHandle, uint32_t>>& ResourceMapper::GetStorageVector(TextureType textureType)
+std::vector<ResourceMapper::TextureToMap>& ResourceMapper::GetStorageVector(TextureType textureType)
 {
     switch(textureType)
     {

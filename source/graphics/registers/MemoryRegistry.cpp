@@ -22,20 +22,20 @@ TextureHandle MemoryRegistry::CreateTexture1D(TextureInfo1D textureInfo)
 
     TextureInfo info
     {
-        .Data.TextureType = TextureType::TEXTURE_1D,
-        .Data.Width = textureInfo.Width,
-        .Data.Height = 1,
-        .Data.Depth = 1,
-        .Data.ArrayLayers = textureInfo.ArrayLayers,
-        .Data.Format = textureInfo.Format,
-        .Data.MipLevels = textureInfo.MipLevels,
-        .Data.Sample = textureInfo.Sample,
-        .Data.Usage = textureInfo.Usage
+        .TextureType = TextureType::TEXTURE_1D,
+        .Width = textureInfo.Width,
+        .Height = 1,
+        .Depth = 1,
+        .ArrayLayers = textureInfo.ArrayLayers,
+        .MipLevels = textureInfo.MipLevels,
+        .Format = textureInfo.Format,
+        .Usage = textureInfo.Usage,
+        .Sample = textureInfo.Sample
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
 
-    ResourceMapper::ScheduleImageMapping(handle, info);
+    ResourceMapper::ScheduleImageMapping(handle, texture.ImageView, info);
 
     textures.resize(ResourceRegistry::textureResourcesPeakIndex);
     texturesInfo.resize(ResourceRegistry::textureResourcesPeakIndex);
@@ -53,20 +53,20 @@ TextureHandle MemoryRegistry::CreateTexture2D(TextureInfo2D textureInfo)
 
     TextureInfo info
     {
-        .Data.TextureType = TextureType::TEXTURE_2D,
-        .Data.Width = textureInfo.Width,
-        .Data.Height = textureInfo.Height,
-        .Data.Depth = 1,
-        .Data.ArrayLayers = textureInfo.ArrayLayers,
-        .Data.Format = textureInfo.Format,
-        .Data.MipLevels = textureInfo.MipLevels,
-        .Data.Sample = textureInfo.Sample,
-        .Data.Usage = textureInfo.Usage
+        .TextureType = TextureType::TEXTURE_2D,
+        .Width = textureInfo.Width,
+        .Height = textureInfo.Height,
+        .Depth = 1,
+        .ArrayLayers = textureInfo.ArrayLayers,
+        .MipLevels = textureInfo.MipLevels,
+        .Format = textureInfo.Format,
+        .Usage = textureInfo.Usage,
+        .Sample = textureInfo.Sample
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
 
-    ResourceMapper::ScheduleImageMapping(handle, info);
+    ResourceMapper::ScheduleImageMapping(handle,  texture.ImageView, info);
 
     textures.resize(ResourceRegistry::textureResourcesPeakIndex);
     texturesInfo.resize(ResourceRegistry::textureResourcesPeakIndex);
@@ -84,20 +84,20 @@ TextureHandle MemoryRegistry::CreateTexture3D(TextureInfo3D textureInfo)
 
     TextureInfo info
     {
-        .Data.TextureType = TextureType::TEXTURE_3D,
-        .Data.Width = textureInfo.Width,
-        .Data.Height = textureInfo.Height,
-        .Data.Depth = textureInfo.Depth,
-        .Data.ArrayLayers = textureInfo.ArrayLayers,
-        .Data.Format = textureInfo.Format,
-        .Data.MipLevels = textureInfo.MipLevels,
-        .Data.Sample = textureInfo.Sample,
-        .Data.Usage = textureInfo.Usage
+        .TextureType = TextureType::TEXTURE_3D,
+        .Width = textureInfo.Width,
+        .Height = textureInfo.Height,
+        .Depth = textureInfo.Depth,
+        .ArrayLayers = textureInfo.ArrayLayers,
+        .MipLevels = textureInfo.MipLevels,
+        .Format = textureInfo.Format,
+        .Usage = textureInfo.Usage,
+        .Sample = textureInfo.Sample,
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
 
-    ResourceMapper::ScheduleImageMapping(handle, info);
+    ResourceMapper::ScheduleImageMapping(handle, texture.ImageView, info);
 
 
     textures.resize(ResourceRegistry::textureResourcesPeakIndex);
@@ -116,20 +116,20 @@ TextureHandle MemoryRegistry::CreateTextureCube(TextureInfo2D textureInfo)
 
     TextureInfo info
     {
-        .Data.TextureType = TextureType::TEXTURE_CUBE,
-        .Data.Width = textureInfo.Width,
-        .Data.Height = textureInfo.Height,
-        .Data.Depth = 1,
-        .Data.ArrayLayers = textureInfo.ArrayLayers,
-        .Data.Format = textureInfo.Format,
-        .Data.MipLevels = textureInfo.MipLevels,
-        .Data.Sample = textureInfo.Sample,
-        .Data.Usage = textureInfo.Usage
+        .TextureType = TextureType::TEXTURE_CUBE,
+        .Width = textureInfo.Width,
+        .Height = textureInfo.Height,
+        .Depth = 1,
+        .ArrayLayers = textureInfo.ArrayLayers,
+        .MipLevels = textureInfo.MipLevels,
+        .Format = textureInfo.Format,
+        .Usage = textureInfo.Usage,
+        .Sample = textureInfo.Sample
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
 
-    ResourceMapper::ScheduleImageMapping(handle, info);
+    ResourceMapper::ScheduleImageMapping(handle, texture.ImageView, info);
 
 
     textures.resize(ResourceRegistry::textureResourcesPeakIndex);
@@ -155,7 +155,7 @@ SamplerHandle MemoryRegistry::CreateSampler(SamplerInfo samplerInfo)
 
     SamplerHandle handle = ResourceRegistry::RequestPersistentSamplerSlot();
 
-    ResourceMapper::ScheduleSamplerMapping(handle);
+    ResourceMapper::ScheduleSamplerMapping(handle, sampler.Sampler);
 
     samplers.resize(ResourceRegistry::samplerResourcesPeakIndex);
     samplersInfo.resize(ResourceRegistry::samplerResourcesPeakIndex);
@@ -173,15 +173,15 @@ BufferHandle MemoryRegistry::CreateGPUBuffer(BufferInfo bufferInfo)
 
     BufferInfo info
     {
-        .Data.Size = bufferInfo.Data.Size,
-        .Data.Usage = bufferInfo.Data.Usage
+        .Size = bufferInfo.Size,
+        .Usage = bufferInfo.Usage
     };
 
     BufferHandle handle = ResourceRegistry::RequestPersistentBufferSlot();
     
     ResourceTracker::RegisterBufferState(handle);
 
-    ResourceMapper::ScheduleBufferMapping(handle);
+    // TODO : Mapping ResourceMapper::ScheduleBufferMapping(handle);
 
     buffers.resize(ResourceRegistry::bufferResourcesPeakIndex);
     buffersInfo.resize(ResourceRegistry::bufferResourcesPeakIndex);
@@ -199,8 +199,8 @@ BufferHandle MemoryRegistry::CreateCPUBuffer(BufferInfo bufferInfo)
 
     BufferInfo info
     {
-        .Data.Size = bufferInfo.Data.Size,
-        .Data.Usage = bufferInfo.Data.Usage
+        .Size = bufferInfo.Size,
+        .Usage = bufferInfo.Usage
     };
 
     BufferHandle handle = ResourceRegistry::RequestPersistentBufferSlot();
@@ -287,8 +287,8 @@ void MemoryRegistry::ResizeBufferIfNeeded(BufferHandle &buffer, uint64_t require
 
         BufferInfo bufferInfo
         {
-            .Data.Size = requiredSize,
-            .Data.Usage = bufferUsage
+            .Size = requiredSize,
+            .Usage = bufferUsage
         };
 
         BufferHandle newBufferHandle = MemoryRegistry::CreateGPUBuffer(bufferInfo);

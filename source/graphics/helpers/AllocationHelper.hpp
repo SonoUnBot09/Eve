@@ -21,8 +21,8 @@ namespace Eve::Graphics::Helpers
         VkBufferCreateInfo bufferCI
         {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .size = bufferInfo.Data.Size,
-            .usage = GetVkBufferUsage(bufferInfo.Data.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            .size = bufferInfo.Size,
+            .usage = GetVkBufferUsage(bufferInfo.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
         };
 
@@ -41,8 +41,8 @@ namespace Eve::Graphics::Helpers
         VkBufferCreateInfo bufferCI
         {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .size = bufferInfo.Data.Size,
-            .usage = GetVkBufferUsage(bufferInfo.Data.Usage),
+            .size = bufferInfo.Size,
+            .usage = GetVkBufferUsage(bufferInfo.Usage),
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
         };
 
@@ -94,7 +94,6 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo imageAllocInfo
         {
-            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
@@ -140,7 +139,6 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo imageAllocInfo
         {
-            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
@@ -186,7 +184,6 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo imageAllocInfo
         {
-            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
@@ -233,7 +230,6 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo imageAllocInfo
         {
-            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 

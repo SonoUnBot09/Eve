@@ -1,20 +1,13 @@
-#include "Eve/graphics/Buffer.hpp"
-#include "Eve/graphics/Mesh.hpp"
-#include "Eve/graphics/PassModule.hpp"
-#include "Eve/graphics/Texture.hpp"
-#include "GraphicsCore.hpp"
-#include <graphics/registers/MemoryRegistry.hpp>
-#include "Resources.hpp"
-#include "builders/ShaderObject.hpp"
-#include "graphics/builders/ShaderObject.hpp"
-#include "graphics/helpers/VulkanMapping.hpp"
-#include "registers/ResourceRegistry.hpp"
-#include <graphics/registers/MeshRegistry.hpp>
+#include "RenderGraph.hpp"
 #include <cstdint>
-#include <graphics/RenderGraph.hpp>
 #include <graphics/registers/ShaderRegistry.hpp>
+#include "graphics/builders/ContextBuilder.hpp"
+#include "registers/ResourceTracker.hpp"
 #include <graphics/registers/MeshRegistry.hpp>
+#include <graphics/registers/TransientResourcePool.hpp>
 #include <graphics/ResourceMapper.hpp>
+#include <graphics/registers/ResourceRegistry.hpp>
+
 
 using namespace Eve::Graphics;
 
@@ -394,13 +387,13 @@ namespace
         }
     }
 
-    void CreateTransientTexture(TextureInfo textureInfo, VkImage& image, VkImageView& imageView)
+    void CreateTransientTexture(TextureInfo& textureInfo, VkImage& image, VkImageView& imageView)
     {
         VkImageType imageType;
         VkImageViewType imageViewType;
         VkImageCreateFlags flags = static_cast<VkImageCreateFlags>(0);
         
-        switch (textureInfo.Data.TextureType) 
+        switch (textureInfo.TextureType) 
         {
             case (TextureType::TEXTURE_1D):
                 imageType = VK_IMAGE_TYPE_1D;
@@ -421,19 +414,19 @@ namespace
                 break;
         }
 
-        VkFormat format = GetVkImageFormat(textureInfo.Data.Format);
+        VkFormat format = GetVkImageFormat(textureInfo.Format);
         VkImageCreateInfo imageCI
         {
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
             .flags = flags,
             .imageType = imageType,
             .format = format,
-            .extent {.width = textureInfo.Data.Width, .height = textureInfo.Data.Height, .depth = textureInfo.Data.Depth},
-            .mipLevels = textureInfo.Data.MipLevels,
-            .arrayLayers = textureInfo.Data.ArrayLayers,
-            .samples = GetVkImageSamplesCount(textureInfo.Data.Sample),
+            .extent {.width = textureInfo.Width, .height = textureInfo.Height, .depth = textureInfo.Depth},
+            .mipLevels = textureInfo.MipLevels,
+            .arrayLayers = textureInfo.ArrayLayers,
+            .samples = GetVkImageSamplesCount(textureInfo.Sample),
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .usage = GetVkImageUsage(textureInfo.Data.Usage),
+            .usage = GetVkImageUsage(textureInfo.Usage),
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
@@ -455,9 +448,9 @@ namespace
             {
                 .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
                 .baseMipLevel = 0,
-                .levelCount = textureInfo.Data.MipLevels,
+                .levelCount = textureInfo.MipLevels,
                 .baseArrayLayer = 0,
-                .layerCount = textureInfo.Data.ArrayLayers
+                .layerCount = textureInfo.ArrayLayers
             }
         };
 
@@ -465,13 +458,13 @@ namespace
 
     }
 
-    void CreateTransientBuffer(BufferInfo bufferInfo, VkBuffer buffer)
+    void CreateTransientBuffer(BufferInfo& bufferInfo, VkBuffer& buffer)
     {
         VkBufferCreateInfo bufferCI
         {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .size = bufferInfo.Data.Size,
-            .usage = GetVkBufferUsage(bufferInfo.Data.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            .size = bufferInfo.Size,
+            .usage = GetVkBufferUsage(bufferInfo.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
         };
 
@@ -502,7 +495,7 @@ namespace
         }
     }
 
-    bool IsTextureBarrierNeeded(RenderGraph::PersistentTextureState src, RenderGraph::TextureBarrierInfo dst, Usage newUsage)
+    bool IsTextureBarrierNeeded(TextureState src, RenderGraph::TextureBarrierInfo dst, Usage newUsage)
     {
         if(IsReadOnly(src.Usage) && IsReadOnly(newUsage))
         {
@@ -533,7 +526,7 @@ namespace
         }
     }
 
-    bool IsBufferBarrierNeeded(RenderGraph::PersistentBufferState src, RenderGraph::BufferBarrierInfo dst, Usage newUsage)
+    bool IsBufferBarrierNeeded(BufferState src, RenderGraph::BufferBarrierInfo dst, Usage newUsage)
     {
         if(IsReadOnly(src.Usage) && IsReadOnly(newUsage))
         {
@@ -629,26 +622,22 @@ namespace
 
 bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 {
-    MemoryRegistry::textures.resize(ResourceRegistry::textureResourcesPeakIndex);
-    MemoryRegistry::buffers.resize(ResourceRegistry::bufferResourcesPeakIndex);
-
     MeshRegistry::UploadMeshes();
     
     UpdateTexturesPool(frameIndex);
     UpdateBuffersPool(frameIndex);
 
-    transientTextures[frameIndex].clear();
-    transientBuffers[frameIndex].clear();
+    TransientResourcePool::ClearTransientResources(frameIndex);
 
     uint32_t transientTexturesCount = transientRequestedTextures.size();
     uint32_t transientBuffersCount = transientRequestedBuffers.size();
     uint32_t passesCount = passes.size();
 
-    for(uint32_t bucketIndex = 0; bucketIndex < texturesMemoryTypeIndicies.size(); bucketIndex++)
+    for(uint32_t bucketIndex = 0; bucketIndex < texturesBucketPasses.size(); bucketIndex++)
     {
         texturesBucketPasses[bucketIndex].resize(passesCount);
     }
-    for(uint32_t bucketIndex = 0; bucketIndex < buffersMemoryTypeIndicies.size(); bucketIndex++)
+    for(uint32_t bucketIndex = 0; bucketIndex < buffersBucketPasses.size(); bucketIndex++)
     {
         buffersBucketPasses[bucketIndex].resize(passesCount);
     }
@@ -732,20 +721,24 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 
         if(firstPassIndex == -1 && !isPresentTexture) { continue; }
 
-        transientTextures[frameIndex][textureId].TextureInfo = transientRequestedTextures[textureId];
-        transientTextures[frameIndex][textureId].TextureInfo.Data.Usage = usage;
+        TextureInfo newTextureInfo = transientRequestedTextures[textureId];
+        newTextureInfo.Usage = usage;
 
-        uint32_t bucketIndex = SetTextureMemoryInfo(frameIndex, textureId, passesCount);
+        uint32_t resourceId = transientRequestedTextureHandles[textureId].Id;
+       
+        TransientResourcePool::AddTextureResource(newTextureInfo, resourceId, frameIndex);
 
-        texturesBucketPasses[bucketIndex][firstPassIndex].TexturesToCreate.emplace_back(textureId);
-        texturesBucketPasses[bucketIndex][lastPassIndex].TexturesToDestroy.emplace_back(textureId);
+        uint32_t poolIndex = TransientResourcePool::FindTexturePoolIndex(newTextureInfo, passesCount);
+
+        TextureResource& resource = TransientResourcePool::GetTextureObject(textureId, frameIndex);
+        resource.TexturePoolIndex = poolIndex;
+
+        TexturePool& pool = TransientResourcePool::GetTexturePool(poolIndex);
+
+        texturesBucketPasses[pool.MemoryInfo.BucketIndex][firstPassIndex].TexturesToCreate.push_back(textureId);
+        texturesBucketPasses[pool.MemoryInfo.BucketIndex][lastPassIndex].TexturesToDestroy.push_back(textureId);
 
         bool shouldBeMapped = NeedTextureDescriptor(usage);
-
-        if(shouldBeMapped)
-        {
-            ResourceMapper::ScheduleImageMapping({textureId, 0}, transientTextures[frameIndex][textureId].TextureInfo);
-        }
     }
     uint32_t buffersBarriersOffset = 0;
     barriersOffsetPerBuffer.push_back(buffersBarriersOffset);
@@ -815,21 +808,24 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 
         if(firstPassIndex == -1) { continue; }
 
-        transientBuffers[frameIndex][bufferId].BufferInfo = transientRequestedBuffers[bufferId];
-        transientBuffers[frameIndex][bufferId].BufferInfo.Data.Usage = usage;
+        BufferInfo newBufferInfo = transientRequestedBuffers[bufferId];
+        newBufferInfo.Usage = usage;
 
-        uint32_t bucketIndex = SetBufferMemoryInfo(frameIndex, bufferId, passesCount);
+        uint32_t resourceId = transientRequestedBufferHandles[bufferId].Id;
+        
+        TransientResourcePool::AddBufferResource(newBufferInfo, resourceId, frameIndex);
 
-        buffersBucketPasses[bucketIndex][firstPassIndex].BuffersToCreate.emplace_back(bufferId);
-        buffersBucketPasses[bucketIndex][lastPassIndex].BuffersToDestroy.emplace_back(bufferId);
+        uint32_t poolIndex = TransientResourcePool::FindBufferPoolIndex(newBufferInfo, passesCount);
+
+        BufferResource& resource = TransientResourcePool::GetBufferObject(bufferId, frameIndex);
+        resource.BufferPoolIndex = poolIndex;
+
+        BufferPool& pool = TransientResourcePool::GetBufferPool(poolIndex);
+
+        buffersBucketPasses[pool.MemoryInfo.BucketIndex][firstPassIndex].BuffersToCreate.push_back(bufferId);
+        buffersBucketPasses[pool.MemoryInfo.BucketIndex][lastPassIndex].BuffersToDestroy.push_back(bufferId);
 
         bool shouldBeMapped = NeedBufferDescriptor(usage);
-
-        if(shouldBeMapped)
-        {
-            ResourceMapper::ScheduleBufferMapping({bufferId, 0});
-        }
-
     }
 
     // Generate persistent texture and buffer barriers
@@ -842,21 +838,21 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
         // --- Textures ---
         for(uint32_t i = 0; i < textures.size(); i++)
         {
-            uint32_t textureId = textures[i].first.Id;
+            TextureHandle handle = textures[i].first;
             Usage newUsage = textures[i].second;
 
-            PersistentTextureState& textureState = persistentTexturesState[textureId];
+            TextureState& textureState = ResourceTracker::GetTextureState(handle);
             TextureBarrierInfo dstBarrierInfo = CalculateTextureBarrierInfo(newUsage);
 
             bool barrier = IsTextureBarrierNeeded(textureState, dstBarrierInfo, newUsage);
 
             if(barrier)
             {
-                dstBarrierInfo.TextureId = textureId;
+                dstBarrierInfo.TextureId = handle.Id;
 
                 TextureBarrierInfo srcBarrierInfo
                 {
-                    .TextureId = textureId,
+                    .TextureId = handle.Id,
                     .StageMask = textureState.StageMask,
                     .AccessMask = textureState.AccessMask,
                     .Layout = textureState.Layout
@@ -887,21 +883,21 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
         // --- Buffers ----
         for(uint32_t i = 0; i < buffers.size(); i++)
         {
-            uint32_t bufferId = buffers[i].first.Id;
+            BufferHandle handle = buffers[i].first;
             Usage newUsage = buffers[i].second;
 
-            PersistentBufferState& bufferState = persistentBuffersState[bufferId];
+            BufferState& bufferState = ResourceTracker::GetBufferState(handle);
             BufferBarrierInfo dstBarrierInfo = CalculateBufferBarrierInfo(newUsage);
 
             bool barrier = IsBufferBarrierNeeded(bufferState, dstBarrierInfo, newUsage);
 
             if(barrier)
             {
-                dstBarrierInfo.BufferId = bufferId;
+                dstBarrierInfo.BufferId = handle.Id;
 
                 BufferBarrierInfo srcBarrierInfo
                 {
-                    .BufferId = bufferId,
+                    .BufferId = handle.Id,
                     .StageMask = bufferState.StageMask,
                     .AccessMask = bufferState.AccessMask
                 };
@@ -951,43 +947,46 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
             TexturesBucketPass& pass = _passes[passIndex];
 
             // Texture Creation
-            std::vector<TransientTextureHandle>& texturesToCreate = pass.TexturesToCreate;
+            std::vector<uint32_t>& texturesToCreate = pass.TexturesToCreate;
 
             for(uint32_t i = 0; i < texturesToCreate.size(); i++)
             {
-                TransientTextureHandle handle = texturesToCreate[i];
-                TextureResource& texture = transientTextures[frameIndex][handle.Id];
+                uint32_t resourceIndex = texturesToCreate[i];
+
+                TextureResource& resource = TransientResourcePool::GetTextureObject(resourceIndex, frameIndex);
+
+                TexturePool& pool = TransientResourcePool::GetTexturePool(resource.TexturePoolIndex);
 
                 VmaVirtualAllocationCreateInfo allocCI
                 {
-                    .size = texture.MemoryInfo.Size,
-                    .alignment = texture.MemoryInfo.Alignment
+                    .size = pool.MemoryInfo.Size,
+                    .alignment = pool.MemoryInfo.Alignment
                 };
 
                 VmaVirtualAllocation allocation;
                 VkDeviceSize offset;
                 vmaVirtualAllocate(block, &allocCI, &allocation, &offset);
 
-                peakSize = std::max(peakSize, static_cast<uint64_t>(offset) + texture.MemoryInfo.Size);
-                peakAlignment = std::max(peakAlignment, texture.MemoryInfo.Alignment);
+                peakSize = std::max(peakSize, static_cast<uint64_t>(offset) + pool.MemoryInfo.Size);
+                peakAlignment = std::max(peakAlignment, pool.MemoryInfo.Alignment);
 
-                TextureBarrierInfo firstBarrier = GetFirstTextureBarrierInfo(handle.Id, offset, texture.MemoryInfo.Size);
-                uint32_t firstBarrierIndex = barriersOffsetPerTexture[handle.Id];
+                TextureBarrierInfo firstBarrier = GetFirstTextureBarrierInfo(resourceIndex, offset, pool.MemoryInfo.Size);
+                uint32_t firstBarrierIndex = barriersOffsetPerTexture[resourceIndex];
                 texturesBarriersInfo[firstBarrierIndex].first = firstBarrier;
 
-                texturesVirtualAllocs[handle.Id] = allocation;
+                texturesVirtualAllocs[resourceIndex] = allocation;
 
-                texture.TextureInfo.MemoryInfo.Offset = static_cast<uint64_t>(offset);
+                resource.MemoryOffset = static_cast<uint64_t>(offset);
             }
 
             // Texture Destruction
-            std::vector<TransientTextureHandle>& texturesToDestroy = pass.TexturesToDestroy;
+            std::vector<uint32_t>& texturesToDestroy = pass.TexturesToDestroy;
 
             for(uint32_t i = 0; i < texturesToDestroy.size(); i++)
             {
-                TransientTextureHandle handle = texturesToDestroy[i];
+                uint32_t resourceIndex = texturesToDestroy[i];
 
-                VmaVirtualAllocation allocation = texturesVirtualAllocs[handle.Id];
+                VmaVirtualAllocation allocation = texturesVirtualAllocs[resourceIndex];
 
                 vmaVirtualFree(block, allocation);
             }
@@ -997,7 +996,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
         vmaClearVirtualBlock(block);
         virtualMemorySlots.clear();
 
-        bool success = ResizeTextureMemoryPoolIfNeeded(bucketIndex, peakSize, peakAlignment);
+        bool success = TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(bucketIndex, peakSize, peakAlignment);
 
         if(!success)
         {
@@ -1017,43 +1016,46 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
             BuffersBucketPass& pass = _passes[passIndex];
 
             // Buffer Creation
-            std::vector<TransientBufferHandle>& buffersToCreate = pass.BuffersToCreate;
+            std::vector<uint32_t>& buffersToCreate = pass.BuffersToCreate;
 
             for(uint32_t i = 0; i < buffersToCreate.size(); i++)
             {
-                TransientBufferHandle handle = buffersToCreate[i];
-                BufferResource& buffer = transientBuffers[frameIndex][handle.Id];
+                uint32_t resourceIndex = buffersToCreate[i];
+
+                BufferResource& resource = TransientResourcePool::GetBufferObject(resourceIndex, frameIndex);
+
+                BufferPool& pool = TransientResourcePool::GetBufferPool(resource.BufferPoolIndex);
 
                 VmaVirtualAllocationCreateInfo allocCI
                 {
-                    .size = buffer.MemoryInfo.Size,
-                    .alignment = buffer.MemoryInfo.Alignment
+                    .size = pool.MemoryInfo.Size,
+                    .alignment = pool.MemoryInfo.Alignment
                 };
 
                 VmaVirtualAllocation allocation;
                 VkDeviceSize offset;
                 vmaVirtualAllocate(block, &allocCI, &allocation, &offset);
 
-                peakSize = std::max(peakSize, static_cast<uint64_t>(offset) + buffer.MemoryInfo.Size);
-                peakAlignment = std::max(peakAlignment, buffer.MemoryInfo.Alignment);
+                peakSize = std::max(peakSize, static_cast<uint64_t>(offset) + pool.MemoryInfo.Size);
+                peakAlignment = std::max(peakAlignment, pool.MemoryInfo.Alignment);
 
-                BufferBarrierInfo firstBarrier = GetFirstBufferBarrierInfo(handle.Id, offset, buffer.MemoryInfo.Size);
-                uint32_t firstBarrierIndex = barriersOffsetPerBuffer[handle.Id];
+                BufferBarrierInfo firstBarrier = GetFirstBufferBarrierInfo(resourceIndex, offset, pool.MemoryInfo.Size);
+                uint32_t firstBarrierIndex = barriersOffsetPerBuffer[resourceIndex];
                 buffersBarriersInfo[firstBarrierIndex].first = firstBarrier;
 
-                buffersVirtualAllocs[handle.Id] = allocation;
+                buffersVirtualAllocs[resourceIndex] = allocation;
 
-                buffer.BufferInfo.MemoryInfo.Offset = static_cast<uint64_t>(offset);
+                resource.MemoryOffset = static_cast<uint64_t>(offset);
             }
 
             // Buffer Destruction
-            std::vector<TransientBufferHandle>& buffersToDestroy = pass.BuffersToDestroy;
+            std::vector<uint32_t>& buffersToDestroy = pass.BuffersToDestroy;
 
             for(uint32_t i = 0; i < buffersToDestroy.size(); i++)
             {
-                TransientBufferHandle handle = buffersToDestroy[i];
+                uint32_t resourceIndex = buffersToDestroy[i];
 
-                VmaVirtualAllocation allocation = buffersVirtualAllocs[handle.Id];
+                VmaVirtualAllocation allocation = buffersVirtualAllocs[resourceIndex];
 
                 vmaVirtualFree(block, allocation);
             }
@@ -1062,7 +1064,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
         vmaClearVirtualBlock(block);
         virtualMemorySlots.clear();
 
-        bool success = ResizeBufferMemoryPoolIfNeeded(bucketIndex, peakSize, peakAlignment);
+        bool success = TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(bucketIndex, peakSize, peakAlignment);
 
         if(!success)
         {
@@ -1080,56 +1082,67 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
     // Insert the barriers info in the right passes so the barriers can be created later
     for(uint32_t textureId = 0; textureId < transientTexturesCount; textureId++)
     {
-        TextureResource& resource = transientTextures[frameIndex][textureId];
+        TextureResource& resource = TransientResourcePool::GetTextureObject(textureId, frameIndex);
 
-        auto it = std::lower_bound(texturesPool.begin(), texturesPool.end(), resource, [](const std::pair<TextureResource, bool>& a, const TextureResource& b)
-        {
-            return std::memcmp(&a.first.TextureInfo, &b.TextureInfo, sizeof(TextureInfo)) < 0;
-        });
+        uint64_t memoryOffset = resource.MemoryOffset;
+
+        TexturePool& pool = TransientResourcePool::GetTexturePool(resource.TexturePoolIndex);
+
+        std::vector<TransientTextureObject>& pooledResources = pool.Textures;
 
         bool found = false;
-        for(; it != texturesPool.end(); it++)
+        uint32_t foundResourceIndex;
+        for(uint32_t i = 0; i < pooledResources.size(); i++)
         {
-            if(std::memcmp(&it->first.TextureInfo, &resource.TextureInfo, sizeof(TextureInfo)) != 0)
-            {
-                break;
-            }
+            TransientTextureObject& foundResource = pooledResources[i];
 
-            if(it->second == false)
+            if(foundResource.PooledResource == false && foundResource.MemoryOffset == memoryOffset)
             {
                 found = true;
-                break;
+                foundResource.PooledResource = true;
+                foundResourceIndex = i;
             }
+
         }
 
         if(found)
         {
-            resource.Image = it->first.Image;
-            resource.ImageView = it->first.ImageView;
-            it->second = true;
+            TransientTextureObject& foundResource = pooledResources[foundResourceIndex];
 
-            resource.PooledImage = true;
-        }
-        else 
-        {
-            CreateTransientTexture(resource.TextureInfo, resource.Image, resource.ImageView);
+            resource.Image = foundResource.Image;
+            resource.ImageView = foundResource.ImageView;
+            resource.PooledResource = true;
 
-            MemoryBucket& memoryPool = texturesMemoryBucket[resource.MemoryInfo.BucketIndex];
-            vmaBindImageMemory2(GraphicsCore::Context.Allocator, memoryPool.Allocation, 
-                resource.TextureInfo.MemoryInfo.Offset, resource.Image, nullptr);
+            TransientTextureHandle handle = {resource.Id};
 
-            resource.PooledImage = false;
-
-            TransientTextureHandle handle = transientRequestedTextureHandles[textureId];
-
-            MemoryRegistry::textures[handle.Id].Image = resource.Image;
-            MemoryRegistry::textures[handle.Id].ImageView = resource.ImageView;
-
-            bool shouldBeMapped = NeedTextureDescriptor(resource.TextureInfo.Data.Usage);
+            bool shouldBeMapped = NeedTextureDescriptor(pool.TextureInfo.Usage);
 
             if(shouldBeMapped)
             {
-                ResourceMapper::ScheduleImageMapping({handle.Id,0}, transientTextures[frameIndex][textureId].TextureInfo);
+                ResourceMapper::ScheduleImageMapping(resource.Id, resource.ImageView, pool.TextureInfo);
+            }
+        }
+        else 
+        {
+            VkImage image;
+            VkImageView imageView;
+            CreateTransientTexture(pool.TextureInfo, image, imageView);
+
+            resource.Image = image;
+            resource.ImageView = imageView;
+            resource.PooledResource = false;
+
+            MemoryBucket& memoryPool = TransientResourcePool::GetTextureMemoryBucket(pool.MemoryInfo.BucketIndex);
+            vmaBindImageMemory2(GraphicsCore::Context.Allocator, memoryPool.Allocation, 
+                memoryOffset, image, nullptr);
+
+            TransientTextureHandle handle = {resource.Id};
+
+            bool shouldBeMapped = NeedTextureDescriptor(pool.TextureInfo.Usage);
+
+            if(shouldBeMapped)
+            {
+                ResourceMapper::ScheduleImageMapping(handle, imageView, pool.TextureInfo);
             }
         }
 
@@ -1149,54 +1162,64 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
     }
     for(uint32_t bufferId = 0; bufferId < transientBuffersCount; bufferId++)
     {
-        BufferResource& resource = transientBuffers[frameIndex][bufferId];
+        BufferResource& resource = TransientResourcePool::GetBufferObject(bufferId, frameIndex);
 
-        auto it = std::lower_bound(buffersPool.begin(), buffersPool.end(), resource, [](const std::pair<BufferResource, bool>& a, const BufferResource& b)
-        {
-            return std::memcmp(&a.first.BufferInfo, &b.BufferInfo, sizeof(BufferInfo)) < 0;
-        });
+        uint64_t memoryOffset = resource.MemoryOffset;
+
+        BufferPool& pool = TransientResourcePool::GetBufferPool(resource.BufferPoolIndex);
+
+        std::vector<TransientBufferObject>& pooledResources = pool.Buffers;
 
         bool found = false;
-        for(; it != buffersPool.end(); it++)
+        uint32_t foundResourceIndex;
+        for(uint32_t i = 0; i < pooledResources.size(); i++)
         {
-            if(std::memcmp(&it->first.BufferInfo, &resource.BufferInfo, sizeof(BufferInfo)) != 0)
-            {
-                break;
-            }
+            TransientBufferObject& foundResource = pooledResources[i];
 
-            if(it->second == false)
+            if(foundResource.PooledResource == false && foundResource.MemoryOffset == memoryOffset)
             {
                 found = true;
-                break;
+                foundResource.PooledResource = true;
+                foundResourceIndex = i;
             }
+
         }
 
         if(found)
         {
-            resource.Buffer = it->first.Buffer;
-            it->second = true;
+            TransientBufferObject& foundResource = pooledResources[foundResourceIndex];
 
-            resource.PooledBuffer = true;
-        }
-        else 
-        {
-            CreateTransientBuffer(resource.BufferInfo, resource.Buffer);
+            resource.Buffer = foundResource.Buffer;
+            resource.PooledResource = true;
 
-            MemoryBucket& memoryPool = buffersMemoryBucket[resource.MemoryInfo.BucketIndex];
-            vmaBindBufferMemory2(GraphicsCore::Context.Allocator, memoryPool.Allocation, 
-                resource.BufferInfo.MemoryInfo.Offset, resource.Buffer, nullptr);
+            TransientBufferHandle handle = { resource.Id };
 
-            resource.PooledBuffer = false;
-
-            TransientBufferHandle handle = transientRequestedBufferHandles[bufferId];
-
-            MemoryRegistry::buffers[handle.Id].Buffer = resource.Buffer;
-
-            bool shouldBeMapped = NeedBufferDescriptor(resource.BufferInfo.Data.Usage);
+            bool shouldBeMapped = NeedBufferDescriptor(pool.BufferInfo.Usage);
 
             if(shouldBeMapped)
             {
-                ResourceMapper::ScheduleBufferMapping({handle.Id,0});
+                ResourceMapper::ScheduleBufferMapping(handle, resource.Buffer);
+            }
+        }
+        else 
+        {
+            VkBuffer buffer;
+            CreateTransientBuffer(pool.BufferInfo, buffer);
+
+            resource.Buffer = buffer;
+            resource.PooledResource = false;
+
+            MemoryBucket& memoryPool = TransientResourcePool::GetBufferMemoryBucket(pool.MemoryInfo.BucketIndex);
+            vmaBindBufferMemory2(GraphicsCore::Context.Allocator, memoryPool.Allocation, 
+                memoryOffset, buffer, nullptr);
+
+            TransientBufferHandle handle = { resource.Id };
+
+            bool shouldBeMapped = NeedBufferDescriptor(pool.BufferInfo.Usage);
+
+            if(shouldBeMapped)
+            {
+                ResourceMapper::ScheduleBufferMapping(handle, buffer);
             }
         }
 
@@ -1262,9 +1285,9 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
 
             uint32_t textureIndex = barrierInfo.DstInfo.TextureId;
 
-            TextureResource& texture = transientTextures[frameIndex][textureIndex];
+            TextureResource& texture = TransientResourcePool::GetTextureObject(textureIndex, frameIndex);
             VkImage image = texture.Image;
-            VkFormat format = GetVkImageFormat(transientTextures[frameIndex][textureIndex].TextureInfo.Data.Format);
+            VkFormat format = GetVkImageFormat(texture.TextureInfo.Format);
             VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
 
             VkImageMemoryBarrier2 barrier
@@ -1285,7 +1308,7 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
                     .baseMipLevel = 0,
                     .levelCount = 1,
                     .baseArrayLayer = 0,
-                    .layerCount = texture.TextureInfo.Data.ArrayLayers
+                    .layerCount = texture.TextureInfo.ArrayLayers
                 }
             };
 
@@ -1299,7 +1322,7 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
 
             uint32_t bufferIndex = barrierInfo.DstInfo.BufferId;
 
-            VkBuffer buffer = transientBuffers[frameIndex][bufferIndex].Buffer;
+            VkBuffer buffer = TransientResourcePool::GetBufferObject(bufferIndex, frameIndex).Buffer;
 
             VkBufferMemoryBarrier2 barrier
             {
@@ -1329,7 +1352,7 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
 
             TextureInfo& textureInfo = MemoryRegistry::GetTextureInfo(textureId);
 
-            VkFormat format = GetVkImageFormat(textureInfo.Data.Format);
+            VkFormat format = GetVkImageFormat(textureInfo.Format);
             VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
 
             VkImageMemoryBarrier2 barrier
@@ -1350,7 +1373,7 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
                     .baseMipLevel = 0,
                     .levelCount = 1,
                     .baseArrayLayer = 0,
-                    .layerCount = textureInfo.Data.ArrayLayers
+                    .layerCount = textureInfo.ArrayLayers
                 }
             };
 
@@ -1427,7 +1450,7 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
     // No need to create a pass to copy the colors into the swapchain
     if(presentTexture.Id == UINT32_MAX) { return true; }
 
-    TextureResource& colorTexture = transientTextures[frameIndex][presentTexture.Id];
+    TextureResource& colorTexture = TransientResourcePool::GetTextureObject(presentTexture.Id, frameIndex);
 
     TextureBarrierInfo srcBarrierInfo
     {
@@ -1603,8 +1626,8 @@ void RenderGraph::RecordTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pa
     {
         BufferCopy copyInfo = copies[i];
 
-        VkBuffer srcBuffer = transientBuffers[frameIndex][copyInfo.SrcBuffer].Buffer;
-        VkBuffer dstBuffer = transientBuffers[frameIndex][copyInfo.DstBuffer].Buffer;
+        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(copyInfo.SrcBuffer, frameIndex).Buffer;
+        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(copyInfo.DstBuffer, frameIndex).Buffer;
 
         VkBufferCopy bufferCopy
         {
@@ -1647,14 +1670,14 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& p
     {
         TextureCopy copyInfo = copies[i];
 
-        TextureResource& srcTexture = transientTextures[frameIndex][copyInfo.SrcTexture];
-        TextureResource& dstTexture = transientTextures[frameIndex][copyInfo.DstTexture];
+        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
+        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
 
         VkImage srcImage = srcTexture.Image;
         VkImage dstImage = dstTexture.Image;
 
-        VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Data.Format);
-        VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Data.Format);
+        VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Format);
+        VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Format);
 
         VkImageAspectFlags srcAspcetMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
@@ -1666,7 +1689,7 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& p
                 .aspectMask = srcAspcetMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = srcTexture.TextureInfo.Data.ArrayLayers
+                .layerCount = srcTexture.TextureInfo.ArrayLayers
             },
             .srcOffset {copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
 
@@ -1675,7 +1698,7 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& p
                 .aspectMask = dstAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = dstTexture.TextureInfo.Data.ArrayLayers
+                .layerCount = dstTexture.TextureInfo.ArrayLayers
             },
             .dstOffset {copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
 
@@ -1707,8 +1730,8 @@ void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& 
         VkImage srcImage = MemoryRegistry::GetTexture(copyInfo.SrcTexture).Image;
         VkImage dstImage = MemoryRegistry::GetTexture(copyInfo.DstTexture).Image;
 
-        VkFormat srcFormat = GetVkImageFormat(srcTexture.Data.Format);
-        VkFormat dstFormat = GetVkImageFormat(dstTexture.Data.Format);
+        VkFormat srcFormat = GetVkImageFormat(srcTexture.Format);
+        VkFormat dstFormat = GetVkImageFormat(dstTexture.Format);
 
         VkImageAspectFlags srcAspcetMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
@@ -1720,7 +1743,7 @@ void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& 
                 .aspectMask = srcAspcetMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = srcTexture.Data.ArrayLayers
+                .layerCount = srcTexture.ArrayLayers
             },
             .srcOffset {copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
 
@@ -1729,7 +1752,7 @@ void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& 
                 .aspectMask = dstAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = dstTexture.Data.ArrayLayers
+                .layerCount = dstTexture.ArrayLayers
             },
             .dstOffset {copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
 
@@ -1755,12 +1778,12 @@ void RenderGraph::RecordTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer,
     {
         BufferToTextureCopy copyInfo = copies[i];
 
-        TextureResource& dstTexture = transientTextures[frameIndex][copyInfo.DstTexture];
+        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(copyInfo.DstTexture, frameIndex);
 
-        VkBuffer srcBuffer = transientBuffers[frameIndex][copyInfo.SrcBuffer].Buffer;
+        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(copyInfo.SrcBuffer, frameIndex).Buffer;
         VkImage dstImage = dstTexture.Image;
 
-        VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Data.Format);
+        VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Format);
 
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
 
@@ -1774,7 +1797,7 @@ void RenderGraph::RecordTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer,
                 .aspectMask = dstAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = dstTexture.TextureInfo.Data.ArrayLayers
+                .layerCount = dstTexture.TextureInfo.ArrayLayers
             },
             .imageOffset{copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
             .imageExtent{
@@ -1801,7 +1824,7 @@ void RenderGraph::RecordPersistentBufferToTextureCopy(VkCommandBuffer& cmdBuffer
         VkBuffer srcBuffer = MemoryRegistry::GetBuffer(copyInfo.SrcBuffer).Buffer;
         VkImage dstImage = MemoryRegistry::GetTexture(copyInfo.DstTexture).Image;
 
-        VkFormat dstFormat = GetVkImageFormat(dstTexture.Data.Format);
+        VkFormat dstFormat = GetVkImageFormat(dstTexture.Format);
 
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
 
@@ -1815,7 +1838,7 @@ void RenderGraph::RecordPersistentBufferToTextureCopy(VkCommandBuffer& cmdBuffer
                 .aspectMask = dstAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = dstTexture.Data.ArrayLayers
+                .layerCount = dstTexture.ArrayLayers
             },
             .imageOffset{copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
             .imageExtent{
@@ -1837,12 +1860,12 @@ void RenderGraph::RecordTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer,
     {
         TextureToBufferCopy copyInfo = copies[i];
 
-        TextureResource& srcTexture = transientTextures[frameIndex][copyInfo.SrcTexture];
+        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
 
         VkImage srcImage = srcTexture.Image;
-        VkBuffer dstBuffer = transientBuffers[frameIndex][copyInfo.DstBuffer].Buffer;
+        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(copyInfo.DstBuffer, frameIndex).Buffer;
 
-        VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Data.Format);
+        VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Format);
 
         VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
 
@@ -1856,7 +1879,7 @@ void RenderGraph::RecordTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer,
                 .aspectMask = srcAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = srcTexture.TextureInfo.Data.ArrayLayers
+                .layerCount = srcTexture.TextureInfo.ArrayLayers
             },
             .imageOffset{copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
             .imageExtent{
@@ -1883,7 +1906,7 @@ void RenderGraph::RecordPersistentTextureToBufferCopy(VkCommandBuffer& cmdBuffer
         VkImage srcImage = MemoryRegistry::GetTexture(copyInfo.SrcTexture).Image;
         VkBuffer dstBuffer = MemoryRegistry::GetBuffer(copyInfo.DstBuffer).Buffer;
 
-        VkFormat srcFormat = GetVkImageFormat(srcTexture.Data.Format);
+        VkFormat srcFormat = GetVkImageFormat(srcTexture.Format);
 
         VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
 
@@ -1897,7 +1920,7 @@ void RenderGraph::RecordPersistentTextureToBufferCopy(VkCommandBuffer& cmdBuffer
                 .aspectMask = srcAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = srcTexture.Data.ArrayLayers
+                .layerCount = srcTexture.ArrayLayers
             },
             .imageOffset{copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
             .imageExtent{
@@ -1967,12 +1990,12 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass&
     {
         TextureUpload uploadInfo = uploads[i];
 
-        TextureResource& dstTexture = transientTextures[frameIndex][uploadInfo.DstTexture];
+        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(uploadInfo.DstTexture, frameIndex);
 
         VkBuffer srcBuffer = MemoryRegistry::GetBuffer(uploadInfo.SrcBufferId).Buffer;
         VkImage dstImage = MemoryRegistry::GetTexture(uploadInfo.DstTexture).Image;
 
-        VkFormat format = GetVkImageFormat(dstTexture.TextureInfo.Data.Format);
+        VkFormat format = GetVkImageFormat(dstTexture.TextureInfo.Format);
 
         VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
 
@@ -1986,7 +2009,7 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass&
                 .aspectMask = aspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = dstTexture.TextureInfo.Data.ArrayLayers,
+                .layerCount = dstTexture.TextureInfo.ArrayLayers,
             },
             .imageOffset {uploadInfo.DstOffset.x, uploadInfo.DstOffset.y, uploadInfo.DstOffset.z},
             .imageExtent {
@@ -2015,7 +2038,7 @@ void RenderGraph::RecordPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass
         VkBuffer srcBuffer = MemoryRegistry::GetBuffer(uploadInfo.SrcBufferId).Buffer;
         VkImage dstImage = MemoryRegistry::GetTexture(uploadInfo.DstTexture).Image;
 
-        VkFormat format = GetVkImageFormat(dstTexture.Data.Format);
+        VkFormat format = GetVkImageFormat(dstTexture.Format);
 
         VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
 
@@ -2029,7 +2052,7 @@ void RenderGraph::RecordPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass
                 .aspectMask = aspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
-                .layerCount = dstTexture.Data.ArrayLayers,
+                .layerCount = dstTexture.ArrayLayers,
             },
             .imageOffset {uploadInfo.DstOffset.x, uploadInfo.DstOffset.y, uploadInfo.DstOffset.z},
             .imageExtent {
@@ -2105,13 +2128,15 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32
     {
         TransientTextureHandle handle = colorTargets[i];
 
-        uint32_t _width = transientTextures[frameIndex][handle.Id].TextureInfo.Data.Width;
-        uint32_t _height = transientTextures[frameIndex][handle.Id].TextureInfo.Data.Height;
+        uint32_t index = transientTextureHandleToIndex[handle.Id];
+
+        uint32_t _width = TransientResourcePool::GetTextureObject(index, frameIndex).TextureInfo.Width;
+        uint32_t _height = TransientResourcePool::GetTextureObject(index, frameIndex).TextureInfo.Height;
 
         width = std::min(width, _width);
         height = std::min(height, _height);
 
-        VkImageView imageView = transientTextures[frameIndex][handle.Id].ImageView;
+        VkImageView imageView = TransientResourcePool::GetTextureObject(index, frameIndex).ImageView;
 
         LoadStoreOp loadStoreOp;
         for(uint32_t j = 0; j < loadStoreOps.size(); j++)
@@ -2143,14 +2168,15 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32
 
     if(useDepthTarget)
     {
-        uint32_t _width = transientTextures[frameIndex][depthTarget.Id].TextureInfo.Data.Width;
-        uint32_t _height = transientTextures[frameIndex][depthTarget.Id].TextureInfo.Data.Height;
+        uint32_t index = transientTextureHandleToIndex[depthTarget.Id];
+        uint32_t _width = TransientResourcePool::GetTextureObject(index, frameIndex).TextureInfo.Width;
+        uint32_t _height = TransientResourcePool::GetTextureObject(index, frameIndex).TextureInfo.Height;
 
         width = std::min(width, _width);
         height = std::min(height, _height);
 
 
-        VkImageView imageView = transientTextures[frameIndex][depthTarget.Id].ImageView;
+        VkImageView imageView = TransientResourcePool::GetTextureObject(index, frameIndex).ImageView;
 
         LoadStoreOp loadStoreOp;
         for(uint32_t j = 0; j < loadStoreOps.size(); j++)
@@ -2178,13 +2204,14 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32
 
     if(useStencilTarget)
     {
-        uint32_t _width = transientTextures[frameIndex][stencilTarget.Id].TextureInfo.Data.Width;
-        uint32_t _height = transientTextures[frameIndex][stencilTarget.Id].TextureInfo.Data.Height;
+        uint32_t index = transientTextureHandleToIndex[stencilTarget.Id];
+        uint32_t _width = TransientResourcePool::GetTextureObject(index, frameIndex).TextureInfo.Width;
+        uint32_t _height = TransientResourcePool::GetTextureObject(index, frameIndex).TextureInfo.Height;
 
         width = std::min(width, _width);
         height = std::min(height, _height);
 
-        VkImageView imageView = transientTextures[frameIndex][stencilTarget.Id].ImageView;
+        VkImageView imageView = TransientResourcePool::GetTextureObject(index, frameIndex).ImageView;
 
         LoadStoreOp loadStoreOp;
         for(uint32_t j = 0; j < loadStoreOps.size(); j++)
@@ -2270,194 +2297,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32
     vkCmdEndRendering(cmdBuffer);
 }
 
-uint32_t RenderGraph::SetTextureMemoryInfo(const uint32_t frameIndex, const uint32_t textureId, const uint32_t passesCount)
-{
-    TextureResource& resource = transientTextures[frameIndex][textureId];
-
-    auto it = std::lower_bound(texturesPool.begin(), texturesPool.end(), resource, 
-    [](const std::pair<TextureResource, bool>& a, const TextureResource& b)
-    {
-        return std::memcmp(&a.first.TextureInfo.Data, &b.TextureInfo.Data, sizeof(TextureInfo::Data)) < 0;
-    });
-
-    if(it != texturesPool.end() && std::memcmp(&it->first.TextureInfo.Data, &resource.TextureInfo.Data, sizeof(TextureInfo::Data)) == 0)
-    {
-        // Texture with same setting found
-        resource.MemoryInfo.BucketIndex = it->first.MemoryInfo.BucketIndex;
-        resource.MemoryInfo.Alignment = static_cast<uint64_t>(it->first.MemoryInfo.Alignment);
-        resource.MemoryInfo.Size = static_cast<uint64_t>(it->first.MemoryInfo.Size);
-
-        resource.TextureInfo.MemoryInfo.Size = static_cast<uint64_t>(it->first.MemoryInfo.Size);
-
-        return it->first.MemoryInfo.BucketIndex;
-    }
-
-    VkImageType imageType = VK_IMAGE_TYPE_2D;
-    #pragma region Determine Image Type
-    if(resource.TextureInfo.Data.Depth > 1)
-    {
-        imageType = VK_IMAGE_TYPE_3D;
-    }
-    else if(resource.TextureInfo.Data.Height == 1)
-    {
-        imageType = VK_IMAGE_TYPE_1D;
-    }
-    #pragma endregion
-
-    VkImageCreateInfo imageCI
-    {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .imageType = imageType,
-        .format = GetVkImageFormat(resource.TextureInfo.Data.Format),
-        .extent {
-            .width = resource.TextureInfo.Data.Width,
-            .height = resource.TextureInfo.Data.Height,
-            .depth = resource.TextureInfo.Data.Depth
-        },
-        .mipLevels = resource.TextureInfo.Data.MipLevels,
-        .arrayLayers = resource.TextureInfo.Data.ArrayLayers,
-        .samples = GetVkImageSamplesCount(resource.TextureInfo.Data.Sample),
-        .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .usage = GetVkImageUsage(resource.TextureInfo.Data.Usage),
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-    };
-
-    VkDeviceImageMemoryRequirements reqs
-    {
-        .sType = VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS,
-        .pCreateInfo = &imageCI
-    };
-
-    VkMemoryRequirements2 memoryRequirements { .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
-    vkGetDeviceImageMemoryRequirements(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
-
-    uint32_t memoryTypeIndex = FindBestMemoryTypeIndex(memoryRequirements);
-
-    uint32_t bucketIndex = GetTexturesBucketIndex(memoryTypeIndex, passesCount);
-
-    resource.MemoryInfo.BucketIndex = bucketIndex;
-    resource.MemoryInfo.Alignment = static_cast<uint64_t>(memoryRequirements.memoryRequirements.alignment);
-    resource.MemoryInfo.Size = static_cast<uint64_t>(memoryRequirements.memoryRequirements.size);
-
-    resource.TextureInfo.MemoryInfo.Size = static_cast<uint64_t>(memoryRequirements.memoryRequirements.size);
-
-    return bucketIndex;
-}
-
-uint32_t RenderGraph::SetBufferMemoryInfo(const uint32_t frameIndex, const uint32_t bufferId, const uint32_t passesCount)
-{
-    BufferResource& resource = transientBuffers[frameIndex][bufferId];
-
-    auto it = std::lower_bound(buffersPool.begin(), buffersPool.end(), resource, 
-    [](const std::pair<BufferResource, bool>& a, const BufferResource& b)
-    {
-        return std::memcmp(&a.first.BufferInfo.Data, &b.BufferInfo.Data, sizeof(BufferInfo::Data)) < 0;
-    });
-
-    if(it != buffersPool.end() && std::memcmp(&it->first.BufferInfo.Data, &resource.BufferInfo.Data, sizeof(BufferInfo::Data)) == 0)
-    {
-        // Texture with same setting found
-        resource.MemoryInfo.BucketIndex = it->first.MemoryInfo.BucketIndex;
-        resource.MemoryInfo.Alignment = static_cast<uint64_t>(it->first.MemoryInfo.Alignment);
-        resource.MemoryInfo.Size = static_cast<uint64_t>(it->first.MemoryInfo.Size);
-
-        resource.BufferInfo.MemoryInfo.Size = static_cast<uint64_t>(it->first.MemoryInfo.Size);
-
-        return it->first.MemoryInfo.BucketIndex;
-    }
-
-    VkBufferCreateInfo bufferCI
-    {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = resource.BufferInfo.Data.Size,
-        .usage = GetVkBufferUsage(resource.BufferInfo.Data.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
-    };
-
-    VkDeviceBufferMemoryRequirements reqs
-    {
-        .sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS,
-        .pCreateInfo = &bufferCI
-    };
-
-    VkMemoryRequirements2 memoryRequirements { .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
-    vkGetDeviceBufferMemoryRequirements(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
-
-    uint32_t memoryTypeIndex = FindBestMemoryTypeIndex(memoryRequirements);
-
-    uint32_t bucketIndex = GetBuffersBucketIndex(memoryTypeIndex, passesCount);
-
-    resource.MemoryInfo.BucketIndex = bucketIndex;
-    resource.MemoryInfo.Alignment = static_cast<uint64_t>(memoryRequirements.memoryRequirements.alignment);
-    resource.MemoryInfo.Size = static_cast<uint64_t>(memoryRequirements.memoryRequirements.size);
-
-    resource.BufferInfo.MemoryInfo.Size = static_cast<uint64_t>(memoryRequirements.memoryRequirements.size);
-
-    return bucketIndex;
-}
-
-uint32_t RenderGraph::GetTexturesBucketIndex(const uint32_t memoryTypeIndex, const uint32_t passesCount)
-{
-    uint32_t bucketsCount = texturesMemoryTypeIndicies.size();
-    for (uint32_t i = 0; i < bucketsCount; i++)
-    {
-        if(texturesMemoryTypeIndicies[i] == memoryTypeIndex)
-        {
-            return i;
-        }
-    }
-
-    texturesMemoryTypeIndicies.push_back(memoryTypeIndex);
-    uint32_t bucketIndex = bucketsCount;
-
-    texturesBucketPasses.push_back(std::vector<TexturesBucketPass>(passesCount));
-
-    MemoryBucket memoryBucket
-    {
-        .used = false
-    };
-    texturesMemoryBucket.push_back(memoryBucket);
-
-    return bucketIndex;
-}
-
-uint32_t RenderGraph::GetBuffersBucketIndex(const uint32_t memoryTypeIndex, const uint32_t passesCount)
-{
-    uint32_t bucketsCount = buffersMemoryTypeIndicies.size();
-    for (uint32_t i = 0; i < bucketsCount; i++)
-    {
-        if(buffersMemoryTypeIndicies[i] == memoryTypeIndex)
-        {
-            return i;
-        }
-    }
-
-    buffersMemoryTypeIndicies.push_back(memoryTypeIndex);
-    uint32_t bucketIndex = bucketsCount;
-
-    buffersBucketPasses.push_back(std::vector<BuffersBucketPass>(passesCount));
-
-    MemoryBucket memoryBucket
-    {
-        .used = false
-    };
-    buffersMemoryBucket.push_back(memoryBucket);
-
-    return bucketIndex;
-}
-
-uint32_t RenderGraph::GetTexturesMemoryTypeIndex(const uint32_t bucketIndex)
-{
-    return texturesMemoryTypeIndicies[bucketIndex];
-}
-
-uint32_t RenderGraph::GetBuffersMemoryTypeIndex(const uint32_t bucketIndex)
-{
-    return buffersMemoryTypeIndicies[bucketIndex];
-}
-
-RenderGraph::TextureBarrierInfo RenderGraph::GetFirstTextureBarrierInfo(const uint32_t newAllocId, const uint64_t newAllocOffset, const uint64_t newAllocSize)
+RenderGraph::TextureBarrierInfo RenderGraph::GetFirstTextureBarrierInfo(const uint32_t newAllocIndex, const uint64_t newAllocOffset, const uint64_t newAllocSize)
 {
     TextureBarrierInfo barrier
     {
@@ -2469,7 +2309,7 @@ RenderGraph::TextureBarrierInfo RenderGraph::GetFirstTextureBarrierInfo(const ui
     uint64_t start = newAllocOffset;
     uint64_t end = newAllocOffset + newAllocSize;
 
-    MemorySlot newMemorySlot{start, end, newAllocId};
+    MemorySlot newMemorySlot{start, end, newAllocIndex};
 
     auto it = std::lower_bound(virtualMemorySlots.begin(), virtualMemorySlots.end(), newMemorySlot, [](const MemorySlot& a, const MemorySlot& b){
         return a.End <= b.Start;
@@ -2482,7 +2322,7 @@ RenderGraph::TextureBarrierInfo RenderGraph::GetFirstTextureBarrierInfo(const ui
     {
         if(it->Start >= newMemorySlot.End) { break; }
 
-        uint32_t lastBarrierIndex = barriersOffsetPerTexture[it->ResourceId + 1] - 1;
+        uint32_t lastBarrierIndex = barriersOffsetPerTexture[it->ResourceIndex + 1] - 1;
 
         TextureBarrierInfo accumulatorBarrier = texturesBarriersInfo[lastBarrierIndex].first;
 
@@ -2508,7 +2348,7 @@ RenderGraph::TextureBarrierInfo RenderGraph::GetFirstTextureBarrierInfo(const ui
         if(strideStart > 0)
         {
             // Free memory at the beginnig of the slot
-            MemorySlot startSlot{firstSlot.Start, firstSlot.Start + strideStart, firstSlot.ResourceId};
+            MemorySlot startSlot{firstSlot.Start, firstSlot.Start + strideStart, firstSlot.ResourceIndex};
 
             fragments[fragmentsCount++] = startSlot;
         }
@@ -2518,7 +2358,7 @@ RenderGraph::TextureBarrierInfo RenderGraph::GetFirstTextureBarrierInfo(const ui
         if(strideEnd > 0)
         {
             // Free memory at the end of the slot
-            MemorySlot endSlot{newMemorySlot.End, newMemorySlot.End + strideEnd, lastSlot.ResourceId};
+            MemorySlot endSlot{newMemorySlot.End, newMemorySlot.End + strideEnd, lastSlot.ResourceIndex};
 
             fragments[fragmentsCount++] = endSlot;
         }
@@ -2538,7 +2378,7 @@ RenderGraph::TextureBarrierInfo RenderGraph::GetFirstTextureBarrierInfo(const ui
     return barrier;
 }
 
-RenderGraph::BufferBarrierInfo RenderGraph::GetFirstBufferBarrierInfo(const uint32_t newAllocId, const uint64_t newAllocOffset, const uint64_t newAllocSize)
+RenderGraph::BufferBarrierInfo RenderGraph::GetFirstBufferBarrierInfo(const uint32_t newAllocIndex, const uint64_t newAllocOffset, const uint64_t newAllocSize)
 {
     BufferBarrierInfo barrier
     {
@@ -2549,7 +2389,7 @@ RenderGraph::BufferBarrierInfo RenderGraph::GetFirstBufferBarrierInfo(const uint
     uint64_t start = newAllocOffset;
     uint64_t end = newAllocOffset + newAllocSize;
 
-    MemorySlot newMemorySlot{start, end, newAllocId};
+    MemorySlot newMemorySlot{start, end, newAllocIndex};
 
     auto it = std::lower_bound(virtualMemorySlots.begin(), virtualMemorySlots.end(), newMemorySlot, [](const MemorySlot& a, const MemorySlot& b){
         return a.End <= b.Start;
@@ -2562,7 +2402,7 @@ RenderGraph::BufferBarrierInfo RenderGraph::GetFirstBufferBarrierInfo(const uint
     {
         if(it->Start >= newMemorySlot.End) { break; }
 
-        uint32_t lastBarrierIndex = barriersOffsetPerBuffer[it->ResourceId + 1] - 1;
+        uint32_t lastBarrierIndex = barriersOffsetPerBuffer[it->ResourceIndex + 1] - 1;
 
         BufferBarrierInfo accumulatorBarrier = buffersBarriersInfo[lastBarrierIndex].first;
 
@@ -2588,7 +2428,7 @@ RenderGraph::BufferBarrierInfo RenderGraph::GetFirstBufferBarrierInfo(const uint
         if(strideStart > 0)
         {
             // Free memory at the beginnig of the slot
-            MemorySlot startSlot{firstSlot.Start, firstSlot.Start + strideStart, firstSlot.ResourceId};
+            MemorySlot startSlot{firstSlot.Start, firstSlot.Start + strideStart, firstSlot.ResourceIndex};
 
             fragments[fragmentsCount++] = startSlot;
         }
@@ -2598,7 +2438,7 @@ RenderGraph::BufferBarrierInfo RenderGraph::GetFirstBufferBarrierInfo(const uint
         if(strideEnd > 0)
         {
             // Free memory at the end of the slot
-            MemorySlot endSlot{newMemorySlot.End, newMemorySlot.End + strideEnd, lastSlot.ResourceId};
+            MemorySlot endSlot{newMemorySlot.End, newMemorySlot.End + strideEnd, lastSlot.ResourceIndex};
 
             fragments[fragmentsCount++] = endSlot;
         }
@@ -2618,294 +2458,34 @@ RenderGraph::BufferBarrierInfo RenderGraph::GetFirstBufferBarrierInfo(const uint
     return barrier;
 }
 
-bool RenderGraph::ResizeTextureMemoryPoolIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment)
-{
-    if(peakSize == 0) { return true; }
-
-    MemoryBucket& memoryBucket = texturesMemoryBucket[bucketIndex];
-
-    if(memoryBucket.used && memoryBucket.AllocationInfo.size >= peakSize)
-    {
-        return true;
-    }
-
-    for(int32_t i = static_cast<int32_t>(texturesPool.size()) - 1; i >= 0; i--)
-    {
-        std::pair<TextureResource, bool>& texture = texturesPool[i];
-
-        if(texture.first.MemoryInfo.BucketIndex != bucketIndex) { continue; }
-
-        vkDestroyImageView(GraphicsCore::Context.Device, texture.first.ImageView, nullptr);
-        vkDestroyImage(GraphicsCore::Context.Device, texture.first.Image, nullptr);
-
-        texturesPool.erase(texturesPool.begin() + i);
-    }
-
-    if(memoryBucket.used)
-    {
-        vmaFreeMemory(GraphicsCore::Context.Allocator, memoryBucket.Allocation);
-        memoryBucket.used = false;
-    }
-
-    VkMemoryRequirements memReqs
-    {
-        .size = peakSize + Eve::Settings::transientTexturesStepPoolSize,
-        .alignment = peakAlignment,
-        .memoryTypeBits = (1u << GetTexturesMemoryTypeIndex(bucketIndex))
-    };
-
-    VmaAllocationCreateInfo allocInfo
-    {
-        .usage = VMA_MEMORY_USAGE_AUTO
-    };
-
-    VkResult result = vmaAllocateMemory(GraphicsCore::Context.Allocator, &memReqs, &allocInfo, 
-        &memoryBucket.Allocation, &memoryBucket.AllocationInfo);
-
-    if(result != VK_SUCCESS)
-    {
-        return false;
-    }
-
-    memoryBucket.used = true;
-
-    return true;
-}
-
-bool RenderGraph::ResizeBufferMemoryPoolIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment)
-{
-    if(peakSize == 0) { return true; }
-
-    MemoryBucket& memoryBucket = buffersMemoryBucket[bucketIndex];
-
-    if(memoryBucket.used && memoryBucket.AllocationInfo.size >= peakSize)
-    {
-        return true;
-    }
-
-    for(int32_t i = static_cast<int32_t>(buffersPool.size()) - 1; i >= 0; i--)
-    {
-        std::pair<BufferResource, bool>& buffer = buffersPool[i];
-
-        if(buffer.first.MemoryInfo.BucketIndex != bucketIndex) { continue; }
-
-        vkDestroyBuffer(GraphicsCore::Context.Device, buffer.first.Buffer, nullptr);
-
-        buffersPool.erase(buffersPool.begin() + i);
-    }
-
-    if(memoryBucket.used)
-    {
-        vmaFreeMemory(GraphicsCore::Context.Allocator, memoryBucket.Allocation);
-        memoryBucket.used = false;
-    }
-
-    VkMemoryRequirements memReqs
-    {
-        .size = peakSize + Eve::Settings::transientBuffersStepPoolSize,
-        .alignment = peakAlignment,
-        .memoryTypeBits = (1u << GetBuffersMemoryTypeIndex(bucketIndex))
-    };
-
-    VmaAllocationCreateInfo allocInfo
-    {
-        .usage = VMA_MEMORY_USAGE_AUTO
-    };
-
-    VkResult result = vmaAllocateMemory(GraphicsCore::Context.Allocator, &memReqs, &allocInfo, 
-        &memoryBucket.Allocation, &memoryBucket.AllocationInfo);
-
-    if(result != VK_SUCCESS)
-    {
-        return false;
-    }
-
-    memoryBucket.used = true;
-
-    return true;
-}
-
-void RenderGraph::UpdateTexturesPool(const uint32_t frameIndex)
-{
-
-    std::vector<uint32_t> freeTexturesSlot;
-    for(uint32_t i = 0; i < texturesPool.size(); i++)
-    {
-        std::pair<TextureResource, bool>& data = texturesPool[i];
-
-        if (data.second == true) 
-        {
-            data.first.FramesCount = 10; // TODO: Set with a valid frame delay
-        }
-        else 
-        {
-            if (data.first.FramesCount == 0) 
-            { 
-                freeTexturesSlot.push_back(i); 
-            }
-            else 
-            {
-                data.first.FramesCount--;
-            }
-        }
-    }
-
-    int32_t freeTexturesCount = freeTexturesSlot.size();
-    int32_t freeTexturesIndex = 0;
-
-    for(uint32_t i = 0; i < freeTexturesCount; i++)
-    {
-        uint32_t index = freeTexturesSlot[i];
-        
-        // Destroy old images
-        TextureResource oldTexture = texturesPool[index].first;
-        vkDestroyImageView(GraphicsCore::Context.Device, oldTexture.ImageView, nullptr);
-        vkDestroyImage(GraphicsCore::Context.Device, oldTexture.Image, nullptr);
-    }
-
-
-    for(uint32_t i = 0; i < transientTextures[frameIndex].size(); i++)
-    {
-        TextureResource& data = transientTextures[frameIndex][i];
-
-        ResourceRegistry::FreeTextureSlot(i);
-        if(data.PooledImage) { continue; }
-
-        data.FramesCount = 10; // TODO: Set with a valid frame delay
-
-        if(freeTexturesIndex < freeTexturesCount)
-        {
-            uint32_t index = freeTexturesSlot[freeTexturesIndex];
-
-            texturesPool[index] = std::pair{data, true};
-
-            freeTexturesIndex++;
-            
-            continue;
-        }
-
-        texturesPool.push_back(std::pair{data, true});
-    }
-
-    // There are some textures which need to be erased
-    for(int32_t i = freeTexturesCount - 1; i >= freeTexturesIndex; i--)
-    {
-        uint32_t index = freeTexturesSlot[i];
-
-        texturesPool.erase(texturesPool.begin() + index);
-    }
-
-    for(uint32_t i = 0; i < texturesPool.size(); i++)
-    {
-        // All the textures can be used again
-        texturesPool[i].second = false;
-    }
-
-    std::sort(texturesPool.begin(), texturesPool.end(), [](const std::pair<TextureResource, bool>& a, const std::pair<TextureResource, bool>& b) {
-        return memcmp(&a.first.TextureInfo, &b.first.TextureInfo, sizeof(TextureInfo)) < 0;
-    });
-}
-
-void RenderGraph::UpdateBuffersPool(const uint32_t frameIndex)
-{
-
-    std::vector<uint32_t> freeBuffersSlot;
-    for(uint32_t i = 0; i < buffersPool.size(); i++)
-    {
-        std::pair<BufferResource, bool>& data = buffersPool[i];
-
-        if (data.second == true) 
-        {
-            data.first.FramesCount = 10; // TODO: Set with a valid frame delay
-        }
-        else 
-        {
-            // Non è in uso, vediamo se è scaduta
-            if (data.first.FramesCount == 0) 
-            { 
-                freeBuffersSlot.push_back(i); 
-            }
-            else 
-            {
-                data.first.FramesCount--;
-            }
-        }
-    }
-
-    int32_t freeBuffersCount = freeBuffersSlot.size();
-    int32_t freeBuffersIndex = 0;
-
-    for(uint32_t i = 0; i < freeBuffersCount; i++)
-    {
-        uint32_t index = freeBuffersSlot[i];
-
-        // Destroy old buffer
-        BufferResource oldBuffer = buffersPool[index].first;
-        vkDestroyBuffer(GraphicsCore::Context.Device, oldBuffer.Buffer, nullptr);
-    }
-
-    for(uint32_t i = 0; i < transientBuffers[frameIndex].size(); i++)
-    {
-        BufferResource& data = transientBuffers[frameIndex][i];
-
-        ResourceRegistry::FreeBufferSlot(i);
-
-        if(data.PooledBuffer) { continue; }
-
-        data.FramesCount = 10; // TODO: Set with a valid frame delay
-
-        if(freeBuffersIndex < freeBuffersCount)
-        {
-            uint32_t index = freeBuffersSlot[freeBuffersIndex];
-
-            buffersPool[index] = std::pair{data, true};
-
-            freeBuffersIndex++;
-            
-            continue;
-        }
-
-        buffersPool.push_back(std::pair{data, true});
-    }
-
-    // There are some buffers which need to be erased
-    for(int32_t i = freeBuffersCount - 1; i >= freeBuffersIndex; i--)
-    {
-        uint32_t index = freeBuffersSlot[i];
-
-        buffersPool.erase(buffersPool.begin() + index);
-    }
-
-    for(uint32_t i = 0; i < buffersPool.size(); i++)
-    {
-        // All the buffers can be used again
-        buffersPool[i].second = false;
-    }
-
-    std::sort(buffersPool.begin(), buffersPool.end(), [](const std::pair<BufferResource, bool>& a, const std::pair<BufferResource, bool>& b) {
-        return memcmp(&a.first.BufferInfo, &b.first.BufferInfo, sizeof(BufferInfo)) < 0;
-    });
-}
-
 TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureInfo1D textureInfo)
 {
     TransientTextureHandle handle = ResourceRegistry::RequestTransientTextureSlot();
 
     TextureInfo data
     {
-        .Data.TextureType = TextureType::TEXTURE_1D,
-        .Data.Width = textureInfo.Width, 
-        .Data.Height = 1,
-        .Data.Depth = 1,
-        .Data.ArrayLayers = textureInfo.ArrayLayers,
-        .Data.MipLevels = textureInfo.MipLevels,
-        .Data.Format = textureInfo.Format,
-        .Data.Usage = static_cast<TextureUsage>(0),
-        .Data.Sample = textureInfo.Sample
+        .TextureType = TextureType::TEXTURE_1D,
+        .Width = textureInfo.Width, 
+        .Height = 1,
+        .Depth = 1,
+        .ArrayLayers = textureInfo.ArrayLayers,
+        .MipLevels = textureInfo.MipLevels,
+        .Format = textureInfo.Format,
+        .Usage = static_cast<TextureUsage>(0),
+        .Sample = textureInfo.Sample
     };
 
     transientRequestedTextures.push_back(data);
     transientRequestedTextureHandles.push_back(handle);
+
+    uint32_t index = transientRequestedTextures.size() - 1;
+
+    if(transientTextureHandleToIndex.size() <= handle.Id)
+    {
+        transientTextureHandleToIndex.resize(handle.Id);
+    }
+
+    transientTextureHandleToIndex[handle.Id] = index;
 
     return handle;
 }
@@ -2915,19 +2495,28 @@ TransientTextureHandle RenderGraph::RequestTransientTexture2D(TransientTextureIn
     TransientTextureHandle handle = ResourceRegistry::RequestTransientTextureSlot();
     TextureInfo data
     {
-        .Data.TextureType = TextureType::TEXTURE_2D,
-        .Data.Width = textureInfo.Width, 
-        .Data.Height = textureInfo.Height,
-        .Data.Depth = 1,
-        .Data.ArrayLayers = textureInfo.ArrayLayers,
-        .Data.MipLevels = textureInfo.MipLevels,
-        .Data.Format = textureInfo.Format,
-        .Data.Usage = static_cast<TextureUsage>(0),
-        .Data.Sample = textureInfo.Sample
+        .TextureType = TextureType::TEXTURE_2D,
+        .Width = textureInfo.Width, 
+        .Height = textureInfo.Height,
+        .Depth = 1,
+        .ArrayLayers = textureInfo.ArrayLayers,
+        .MipLevels = textureInfo.MipLevels,
+        .Format = textureInfo.Format,
+        .Usage = static_cast<TextureUsage>(0),
+        .Sample = textureInfo.Sample
     };
 
     transientRequestedTextures.push_back(data);
     transientRequestedTextureHandles.push_back(handle);
+
+    uint32_t index = transientRequestedTextures.size() - 1;
+
+    if(transientTextureHandleToIndex.size() <= handle.Id)
+    {
+        transientTextureHandleToIndex.resize(handle.Id);
+    }
+
+    transientTextureHandleToIndex[handle.Id] = index;
 
     return handle;
 }
@@ -2937,19 +2526,28 @@ TransientTextureHandle RenderGraph::RequestTransientTexture3D(TransientTextureIn
     TransientTextureHandle handle = ResourceRegistry::RequestTransientTextureSlot();
     TextureInfo data
     {
-        .Data.TextureType = TextureType::TEXTURE_3D,
-        .Data.Width = textureInfo.Width, 
-        .Data.Height = textureInfo.Height,
-        .Data.Depth = textureInfo.Depth,
-        .Data.ArrayLayers = textureInfo.ArrayLayers,
-        .Data.MipLevels = textureInfo.MipLevels,
-        .Data.Format = textureInfo.Format,
-        .Data.Usage = static_cast<TextureUsage>(0),
-        .Data.Sample = textureInfo.Sample
+        .TextureType = TextureType::TEXTURE_3D,
+        .Width = textureInfo.Width, 
+        .Height = textureInfo.Height,
+        .Depth = textureInfo.Depth,
+        .ArrayLayers = textureInfo.ArrayLayers,
+        .MipLevels = textureInfo.MipLevels,
+        .Format = textureInfo.Format,
+        .Usage = static_cast<TextureUsage>(0),
+        .Sample = textureInfo.Sample
     };
 
     transientRequestedTextures.push_back(data);
     transientRequestedTextureHandles.push_back(handle);
+
+    uint32_t index = transientRequestedTextures.size() - 1;
+
+    if(transientTextureHandleToIndex.size() <= handle.Id)
+    {
+        transientTextureHandleToIndex.resize(handle.Id);
+    }
+
+    transientTextureHandleToIndex[handle.Id] = index;
 
     return handle;
 }
@@ -2959,19 +2557,28 @@ TransientTextureHandle RenderGraph::RequestTransientTextureCube(TransientTexture
     TransientTextureHandle handle = ResourceRegistry::RequestTransientTextureSlot();
     TextureInfo data
     {
-        .Data.TextureType = TextureType::TEXTURE_3D,
-        .Data.Width = textureInfo.Width, 
-        .Data.Height = textureInfo.Height,
-        .Data.Depth = 1,
-        .Data.ArrayLayers = textureInfo.ArrayLayers,
-        .Data.MipLevels = textureInfo.MipLevels,
-        .Data.Format = textureInfo.Format,
-        .Data.Usage = static_cast<TextureUsage>(0),
-        .Data.Sample = textureInfo.Sample
+        .TextureType = TextureType::TEXTURE_3D,
+        .Width = textureInfo.Width, 
+        .Height = textureInfo.Height,
+        .Depth = 1,
+        .ArrayLayers = textureInfo.ArrayLayers,
+        .MipLevels = textureInfo.MipLevels,
+        .Format = textureInfo.Format,
+        .Usage = static_cast<TextureUsage>(0),
+        .Sample = textureInfo.Sample
     };
 
     transientRequestedTextures.push_back(data);
     transientRequestedTextureHandles.push_back(handle);
+
+    uint32_t index = transientRequestedTextures.size() - 1;
+
+    if(transientTextureHandleToIndex.size() <= handle.Id)
+    {
+        transientTextureHandleToIndex.resize(handle.Id);
+    }
+
+    transientTextureHandleToIndex[handle.Id] = index;
 
     return handle;
 }
@@ -2982,14 +2589,33 @@ TransientBufferHandle RenderGraph::RequestTransientBuffer(TransientBufferInfo bu
 
     BufferInfo data
     {
-        .Data.Size = bufferInfo.Size,
-        .Data.Usage = static_cast<BufferUsage>(0)
+        .Size = bufferInfo.Size,
+        .Usage = static_cast<BufferUsage>(0)
     };
 
     transientRequestedBuffers.push_back(data);
     transientRequestedBufferHandles.push_back(handle);
 
+    uint32_t index = transientRequestedBuffers.size() - 1;
+
+    if(transientBufferHandleToIndex.size() <= handle.Id)
+    {
+        transientBufferHandleToIndex.resize(handle.Id);
+    }
+
+    transientBufferHandleToIndex[handle.Id] = index;
+
     return handle;
+}
+
+void RenderGraph::AddTextureBucketPasses(uint32_t passesCount)
+{
+    texturesBucketPasses.push_back(std::vector<TexturesBucketPass>(passesCount));
+}
+
+void RenderGraph::AddBufferBucketPasses(uint32_t passesCount)
+{
+    buffersBucketPasses.push_back(std::vector<BuffersBucketPass>(passesCount));
 }
 
 void RenderGraph::AddPass(GraphicsPass& pass)

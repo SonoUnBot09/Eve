@@ -16,6 +16,8 @@ namespace Eve::Graphics
 
             inline static TextureState& GetTextureState(TextureHandle handle) { return textureStates[handle.Id]; }
             inline static BufferState& GetBufferState(BufferHandle handle) { return bufferStates[handle.Id]; }
+            inline static void SetTextureState(TextureHandle handle, TextureState& state) { textureStates[handle.Id] = state; }
+            inline static void SetBufferState(BufferHandle handle, BufferState& state) { bufferStates[handle.Id] = state; }
 
         private:
             inline static std::vector<TextureState> textureStates;

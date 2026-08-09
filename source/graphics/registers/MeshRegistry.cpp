@@ -118,8 +118,8 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         {
             BufferInfo info
             {
-                .Data.Size = cpuMesh.Vertices.size() * sizeof(Vec3),
-                .Data.Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
+                .Size = cpuMesh.Vertices.size() * sizeof(Vec3),
+                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
             };
 
             BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(info);
@@ -144,8 +144,8 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         {
             BufferInfo info
             {
-                .Data.Size = cpuMesh.Indicies.size() * sizeof(uint32_t),
-                .Data.Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | 
+                .Size = cpuMesh.Indicies.size() * sizeof(uint32_t),
+                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | 
                     BufferUsage::BUFFER_USAGE_TRANSFER_DST | BufferUsage::BUFFER_USAGE_INDEX
             };
 
@@ -171,8 +171,8 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         {
             BufferInfo info
             {
-                .Data.Size = cpuMesh.Normals.size() * sizeof(Vec3),
-                .Data.Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
+                .Size = cpuMesh.Normals.size() * sizeof(Vec3),
+                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
             };
 
             BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(info);
@@ -197,8 +197,8 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         {
             BufferInfo info
             {
-                .Data.Size = cpuMesh.Colors.size() * sizeof(Vec3),
-                .Data.Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
+                .Size = cpuMesh.Colors.size() * sizeof(Vec3),
+                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
             };
 
             BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(info);
@@ -223,8 +223,8 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         {
             BufferInfo info
             {
-                .Data.Size = cpuMesh.UVs.size() * sizeof(Vec2),
-                .Data.Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
+                .Size = cpuMesh.UVs.size() * sizeof(Vec2),
+                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
             };
 
             BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(info);
@@ -250,8 +250,8 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         {
             BufferInfo info
             {
-                .Data.Size = cpuMesh.Tangents.size() * sizeof(Vec4),
-                .Data.Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
+                .Size = cpuMesh.Tangents.size() * sizeof(Vec4),
+                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
             };
 
             BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(info);

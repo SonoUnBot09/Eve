@@ -75,8 +75,8 @@ void TransferPass::UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, 
     // --- Staging buffer creation ---
     BufferInfo stagingBufferInfo
     {
-        .Data.Size = Size,
-        .Data.Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+        .Size = Size,
+        .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
     };
 
     BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);
@@ -96,8 +96,8 @@ void TransferPass::UploadBuffer(void* SrcData, BufferHandle DstBuffer, uint64_t 
     // --- Staging buffer creation ---
     BufferInfo stagingBufferInfo
     {
-        .Data.Size = Size,
-        .Data.Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+        .Size = Size,
+        .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
     };
 
     BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);
@@ -118,8 +118,8 @@ void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TransientTexture
     // --- Staging buffer creation ---
     BufferInfo stagingBufferInfo
     {
-        .Data.Size = Size,
-        .Data.Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+        .Size = Size,
+        .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
     };
 
     BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);
@@ -139,8 +139,8 @@ void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TextureHandle Ds
     // --- Staging buffer creation ---
     BufferInfo stagingBufferInfo
     {
-        .Data.Size = Size,
-        .Data.Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+        .Size = Size,
+        .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
     };
 
     BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);

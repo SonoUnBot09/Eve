@@ -23,19 +23,40 @@ namespace Eve::Graphics
             static void CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t maxSamplersCount, uint32_t maxBuffersCount);
             static void DestroyGlobalDescriptor();        
             
-            static void ScheduleImageMapping(TextureHandle handle, TextureInfo& textureInfo);
-            static void ScheduleImageMapping(TransientTextureHandle handle, TextureInfo& textureInfo);
-            static void ScheduleSamplerMapping(SamplerHandle handle);
-            static void ScheduleBufferMapping(BufferHandle handle);
-            static void ScheduleBufferMapping(TransientBufferHandle handle);
+            static void ScheduleImageMapping(TextureHandle handle, VkImageView imageView, TextureInfo& textureInfo);
+            static void ScheduleImageMapping(TransientTextureHandle handle, VkImageView imageView, TextureInfo& textureInfo);
+            static void ScheduleSamplerMapping(SamplerHandle handle, VkSampler sampler);
+            static void ScheduleBufferMapping(BufferHandle handle, VkBuffer buffer);
+            static void ScheduleBufferMapping(TransientBufferHandle handle, VkBuffer buffer);
 
             static bool MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex);
 
             static inline VkDescriptorSetLayout GetDescriptorSetLayout() { return layout; }
         private:
 
-            static std::vector<std::pair<TextureHandle, uint32_t>>& GetSampledVector(TextureType textureType);
-            static std::vector<std::pair<TextureHandle, uint32_t>>& GetStorageVector(TextureType textureType);
+            struct TextureToMap
+            {
+                VkImageView ImageView;
+                uint32_t Id;
+                uint32_t Countdown;
+            };
+
+            struct SamplerToMap
+            {
+                VkSampler Sampler;
+                uint32_t Id;
+                uint32_t Countdown;
+            };
+
+            struct BufferToMap
+            {
+                VkBuffer Buffer;
+                uint32_t Id;
+                uint32_t Countdown;
+            };
+
+            static std::vector<TextureToMap>& GetSampledVector(TextureType textureType);
+            static std::vector<TextureToMap>& GetStorageVector(TextureType textureType);
             static std::vector<uint32_t>& GetFreeSampledSlotsVector(TextureType textureType);
             static std::vector<uint32_t>& GetFreeStorageSlotsVector(TextureType textureType);
 
@@ -55,16 +76,16 @@ namespace Eve::Graphics
             inline static std::mutex imagesMutex;
             inline static std::mutex samplersMutex;
             inline static std::mutex buffersMutex;
-            inline static std::vector<std::pair<TextureHandle, uint32_t>> imagesSampled1DToMap;
-            inline static std::vector<std::pair<TextureHandle, uint32_t>> imagesStorage1DToMap;
-            inline static std::vector<std::pair<TextureHandle, uint32_t>> imagesSampled2DToMap;
-            inline static std::vector<std::pair<TextureHandle, uint32_t>> imagesStorage2DToMap;
-            inline static std::vector<std::pair<TextureHandle, uint32_t>> imagesSampled3DToMap;
-            inline static std::vector<std::pair<TextureHandle, uint32_t>> imagesStorage3DToMap;
-            inline static std::vector<std::pair<TextureHandle, uint32_t>> imagesSampledCubeToMap;
-            inline static std::vector<std::pair<TextureHandle, uint32_t>> imagesStorageCubeToMap;
-            inline static std::vector<std::pair<SamplerHandle, uint32_t>> samplersToMap;
-            inline static std::vector<std::pair<BufferHandle, uint32_t>> buffersToMap;
+            inline static std::vector<TextureToMap> imagesSampled1DToMap;
+            inline static std::vector<TextureToMap> imagesStorage1DToMap;
+            inline static std::vector<TextureToMap> imagesSampled2DToMap;
+            inline static std::vector<TextureToMap> imagesStorage2DToMap;
+            inline static std::vector<TextureToMap> imagesSampled3DToMap;
+            inline static std::vector<TextureToMap> imagesStorage3DToMap;
+            inline static std::vector<TextureToMap> imagesSampledCubeToMap;
+            inline static std::vector<TextureToMap> imagesStorageCubeToMap;
+            inline static std::vector<SamplerToMap> samplersToMap;
+            inline static std::vector<BufferToMap> buffersToMap;
 
             inline static std::vector<uint32_t> imageSampled1DToMapFreeSlots;
             inline static std::vector<uint32_t> imageStorage1DToMapFreeSlots;

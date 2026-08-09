@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Eve/graphics/Texture.hpp"
 #include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
 #include <Eve/graphics/PassModule.hpp>
@@ -14,6 +15,15 @@ namespace Eve::Graphics
         VmaAllocationInfo AllocationInfo;
     };
 
+    struct TransientTextureObject
+    {
+        VkImage Image;
+        VkImageView ImageView;
+        uint32_t Countdown;
+        uint64_t MemoryOffset;
+        bool PooledResource;
+    };
+
     struct SamplerObject
     {
         VkSampler Sampler;
@@ -24,6 +34,14 @@ namespace Eve::Graphics
         VkBuffer Buffer;
         VmaAllocation Allocation;
         VmaAllocationInfo AllocationInfo;
+    };
+
+    struct TransientBufferObject
+    {
+        VkBuffer Buffer;
+        uint32_t Countdown;
+        uint64_t MemoryOffset;
+        bool PooledResource;
     };
 
     struct TextureState

@@ -51,22 +51,18 @@ namespace Eve::Graphics
         uint32_t Id;
     };
 
-    #pragma pack(push, 1)
     struct BufferInfo
     {
-        struct Data
+        uint64_t Size;
+        BufferUsage Usage = static_cast<BufferUsage>(0);
+
+        bool operator==(const BufferInfo& other) const
         {
-            uint64_t Size;
-            BufferUsage Usage = static_cast<BufferUsage>(0);
-        } Data;
-        
-        struct MemoryInfo
-        {
-            uint64_t Offset;
-            uint64_t Size;
-        } MemoryInfo;
+            return 
+                Size == other.Size &&
+                Usage == other.Usage;
+        }
     };
-    #pragma pack(pop)
 
     struct TransientBufferInfo
     {

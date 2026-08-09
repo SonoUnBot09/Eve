@@ -26,6 +26,22 @@ namespace Eve::Graphics
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
     };
 
+    static constexpr VkImageType imageTypeLUT[]
+    {
+        VK_IMAGE_TYPE_1D,
+        VK_IMAGE_TYPE_2D,
+        VK_IMAGE_TYPE_3D,
+        VK_IMAGE_TYPE_2D
+    };
+
+    static constexpr VkImageViewType imageViewTypeLUT[]
+    {
+        VK_IMAGE_VIEW_TYPE_1D,
+        VK_IMAGE_VIEW_TYPE_2D,
+        VK_IMAGE_VIEW_TYPE_3D,
+        VK_IMAGE_VIEW_TYPE_CUBE
+    };
+
     static constexpr VkImageUsageFlags imageUsageLUT[]
     {
         VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -283,6 +299,16 @@ namespace Eve::Graphics
     }
 
     // Images
+    static inline VkImageType GetVkImageType(TextureType textureType)
+    {
+        return imageTypeLUT[static_cast<uint32_t>(textureType)];
+    }
+
+    static inline VkImageViewType GetVkImageViewType(TextureType textureType)
+    {
+        return imageViewTypeLUT[static_cast<uint32_t>(textureType)];
+    }
+
     static inline VkImageUsageFlags GetVkImageUsage(TextureUsage usage)
     {
         uint32_t bits = static_cast<uint32_t>(usage);

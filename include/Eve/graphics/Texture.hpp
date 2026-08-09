@@ -245,28 +245,31 @@ namespace Eve::Graphics
         TextureSample Sample = TextureSample::SAMPLE_1;
     };
 
-    #pragma pack(push, 1)
     struct TextureInfo
     {
-        struct Data
-        {
-            TextureType TextureType;
-            uint32_t Width, Height, Depth;
-            uint32_t ArrayLayers;
-            uint32_t MipLevels;
+        TextureType TextureType;
+        uint32_t Width, Height, Depth;
+        uint32_t ArrayLayers;
+        uint32_t MipLevels;
 
-            Format Format;
-            TextureUsage Usage = static_cast<TextureUsage>(0);
-            TextureSample Sample;
-        } Data;
+        Format Format;
+        TextureUsage Usage = static_cast<TextureUsage>(0);
+        TextureSample Sample;
 
-        struct MemoryInfo
+        bool operator==(const TextureInfo& other) const 
         {
-            uint64_t Offset;
-            uint64_t Size;
-        } MemoryInfo;
+            return 
+                TextureType == other.TextureType &&
+                Width == other.Width &&
+                Height == other.Height &&
+                Depth == other.Depth &&
+                ArrayLayers == other.ArrayLayers &&
+                MipLevels == other.MipLevels &&
+                Format == other.Format &&
+                Usage == other.Usage &&
+                Sample == other.Sample;
+        }
     };
-    #pragma pack(pop)
 
     /*
     struct TransientTextureInfo2D
