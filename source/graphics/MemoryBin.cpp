@@ -10,101 +10,130 @@ using namespace Eve::Graphics;
 
 void MemoryBin::DestroyPendingResources()
 {
-
-    if(isGPUInIdle)
+    // --- Persistent Buffer Destruction ---
+    for(int32_t i = persistentBuffersToDestroy.size() - 1; i >= 0; i--)
     {
-        isGPUInIdle = false;
-
-        for(int32_t i = 0; i < buffersToDestroy.size(); i++)
+        if(persistentBuffersToDestroy[i].second > 0)
         {
-            buffersToDestroy[i].second = 0;
-        }
-
-        for(int32_t i = 0; i < texturesToDestroy.size(); i++)
-        {
-            texturesToDestroy[i].second = 0;
-        }
-
-        for(int32_t i = 0; i < samplersToDestroy.size(); i++)
-        {
-            samplersToDestroy[i].second = 0;
-        }
-    }
-
-    // --- Buffer Destruction ---
-    for(int32_t i = buffersToDestroy.size() - 1; i >= 0; i--)
-    {
-        if(buffersToDestroy[i].second > 0)
-        {
-            buffersToDestroy[i].second--;
+            persistentBuffersToDestroy[i].second--;
             continue;
         }
 
-        BufferObject& buffer = buffersToDestroy[i].first;
+        BufferObject& buffer = persistentBuffersToDestroy[i].first;
 
         vmaDestroyBuffer(GraphicsCore::Context.Allocator, buffer.Buffer, buffer.Allocation);
 
-        buffersToDestroy.erase(buffersToDestroy.begin() + i);
+        persistentBuffersToDestroy.erase(persistentBuffersToDestroy.begin() + i);
     }
 
-    // --- Texture Destruction ---
-    for(int32_t i = texturesToDestroy.size() - 1; i >= 0; i--)
+    // --- Persistent Texture Destruction ---
+    for(int32_t i = persistentTexturesToDestroy.size() - 1; i >= 0; i--)
     {
-        if(texturesToDestroy[i].second > 0)
+        if(persistentTexturesToDestroy[i].second > 0)
         {
-            texturesToDestroy[i].second--;
+            persistentTexturesToDestroy[i].second--;
             continue;
         }
 
-        TextureObject& texture = texturesToDestroy[i].first;
+        TextureObject& texture = persistentTexturesToDestroy[i].first;
 
         vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
         
         vmaDestroyImage(GraphicsCore::Context.Allocator, texture.Image, texture.Allocation);
 
-        texturesToDestroy.erase(texturesToDestroy.begin() + i);
+        persistentTexturesToDestroy.erase(persistentTexturesToDestroy.begin() + i);
     }
 
     // --- Sampler Destruction ---
-    for(int32_t i = samplersToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = persistentSamplersToDestroy.size() - 1; i >= 0; i--)
     {
-        if(samplersToDestroy[i].second > 0)
+        if(persistentSamplersToDestroy[i].second > 0)
         {
-            samplersToDestroy[i].second--;
+            persistentSamplersToDestroy[i].second--;
             continue;
         }
 
-        SamplerObject& sampler = samplersToDestroy[i].first;
+        SamplerObject& sampler = persistentSamplersToDestroy[i].first;
 
         vkDestroySampler(GraphicsCore::Context.Device, sampler.Sampler, nullptr);
 
-        samplersToDestroy.erase(samplersToDestroy.begin() + i);
+        persistentSamplersToDestroy.erase(persistentSamplersToDestroy.begin() + i);
+    }
+
+    // --- Transient Buffer Destruction ---
+    for(int32_t i = transientBuffersToDestroy.size() - 1; i >= 0; i--)
+    {
+        if(transientBuffersToDestroy[i].second > 0)
+        {
+            transientBuffersToDestroy[i].second--;
+            continue;
+        }
+
+        TransientBufferObject& buffer = transientBuffersToDestroy[i].first;
+
+        vkDestroyBuffer(GraphicsCore::Context.Device, buffer.Buffer, nullptr);
+
+        transientBuffersToDestroy.erase(transientBuffersToDestroy.begin() + i);
+    }
+
+    // --- Transient Texture Destruction ---
+    for(int32_t i = transientTexturesToDestroy.size() - 1; i >= 0; i--)
+    {
+        if(transientTexturesToDestroy[i].second > 0)
+        {
+            transientTexturesToDestroy[i].second--;
+            continue;
+        }
+
+        TransientTextureObject& texture = transientTexturesToDestroy[i].first;
+
+        vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
+        
+        vkDestroyImage(GraphicsCore::Context.Device, texture.Image, nullptr);
+
+        transientTexturesToDestroy.erase(transientTexturesToDestroy.begin() + i);
+    }
+
+    for(int32_t i = memoryBucketsToDestroy.size() - 1; i >= 0; i--)
+    {
+        std::pair<MemoryBucket, uint32_t>& memoryBucket = memoryBucketsToDestroy[i];
+
+        if(memoryBucket.second > 0)
+        {
+            memoryBucket.second--;
+            continue;
+        }
+
+        vmaFreeMemory(GraphicsCore::Context.Allocator, memoryBucket.first.Allocation);
+
+        memoryBucketsToDestroy.erase(memoryBucketsToDestroy.begin() + 1);
     }
 }
 
-void MemoryBin::DestroyEverythingNow()
+void MemoryBin::FlushAllPendingResources()
 {
-    for(int32_t i = buffersToDestroy.size() - 1; i >= 0; i--)
+    // TODO
+    for(int32_t i = persistentBuffersToDestroy.size() - 1; i >= 0; i--)
     {
-        BufferObject& buffer = buffersToDestroy[i].first;
+        BufferObject& buffer = persistentBuffersToDestroy[i].first;
 
         vmaDestroyBuffer(GraphicsCore::Context.Allocator, buffer.Buffer, buffer.Allocation);
 
-        buffersToDestroy.erase(buffersToDestroy.begin() + i);
+        persistentBuffersToDestroy.erase(persistentBuffersToDestroy.begin() + i);
     }
 
-    for(int32_t i = texturesToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = persistentTexturesToDestroy.size() - 1; i >= 0; i--)
     {
-        TextureObject& texture = texturesToDestroy[i].first;
+        TextureObject& texture = persistentTexturesToDestroy[i].first;
 
         vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
         
         vmaDestroyImage(GraphicsCore::Context.Allocator, texture.Image, texture.Allocation);
 
-        texturesToDestroy.erase(texturesToDestroy.begin() + i);
+        persistentTexturesToDestroy.erase(persistentTexturesToDestroy.begin() + i);
     }
 
-    for(int32_t i = samplersToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = persistentSamplersToDestroy.size() - 1; i >= 0; i--)
     {
         SamplerObject sampler = MemoryRegistry::samplers[i];
 
@@ -155,17 +184,32 @@ void MemoryBin::DestroyEverythingNow()
     MemoryRegistry::samplersInfo.clear();
 }
 
-void MemoryBin::DestroyBuffer(BufferObject buffer)
+void MemoryBin::DestroyPersistentBuffer(BufferObject& buffer)
 {
-    buffersToDestroy.push_back(std::pair{buffer, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+    persistentBuffersToDestroy.push_back(std::pair{buffer, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
 }
 
-void MemoryBin::DestroyTexture(TextureObject texture)
+void MemoryBin::DestroyPersistentTexture(TextureObject& texture)
 {
-    texturesToDestroy.push_back(std::pair{texture, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+    persistentTexturesToDestroy.push_back(std::pair{texture, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
 }
 
-void MemoryBin::DestroySampler(SamplerObject sampler)
+void MemoryBin::DestroyPersistentSampler(SamplerObject& sampler)
 {
-    samplersToDestroy.push_back(std::pair{sampler, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+    persistentSamplersToDestroy.push_back(std::pair{sampler, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
+}
+
+void MemoryBin::DestroyTransientBuffer(TransientBufferObject& buffer, uint32_t countdown)
+{
+    transientBuffersToDestroy.push_back(std::pair{buffer, countdown});
+}
+
+void MemoryBin::DestroyTransientTexture(TransientTextureObject& texture, uint32_t countdown)
+{
+    transientTexturesToDestroy.push_back(std::pair{texture, countdown});
+}
+
+void MemoryBin::DestroyMemoryBucket(MemoryBucket& memoryBucket)
+{
+    memoryBucketsToDestroy.push_back(std::pair{memoryBucket, Eve::Settings::MAX_FRAMES_IN_FLIGHT});
 }

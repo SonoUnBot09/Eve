@@ -181,7 +181,7 @@ BufferHandle MemoryRegistry::CreateGPUBuffer(BufferInfo bufferInfo)
     
     ResourceTracker::RegisterBufferState(handle);
 
-    // TODO : Mapping ResourceMapper::ScheduleBufferMapping(handle);
+    ResourceMapper::ScheduleBufferMapping(handle, buffer.Buffer);
 
     buffers.resize(ResourceRegistry::bufferResourcesPeakIndex);
     buffersInfo.resize(ResourceRegistry::bufferResourcesPeakIndex);
@@ -220,7 +220,7 @@ void MemoryRegistry::DestroyBuffer(BufferHandle handle)
 {
     BufferObject buffer = buffers[handle.Id];
 
-    MemoryBin::DestroyBuffer(buffer);
+    MemoryBin::DestroyPersistentBuffer(buffer);
 
     ResourceRegistry::FreeBufferSlot(handle);
 }
@@ -229,7 +229,7 @@ void MemoryRegistry::DestroyTexture(TextureHandle handle)
 {
     TextureObject texture = textures[handle.Id];
 
-    MemoryBin::DestroyTexture(texture);
+    MemoryBin::DestroyPersistentTexture(texture);
 
     ResourceRegistry::FreeTextureSlot(handle);
 }
@@ -238,7 +238,7 @@ void MemoryRegistry::DestroySampler(SamplerHandle handle)
 {
     SamplerObject sampler = samplers[handle.Id];
 
-    MemoryBin::DestroySampler(sampler);
+    MemoryBin::DestroyPersistentSampler(sampler);
 
     ResourceRegistry::FreeSamplerSlot(handle);
 }
@@ -247,7 +247,7 @@ void MemoryRegistry::DestroyBuffer(uint32_t id)
 {
     BufferObject buffer = buffers[id];
 
-    MemoryBin::DestroyBuffer(buffer);
+    MemoryBin::DestroyPersistentBuffer(buffer);
 
     ResourceRegistry::FreeBufferSlot(id);
 }
@@ -256,7 +256,7 @@ void MemoryRegistry::DestroyTexture(uint32_t id)
 {
     TextureObject texture = textures[id];
 
-    MemoryBin::DestroyTexture(texture);
+    MemoryBin::DestroyPersistentTexture(texture);
 
     ResourceRegistry::FreeTextureSlot(id);
 }
@@ -265,7 +265,7 @@ void MemoryRegistry::DestroySampler(uint32_t id)
 {
     SamplerObject sampler = samplers[id];
 
-    MemoryBin::DestroySampler(sampler);
+    MemoryBin::DestroyPersistentSampler(sampler);
 
     ResourceRegistry::FreeSamplerSlot(id);
 }

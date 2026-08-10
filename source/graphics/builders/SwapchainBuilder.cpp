@@ -171,7 +171,6 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
 {
     vkDeviceWaitIdle(GraphicsCore::Context.Device);
 
-    MemoryBin::MarkGPUAsIdle();
     
     Destroy(swapchain);
 

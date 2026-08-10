@@ -1,9 +1,12 @@
 #include <cstdint>
 #include <graphics/GraphicsCore.hpp>
 #include "TransientResourcePool.hpp"
+#include "EveSettings.hpp"
 #include "graphics/RenderGraph.hpp"
+#include "graphics/Resources.hpp"
 #include "graphics/helpers/VulkanMapping.hpp"
 #include <graphics/registers/ResourceRegistry.hpp>
+#include <graphics/MemoryBin.hpp>
 
 using namespace Eve::Graphics;
 
@@ -276,7 +279,7 @@ bool TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(const uint32_t buc
         return true;
     }
 
-    ScheduleMemoryBucketDestruction(memoryBucket);
+    MemoryBin::DestroyMemoryBucket(memoryBucket);
 
     std::vector<TexturePool> pools = GetTexturePools();
     for(uint32_t poolIndex = 0; poolIndex < pools.size(); poolIndex++)
@@ -287,7 +290,7 @@ bool TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(const uint32_t buc
 
         for(int32_t i = pool.Textures.size() - 1; i >= 0; i--)
         {
-            ScheduleTextureDestruction(pool.Textures[i], Eve::Settings::MAX_FRAMES_IN_FLIGHT);
+            MemoryBin::DestroyTransientTexture(pool.Textures[i], Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 
             pool.Textures.pop_back();
         }
@@ -334,7 +337,7 @@ bool TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(const uint32_t buck
         return true;
     }
 
-    ScheduleMemoryBucketDestruction(memoryBucket);
+    MemoryBin::DestroyMemoryBucket(memoryBucket);
 
     std::vector<BufferPool> pools = GetBufferPools();
     for(uint32_t poolIndex = 0; poolIndex < pools.size(); poolIndex++)
@@ -345,7 +348,7 @@ bool TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(const uint32_t buck
 
         for(int32_t i = pool.Buffers.size() - 1; i >= 0; i--)
         {
-            ScheduleBufferDestruction(pool.Buffers[i], Eve::Settings::MAX_FRAMES_IN_FLIGHT);
+            MemoryBin::DestroyTransientBuffer(pool.Buffers[i], Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 
             pool.Buffers.pop_back();
         }
@@ -436,7 +439,7 @@ void TransientResourcePool::UpdateTexturesPool(const uint32_t frameIndex)
 
             if(object.Countdown == 0)
             {
-                ScheduleTextureDestruction(object, 0);
+                MemoryBin::DestroyTransientTexture(object, 0);
 
                 pool.Textures.erase(pool.Textures.begin() + resourceIndex);
             }
@@ -513,8 +516,8 @@ void TransientResourcePool::UpdateBuffersPool(const uint32_t frameIndex)
 
             if(object.Countdown == 0)
             {
-                ScheduleBufferDestruction(object, 0);
-
+                MemoryBin::DestroyTransientBuffer(object, 0);
+                
                 pool.Buffers.erase(pool.Buffers.begin() + resourceIndex);
             }
         }
@@ -533,4 +536,10 @@ void TransientResourcePool::UpdateBuffersPool(const uint32_t frameIndex)
             pools.erase(pools.begin() + i);
         }
     }
+}
+
+void TransientResourcePool::BeginNewFrame(const uint32_t frameIndex)
+{
+    UpdateTexturesPool(frameIndex);
+    UpdateBuffersPool(frameIndex);
 }

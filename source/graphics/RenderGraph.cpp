@@ -627,7 +627,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
     UpdateTexturesPool(frameIndex);
     UpdateBuffersPool(frameIndex);
 
-    TransientResourcePool::ClearTransientResources(frameIndex);
+    TransientResourcePool::BeginNewFrame(frameIndex);
 
     uint32_t transientTexturesCount = transientRequestedTextures.size();
     uint32_t transientBuffersCount = transientRequestedBuffers.size();
@@ -827,6 +827,9 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 
         bool shouldBeMapped = NeedBufferDescriptor(usage);
     }
+
+    transientRequestedTextureHandles.clear();
+    transientRequestedBufferHandles.clear();
 
     // Generate persistent texture and buffer barriers
     for(uint32_t passIndex = 0; passIndex < passesCount; passIndex++)
@@ -1245,6 +1248,9 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
     transientRequestedTextures.clear();
     transientRequestedBuffers.clear();
     passes.clear();
+    transientTextureHandleToIndex.clear();
+    transientBufferHandleToIndex.clear();
+
     for(uint32_t i = 0; i < texturesBucketPasses.size(); i++)
     {
         texturesBucketPasses[i].clear();
@@ -1253,6 +1259,7 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
     {
         buffersBucketPasses[i].clear();
     }
+    
     barriersOffsetPerTexture.clear();
     texturesBarriersInfo.clear();
     barriersOffsetPerBuffer.clear();

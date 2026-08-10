@@ -1,6 +1,7 @@
 #pragma once
 
 #include <graphics/registers/MemoryRegistry.hpp>
+#include <graphics/registers/TransientResourcePool.hpp>
 #include "Resources.hpp"
 
 namespace Eve::Graphics
@@ -9,20 +10,25 @@ namespace Eve::Graphics
     {
         public:
             static void DestroyPendingResources();
-            static void DestroyBuffer(BufferObject buffer);
-            static void DestroyTexture(TextureObject texture);
-            static void DestroySampler(SamplerObject sampler);
-
-            static void DestroyEverythingNow();
-
-            inline static void MarkGPUAsIdle() { isGPUInIdle = true; }
+            static void DestroyPersistentBuffer(BufferObject& buffer);
+            static void DestroyPersistentTexture(TextureObject& texture);
+            static void DestroyPersistentSampler(SamplerObject& sampler);
+            static void DestroyTransientBuffer(TransientBufferObject& buffer, uint32_t countdown);
+            static void DestroyTransientTexture(TransientTextureObject& texture, uint32_t countdown);
+            static void DestroyMemoryBucket(MemoryBucket& memoryBucket);
+            static void FlushAllPendingResources();
 
         private:
-            inline static std::vector<std::pair<BufferObject, uint32_t>> buffersToDestroy;
-            inline static std::vector<std::pair<TextureObject, uint32_t>> texturesToDestroy;
-            inline static std::vector<std::pair<SamplerObject, uint32_t>> samplersToDestroy;
 
-            inline static bool isGPUInIdle = false;
+            inline static std::vector<std::pair<BufferObject, uint32_t>> persistentBuffersToDestroy;
+            inline static std::vector<std::pair<TextureObject, uint32_t>> persistentTexturesToDestroy;
+            inline static std::vector<std::pair<SamplerObject, uint32_t>> persistentSamplersToDestroy;
+
+            inline static std::vector<std::pair<TransientBufferObject, uint32_t>> transientBuffersToDestroy;
+            inline static std::vector<std::pair<TransientTextureObject, uint32_t>> transientTexturesToDestroy;
+
+            inline static std::vector<std::pair<MemoryBucket, uint32_t>> memoryBucketsToDestroy;
+
 
 
     };
