@@ -30,7 +30,18 @@ bool GraphicsCore::Initialize()
 
 void GraphicsCore::Destroy()
 {
-    if(!Context.Device) { return; }
+    if(!Context.Device) 
+    {
+        if(Window.Window)
+        {
+            SDL_DestroyWindow(Window.Window);
+        }
+
+        SDL_Quit();
+
+        return;
+    }
+    
     vkDeviceWaitIdle(Context.Device);
 
     ResourceMapper::DestroyGlobalDescriptor();

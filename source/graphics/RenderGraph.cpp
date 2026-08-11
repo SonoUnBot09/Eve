@@ -623,11 +623,9 @@ namespace
 bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
 {
     MeshRegistry::UploadMeshes();
-    
-    UpdateTexturesPool(frameIndex);
-    UpdateBuffersPool(frameIndex);
 
-    TransientResourcePool::BeginNewFrame(frameIndex);
+    TransientResourcePool::UpdateTexturesPool(frameIndex);
+    TransientResourcePool::UpdateBuffersPool(frameIndex);
 
     uint32_t transientTexturesCount = transientRequestedTextures.size();
     uint32_t transientBuffersCount = transientRequestedBuffers.size();

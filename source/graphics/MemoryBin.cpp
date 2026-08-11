@@ -1,5 +1,4 @@
 #include "MemoryBin.hpp"
-#include "Eve/Debug.hpp"
 #include "EveSettings.hpp"
 #include "GraphicsCore.hpp"
 #include <graphics/registers/MemoryRegistry.hpp>

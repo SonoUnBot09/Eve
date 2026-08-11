@@ -148,9 +148,6 @@ namespace Eve::Graphics
             static TextureBarrierInfo GetFirstTextureBarrierInfo(const uint32_t newAllocId, const uint64_t newAllocOffset, const uint64_t newAllocSize);
             static BufferBarrierInfo GetFirstBufferBarrierInfo(const uint32_t newAllocId, const uint64_t newAllocOffset, const uint64_t newAllocSize);
 
-            static void UpdateTexturesPool(const uint32_t frameIndex);
-            static void UpdateBuffersPool(const uint32_t frameIndex);
-
             // --- Commands Recorders ---
             static void RecordTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
             static void RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);

@@ -88,15 +88,13 @@ namespace Eve::Graphics
             inline static MemoryBucket& GetBufferMemoryBucket(const uint32_t bucketIndex) 
             { return buffersMemoryBucket[bucketIndex]; }
 
-            static void BeginNewFrame(const uint32_t frameIndex);
+            static void UpdateTexturesPool(const uint32_t frameIndex);
+            static void UpdateBuffersPool(const uint32_t frameIndex);
 
             static bool ResizeTextureMemoryBucketIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment);
             static bool ResizeBufferMemoryBucketIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment);
 
         private:
-
-            static void UpdateTexturesPool(const uint32_t frameIndex);
-            static void UpdateBuffersPool(const uint32_t frameIndex);
 
             static uint32_t GetTexturesBucketIndex(const uint32_t memoryTypeIndex, const uint32_t passesCount);
             static uint32_t GetBuffersBucketIndex(const uint32_t memoryTypeIndex, const uint32_t passesCount);

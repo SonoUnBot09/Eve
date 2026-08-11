@@ -537,9 +537,3 @@ void TransientResourcePool::UpdateBuffersPool(const uint32_t frameIndex)
         }
     }
 }
-
-void TransientResourcePool::BeginNewFrame(const uint32_t frameIndex)
-{
-    UpdateTexturesPool(frameIndex);
-    UpdateBuffersPool(frameIndex);
-}
