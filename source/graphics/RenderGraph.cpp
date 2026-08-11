@@ -1,5 +1,4 @@
 #include "RenderGraph.hpp"
-#include <cstdint>
 #include <graphics/registers/ShaderRegistry.hpp>
 #include "graphics/builders/ContextBuilder.hpp"
 #include "registers/ResourceTracker.hpp"
@@ -620,7 +619,18 @@ namespace
     }
 };
 
-bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
+bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex)
+{
+    bool success = CompileGraph(frameIndex);
+
+    ResourceMapper::MapResources(cmdBuffer, frameIndex);
+
+    RecordCommands(cmdBuffer, frameIndex);
+
+    Clear();
+}
+
+bool RenderGraph::CompileGraph(uint32_t frameIndex)
 {
     MeshRegistry::UploadMeshes();
 
@@ -1239,36 +1249,10 @@ bool RenderGraph::CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex)
         }
     }
 
-    ResourceMapper::MapResources(cmdBuffer, frameIndex);
-
-    RecordCommands(frameIndex, cmdBuffer);
-
-    transientRequestedTextures.clear();
-    transientRequestedBuffers.clear();
-    passes.clear();
-    transientTextureHandleToIndex.clear();
-    transientBufferHandleToIndex.clear();
-
-    for(uint32_t i = 0; i < texturesBucketPasses.size(); i++)
-    {
-        texturesBucketPasses[i].clear();
-    }
-    for(uint32_t i = 0; i < buffersBucketPasses.size(); i++)
-    {
-        buffersBucketPasses[i].clear();
-    }
-    
-    barriersOffsetPerTexture.clear();
-    texturesBarriersInfo.clear();
-    barriersOffsetPerBuffer.clear();
-    buffersBarriersInfo.clear();
-
-    presentTexture.Id = UINT32_MAX;
-
     return true;
 }
 
-bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer)
+bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex)
 {
     std::vector<VkImageMemoryBarrier2> textureMemoryBarriers;
     std::vector<VkBufferMemoryBarrier2> bufferMemoryBarriers;
@@ -1621,6 +1605,31 @@ bool RenderGraph::RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer
     vkCmdPipelineBarrier2(cmdBuffer, &presentDep);
 
     return true;
+}
+
+void RenderGraph::Clear()
+{
+    transientRequestedTextures.clear();
+    transientRequestedBuffers.clear();
+    passes.clear();
+    transientTextureHandleToIndex.clear();
+    transientBufferHandleToIndex.clear();
+
+    for(uint32_t i = 0; i < texturesBucketPasses.size(); i++)
+    {
+        texturesBucketPasses[i].clear();
+    }
+    for(uint32_t i = 0; i < buffersBucketPasses.size(); i++)
+    {
+        buffersBucketPasses[i].clear();
+    }
+    
+    barriersOffsetPerTexture.clear();
+    texturesBarriersInfo.clear();
+    barriersOffsetPerBuffer.clear();
+    buffersBarriersInfo.clear();
+
+    presentTexture.Id = UINT32_MAX;
 }
 
 void RenderGraph::RecordTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)

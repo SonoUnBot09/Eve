@@ -1,7 +1,5 @@
 #pragma once
 
-#include <algorithm>
-#include <ranges>
 #include <vector>
 #include <cstdint>
 
@@ -33,7 +31,7 @@ namespace Eve::Graphics
 
             static void SetPresentTexture(TransientTextureHandle handle);
 
-            static bool CompileGraph(VkCommandBuffer& cmdBuffer, uint32_t frameIndex);
+            static bool Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex);
 
             struct TextureBarrierInfo
             {
@@ -140,7 +138,9 @@ namespace Eve::Graphics
                 uint32_t ResourceIndex;
             };
 
-            static bool RecordCommands(uint32_t frameIndex, VkCommandBuffer& cmdBuffer);
+            static bool CompileGraph(uint32_t frameIndex);
+            static bool RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex);
+            static void Clear();
 
             static uint32_t SetTextureMemoryInfo(const uint32_t frameIndex, const uint32_t textureId, const uint32_t passesCount);
             static uint32_t SetBufferMemoryInfo(const uint32_t frameIndex, const uint32_t bufferId, const uint32_t passesCount);
