@@ -94,6 +94,7 @@ void MemoryBin::DestroyPendingResources()
         transientTexturesToDestroy.erase(transientTexturesToDestroy.begin() + i);
     }
 
+    // --- Transient Memory Buckets Destruction ---
     for(int32_t i = memoryBucketsToDestroy.size() - 1; i >= 0; i--)
     {
         std::pair<MemoryBucket, uint32_t>& memoryBucket = memoryBucketsToDestroy[i];
@@ -110,7 +111,74 @@ void MemoryBin::DestroyPendingResources()
     }
 }
 
-void MemoryBin::FlushAllPendingResources()
+void MemoryBin::DestroyAllPendingResources()
+{
+    // --- Persistent Buffer Destruction ---
+    for(int32_t i = persistentBuffersToDestroy.size() - 1; i >= 0; i--)
+    {
+        BufferObject& buffer = persistentBuffersToDestroy[i].first;
+
+        vmaDestroyBuffer(GraphicsCore::Context.Allocator, buffer.Buffer, buffer.Allocation);
+
+        persistentBuffersToDestroy.erase(persistentBuffersToDestroy.begin() + i);
+    }
+
+    // --- Persistent Texture Destruction ---
+    for(int32_t i = persistentTexturesToDestroy.size() - 1; i >= 0; i--)
+    {
+        TextureObject& texture = persistentTexturesToDestroy[i].first;
+
+        vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
+        
+        vmaDestroyImage(GraphicsCore::Context.Allocator, texture.Image, texture.Allocation);
+
+        persistentTexturesToDestroy.erase(persistentTexturesToDestroy.begin() + i);
+    }
+
+    // --- Sampler Destruction ---
+    for(int32_t i = persistentSamplersToDestroy.size() - 1; i >= 0; i--)
+    {
+        SamplerObject& sampler = persistentSamplersToDestroy[i].first;
+
+        vkDestroySampler(GraphicsCore::Context.Device, sampler.Sampler, nullptr);
+
+        persistentSamplersToDestroy.erase(persistentSamplersToDestroy.begin() + i);
+    }
+
+    // --- Transient Buffer Destruction ---
+    for(int32_t i = transientBuffersToDestroy.size() - 1; i >= 0; i--)
+    {
+        TransientBufferObject& buffer = transientBuffersToDestroy[i].first;
+
+        vkDestroyBuffer(GraphicsCore::Context.Device, buffer.Buffer, nullptr);
+
+        transientBuffersToDestroy.erase(transientBuffersToDestroy.begin() + i);
+    }
+
+    // --- Transient Texture Destruction ---
+    for(int32_t i = transientTexturesToDestroy.size() - 1; i >= 0; i--)
+    {
+        TransientTextureObject& texture = transientTexturesToDestroy[i].first;
+
+        vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
+        
+        vkDestroyImage(GraphicsCore::Context.Device, texture.Image, nullptr);
+
+        transientTexturesToDestroy.erase(transientTexturesToDestroy.begin() + i);
+    }
+
+    // --- Transient Memory Buckets Destruction ---
+    for(int32_t i = memoryBucketsToDestroy.size() - 1; i >= 0; i--)
+    {
+        MemoryBucket& memoryBucket = memoryBucketsToDestroy[i].first;
+
+        vmaFreeMemory(GraphicsCore::Context.Allocator, memoryBucket.Allocation);
+
+        memoryBucketsToDestroy.erase(memoryBucketsToDestroy.begin() + 1);
+    }
+}
+
+void MemoryBin::DestroyEverything()
 {
     // TODO
     for(int32_t i = persistentBuffersToDestroy.size() - 1; i >= 0; i--)

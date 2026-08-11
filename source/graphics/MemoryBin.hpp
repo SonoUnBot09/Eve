@@ -10,13 +10,15 @@ namespace Eve::Graphics
     {
         public:
             static void DestroyPendingResources();
+            static void DestroyAllPendingResources(); 
+            static void DestroyEverything();
+
             static void DestroyPersistentBuffer(BufferObject& buffer);
             static void DestroyPersistentTexture(TextureObject& texture);
             static void DestroyPersistentSampler(SamplerObject& sampler);
             static void DestroyTransientBuffer(TransientBufferObject& buffer, uint32_t countdown);
             static void DestroyTransientTexture(TransientTextureObject& texture, uint32_t countdown);
             static void DestroyMemoryBucket(MemoryBucket& memoryBucket);
-            static void FlushAllPendingResources();
 
         private:
 

@@ -1,10 +1,6 @@
 #include <graphics/GraphicsCore.hpp>
 #include "SwapchainBuilder.hpp"
 #include "Eve/graphics/Geometry.hpp"
-#include "graphics/Resources.hpp"
-#include "graphics/registers/MemoryRegistry.hpp"
-#include "graphics/registers/ResourceRegistry.hpp"
-#include "graphics/registers/ShaderRegistry.hpp"
 #include <graphics/MemoryBin.hpp>
 
 #include <EveSettings.hpp>
