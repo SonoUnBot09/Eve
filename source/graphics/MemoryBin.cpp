@@ -5,6 +5,7 @@
 #include <graphics/registers/MemoryRegistry.hpp>
 #include "Resources.hpp"
 #include "registers/ResourceRegistry.hpp"
+#include "registers/TransientResourcePool.hpp"
 
 using namespace Eve::Graphics;
 
@@ -180,69 +181,37 @@ void MemoryBin::DestroyAllPendingResources()
 
 void MemoryBin::DestroyEverything()
 {
-    // TODO
-    for(int32_t i = persistentBuffersToDestroy.size() - 1; i >= 0; i--)
-    {
-        BufferObject& buffer = persistentBuffersToDestroy[i].first;
-
-        vmaDestroyBuffer(GraphicsCore::Context.Allocator, buffer.Buffer, buffer.Allocation);
-
-        persistentBuffersToDestroy.erase(persistentBuffersToDestroy.begin() + i);
-    }
-
-    for(int32_t i = persistentTexturesToDestroy.size() - 1; i >= 0; i--)
-    {
-        TextureObject& texture = persistentTexturesToDestroy[i].first;
-
-        vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
-        
-        vmaDestroyImage(GraphicsCore::Context.Allocator, texture.Image, texture.Allocation);
-
-        persistentTexturesToDestroy.erase(persistentTexturesToDestroy.begin() + i);
-    }
-
-    for(int32_t i = persistentSamplersToDestroy.size() - 1; i >= 0; i--)
-    {
-        SamplerObject sampler = MemoryRegistry::samplers[i];
-
-        vkDestroySampler(GraphicsCore::Context.Device, sampler.Sampler, nullptr);
-    }
-
+    // --- Persistent Textures ---
     for(uint32_t i = 0; i < MemoryRegistry::textures.size(); i++)
     {
         if(ResourceRegistry::persistentTextures[i] == false) { continue; }
 
         TextureObject texture = MemoryRegistry::textures[i];
 
-        vkDestroyImageView(GraphicsCore::Context.Device, texture.ImageView, nullptr);
-        
-        vmaDestroyImage(GraphicsCore::Context.Allocator, texture.Image, texture.Allocation);
+        persistentTexturesToDestroy.push_back(std::pair{texture, 0});
     }
 
+    // --- Persistent Buffers ---
     for(uint32_t i = 0; i < MemoryRegistry::buffers.size(); i++)
     {
         if(ResourceRegistry::persistentBuffers[i] == false) { continue; }
 
         BufferObject buffer = MemoryRegistry::buffers[i];
 
-        vmaDestroyBuffer(GraphicsCore::Context.Allocator, buffer.Buffer, buffer.Allocation);
+        persistentBuffersToDestroy.push_back(std::pair{buffer, 0});
     }
 
+    // --- Persistent Samplers ---
     for(uint32_t i = 0; i < MemoryRegistry::samplers.size(); i++)
     {
-        bool skip = true;
-        for(uint32_t freeSlotIndex = 0; freeSlotIndex < ResourceRegistry::samplerFreeSlots.size(); freeSlotIndex++)
-        {
-            if(freeSlotIndex == i) {skip = true; break;}
-        }
-
-        if(skip == true) { continue; }
+        if(ResourceRegistry::persistentSamplers[i] == false) { continue; }
 
         SamplerObject sampler = MemoryRegistry::samplers[i];
 
-        vkDestroySampler(GraphicsCore::Context.Device, sampler.Sampler, nullptr);
+        persistentSamplersToDestroy.push_back(std::pair{sampler, 0});
     }
 
+    // --- Persistent Clear ---
     MemoryRegistry::buffers.clear();
     MemoryRegistry::textures.clear();
     MemoryRegistry::samplers.clear();
@@ -250,6 +219,103 @@ void MemoryBin::DestroyEverything()
     MemoryRegistry::buffersInfo.clear();
     MemoryRegistry::texturesInfo.clear();
     MemoryRegistry::samplersInfo.clear();
+
+    // --- Transient Textures & Buffers ---
+    for(uint32_t frameIndex = 0; frameIndex < Eve::Settings::MAX_FRAMES_IN_FLIGHT; frameIndex++)
+    {
+
+        std::vector<TextureResource>& textures = TransientResourcePool::transientTextures[frameIndex];
+
+        for(uint32_t i = 0; i < TransientResourcePool::transientTextures[frameIndex].size(); i++)
+        {
+            for(uint32_t textureIndex = 0; textureIndex < textures.size(); textureIndex++)
+            {
+                TextureResource& texture = textures[textureIndex];
+
+                if(texture.PooledResource) { continue; }
+
+                TransientTextureObject object
+                {
+                    .Image = texture.Image,
+                    .ImageView = texture.ImageView
+                };
+
+                transientTexturesToDestroy.push_back(std::pair{object, 0});
+            }
+        }
+
+        std::vector<BufferResource>& buffers = TransientResourcePool::transientBuffers[frameIndex];
+        
+        for(uint32_t i = 0; i < TransientResourcePool::transientBuffers[frameIndex].size(); i++)
+        {
+            for(uint32_t bufferIndex = 0; bufferIndex < buffers.size(); bufferIndex++)
+            {
+                BufferResource& buffer = buffers[bufferIndex];
+
+                if(buffer.PooledResource) { continue; }
+
+                TransientBufferObject object
+                {
+                    .Buffer = buffer.Buffer
+                };
+
+                transientBuffersToDestroy.push_back(std::pair{object, 0});
+            }
+        }
+
+        TransientResourcePool::transientTextures[frameIndex].clear();
+        TransientResourcePool::transientBuffers[frameIndex].clear();
+    }
+
+    // --- Transient Texture Pools ---
+    for(uint32_t texturePool = 0; texturePool < TransientResourcePool::texturePools.size(); texturePool++)
+    {
+        TexturePool& pool = TransientResourcePool::texturePools[texturePool];
+
+        for(uint32_t i = 0; i < pool.Textures.size(); i++)
+        {
+            transientTexturesToDestroy.push_back(std::pair{pool.Textures[i], 0});
+        }
+
+        pool.Textures.clear();
+    }
+    TransientResourcePool::texturePools.clear();
+
+    // --- Transient Buffer Pools ---
+    for(uint32_t bufferPool = 0; bufferPool < TransientResourcePool::bufferPools.size(); bufferPool++)
+    {
+        BufferPool& pool = TransientResourcePool::bufferPools[bufferPool];
+
+        for(uint32_t i = 0; i < pool.Buffers.size(); i++)
+        {
+            transientBuffersToDestroy.push_back(std::pair{pool.Buffers[i], 0});
+        }
+
+        pool.Buffers.clear();
+    }
+    TransientResourcePool::bufferPools.clear();
+
+    // --- Transient Clear ---
+    ResourceRegistry::persistentTextures.clear();
+    ResourceRegistry::persistentBuffers.clear();
+    ResourceRegistry::persistentSamplers.clear();
+    ResourceRegistry::transientTextures.clear();
+    ResourceRegistry::transientBuffers.clear();
+
+    ResourceRegistry::textureResourcesPeakIndex = 0;
+    ResourceRegistry::samplerResourcesPeakIndex = 0;
+    ResourceRegistry::bufferResourcesPeakIndex = 0;
+
+    ResourceRegistry::textureGenerations.clear();
+    ResourceRegistry::samplerGenerations.clear();
+    ResourceRegistry::bufferGenerations.clear();
+
+    ResourceRegistry::textureFreeSlots.clear();
+    ResourceRegistry::samplerFreeSlots.clear();
+    ResourceRegistry::bufferFreeSlots.clear();
+
+    // --- Destroy All Resources ---
+    DestroyAllPendingResources();
 }
 
 void MemoryBin::DestroyPersistentBuffer(BufferObject& buffer)

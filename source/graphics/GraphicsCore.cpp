@@ -38,7 +38,7 @@ void GraphicsCore::Destroy()
     std::cout << "A" <<std::endl;
     SwapchainBuilder::Destroy(Swapchain);
     std::cout << "B" <<std::endl;
-    MemoryBin::DestroyEverythingNow();
+    MemoryBin::DestroyEverything();
     std::cout << "C" <<std::endl;
 
     if(Context.Allocator)

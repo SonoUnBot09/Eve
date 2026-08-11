@@ -18,19 +18,27 @@ namespace Eve::Graphics
             static TransientTextureHandle RequestTransientTextureSlot();
             static TransientBufferHandle RequestTransientBufferSlot();
 
-            static void FreeTextureSlot(TextureHandle handle);
-            static void FreeTextureSlot(TransientTextureHandle handle);
-            static void FreeTextureSlot(uint32_t id);
+            static void FreePersistentTextureSlot(TextureHandle handle);
+            static void FreeTransientTextureSlot(TransientTextureHandle handle);
+            static void FreePersistentTextureSlot(uint32_t id);
+            static void FreeTransientTextureSlot(uint32_t id);
+
             static void FreeSamplerSlot(SamplerHandle handle);
             static void FreeSamplerSlot(uint32_t id);
-            static void FreeBufferSlot(BufferHandle handle);
-            static void FreeBufferSlot(TransientBufferHandle handle);
-            static void FreeBufferSlot(uint32_t id);
+
+            static void FreePersistentBufferSlot(BufferHandle handle);
+            static void FreeTransientBufferSlot(TransientBufferHandle handle);
+            static void FreePersistentBufferSlot(uint32_t id);
+            static void FreeTransientBufferSlot(uint32_t id);
 
         private:
 
             inline static std::vector<bool> persistentTextures;
             inline static std::vector<bool> persistentBuffers;
+            inline static std::vector<bool> persistentSamplers;
+            inline static std::vector<bool> transientTextures;
+            inline static std::vector<bool> transientBuffers;
+
             inline static uint32_t textureResourcesPeakIndex = 0;
             inline static uint32_t samplerResourcesPeakIndex = 0;
             inline static uint32_t bufferResourcesPeakIndex = 0;

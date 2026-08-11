@@ -222,7 +222,7 @@ void MemoryRegistry::DestroyBuffer(BufferHandle handle)
 
     MemoryBin::DestroyPersistentBuffer(buffer);
 
-    ResourceRegistry::FreeBufferSlot(handle);
+    ResourceRegistry::FreePersistentBufferSlot(handle);
 }
 
 void MemoryRegistry::DestroyTexture(TextureHandle handle)
@@ -231,7 +231,7 @@ void MemoryRegistry::DestroyTexture(TextureHandle handle)
 
     MemoryBin::DestroyPersistentTexture(texture);
 
-    ResourceRegistry::FreeTextureSlot(handle);
+    ResourceRegistry::FreePersistentTextureSlot(handle);
 }
 
 void MemoryRegistry::DestroySampler(SamplerHandle handle)
@@ -249,7 +249,7 @@ void MemoryRegistry::DestroyBuffer(uint32_t id)
 
     MemoryBin::DestroyPersistentBuffer(buffer);
 
-    ResourceRegistry::FreeBufferSlot(id);
+    ResourceRegistry::FreePersistentBufferSlot(id);
 }
 
 void MemoryRegistry::DestroyTexture(uint32_t id)
@@ -258,7 +258,7 @@ void MemoryRegistry::DestroyTexture(uint32_t id)
 
     MemoryBin::DestroyPersistentTexture(texture);
 
-    ResourceRegistry::FreeTextureSlot(id);
+    ResourceRegistry::FreePersistentTextureSlot(id);
 }
 
 void MemoryRegistry::DestroySampler(uint32_t id)

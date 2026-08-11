@@ -392,7 +392,7 @@ void TransientResourcePool::UpdateTexturesPool(const uint32_t frameIndex)
     for(uint32_t i = 0; i < texturesCount; i++)
     {
         TextureResource& resource = textures[i];
-        ResourceRegistry::FreeTextureSlot(resource.Id);
+        ResourceRegistry::FreeTransientTextureSlot(resource.Id);
         
         TexturePool& pool = GetTexturePool(resource.TexturePoolIndex);
 
@@ -470,7 +470,7 @@ void TransientResourcePool::UpdateBuffersPool(const uint32_t frameIndex)
     for(uint32_t i = 0; i < buffersCount; i++)
     {
         BufferResource& resource = buffers[i];
-        ResourceRegistry::FreeBufferSlot(resource.Id);
+        ResourceRegistry::FreeTransientBufferSlot(resource.Id);
         
         BufferPool& pool = GetBufferPool(resource.BufferPoolIndex);
 

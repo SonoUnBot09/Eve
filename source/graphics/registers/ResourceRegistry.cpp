@@ -14,7 +14,9 @@ TextureHandle ResourceRegistry::RequestPersistentTextureSlot()
         handle.Generation = 0;
 
         textureGenerations.push_back(0);
+
         persistentTextures.push_back(true);
+        transientTextures.push_back(false);
     }
     else
     {
@@ -22,11 +24,11 @@ TextureHandle ResourceRegistry::RequestPersistentTextureSlot()
         textureFreeSlots.pop_back();
 
         textureGenerations[id]++;
-        persistentTextures[id] = true;
 
         handle.Id = id;
         handle.Generation = textureGenerations[id];
-        
+
+        persistentTextures[id] = true;
     }
 
     ResourceTracker::RegisterTextureState(handle);
@@ -45,6 +47,8 @@ SamplerHandle ResourceRegistry::RequestPersistentSamplerSlot()
         handle.Generation = 0;
 
         samplerGenerations.push_back(0);
+
+        persistentSamplers.push_back(true);
     }
     else
     {
@@ -55,6 +59,8 @@ SamplerHandle ResourceRegistry::RequestPersistentSamplerSlot()
 
         handle.Id = id;
         handle.Generation = samplerGenerations[id];
+
+        persistentSamplers[handle.Id] = true;
     }
 
     return handle;
@@ -71,7 +77,9 @@ BufferHandle ResourceRegistry::RequestPersistentBufferSlot()
         handle.Generation = 0;
 
         bufferGenerations.push_back(0);
+
         persistentBuffers.push_back(true);
+        transientBuffers.push_back(false);
     }
     else
     {
@@ -79,10 +87,11 @@ BufferHandle ResourceRegistry::RequestPersistentBufferSlot()
         bufferFreeSlots.pop_back();
 
         bufferGenerations[id]++;
-        persistentBuffers[id] = true;
 
         handle.Id = id;
         handle.Generation = bufferGenerations[id];
+
+        persistentBuffers[id] = true;
     }
 
     ResourceTracker::RegisterBufferState(handle);
@@ -100,7 +109,9 @@ TransientTextureHandle ResourceRegistry::RequestTransientTextureSlot()
         textureResourcesPeakIndex++;
 
         textureGenerations.push_back(0);
+
         persistentTextures.push_back(false);
+        transientTextures.push_back(true);
     }
     else
     {
@@ -108,6 +119,8 @@ TransientTextureHandle ResourceRegistry::RequestTransientTextureSlot()
         textureFreeSlots.pop_back();
 
         handle.Id = id;
+
+        transientTextures[handle.Id] = true;
     }
 
     ResourceTracker::RegisterTextureState(handle);
@@ -125,7 +138,9 @@ TransientBufferHandle ResourceRegistry::RequestTransientBufferSlot()
         bufferResourcesPeakIndex++;
 
         bufferGenerations.push_back(0);
+
         persistentBuffers.push_back(false);
+        transientBuffers.push_back(true);
     }
     else
     {
@@ -133,6 +148,8 @@ TransientBufferHandle ResourceRegistry::RequestTransientBufferSlot()
         bufferFreeSlots.pop_back();
 
         handle.Id = id;
+
+        transientBuffers[handle.Id] = true;
     }
 
     ResourceTracker::RegisterBufferState(handle);
@@ -140,43 +157,55 @@ TransientBufferHandle ResourceRegistry::RequestTransientBufferSlot()
     return handle;
 }
 
-void ResourceRegistry::FreeTextureSlot(TextureHandle handle)
+void ResourceRegistry::FreePersistentTextureSlot(TextureHandle handle)
 {
     textureFreeSlots.push_back(handle.Id);
     persistentTextures[handle.Id] = false;
 }
-void ResourceRegistry::FreeTextureSlot(TransientTextureHandle handle)
+void ResourceRegistry::FreeTransientTextureSlot(TransientTextureHandle handle)
 {
     textureFreeSlots.push_back(handle.Id);
-    persistentTextures[handle.Id] = false;
+    transientTextures[handle.Id] = false;
 }
-void ResourceRegistry::FreeTextureSlot(uint32_t id)
+void ResourceRegistry::FreePersistentTextureSlot(uint32_t id)
 {
     textureFreeSlots.push_back(id);
     persistentTextures[id] = false;
+}
+void ResourceRegistry::FreeTransientTextureSlot(uint32_t id)
+{
+    textureFreeSlots.push_back(id);
+    transientTextures[id] = false;
 }
 
 void ResourceRegistry::FreeSamplerSlot(SamplerHandle handle)
 {
     samplerFreeSlots.push_back(handle.Id);
+    persistentSamplers[handle.Id] = false;
 }
 void ResourceRegistry::FreeSamplerSlot(uint32_t id)
 {
     samplerFreeSlots.push_back(id);
+    persistentSamplers[id] = false;
 }
 
-void ResourceRegistry::FreeBufferSlot(BufferHandle handle)
+void ResourceRegistry::FreePersistentBufferSlot(BufferHandle handle)
 {
     bufferFreeSlots.push_back(handle.Id);
     persistentBuffers[handle.Id] = false;
 }
-void ResourceRegistry::FreeBufferSlot(TransientBufferHandle handle)
+void ResourceRegistry::FreeTransientBufferSlot(TransientBufferHandle handle)
 {
     bufferFreeSlots.push_back(handle.Id);
-    persistentBuffers[handle.Id] = false;
+    transientBuffers[handle.Id] = false;
 }
-void ResourceRegistry::FreeBufferSlot(uint32_t id)
+void ResourceRegistry::FreePersistentBufferSlot(uint32_t id)
 {
     bufferFreeSlots.push_back(id);
     persistentBuffers[id] = false;
+}
+void ResourceRegistry::FreeTransientBufferSlot(uint32_t id)
+{
+    bufferFreeSlots.push_back(id);
+    transientBuffers[id] = false;
 }

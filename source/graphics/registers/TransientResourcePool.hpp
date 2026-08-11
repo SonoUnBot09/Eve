@@ -118,10 +118,6 @@ namespace Eve::Graphics
             inline static std::vector<MemoryBucket> texturesMemoryBucket;
             inline static std::vector<MemoryBucket> buffersMemoryBucket;
 
-            inline static std::vector<std::pair<MemoryBucket, uint32_t>> memoryBucketToDestroy;
-            inline static std::vector<std::pair<TransientTextureObject, uint32_t>> transientTexturesToDestroy;
-            inline static std::vector<std::pair<TransientBufferObject, uint32_t>> transientBuffersToDestroy;
-
-
+            friend class MemoryBin;
     };
 }
