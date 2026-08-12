@@ -1,9 +1,6 @@
+#include "EveSettings.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
-
-#include <vector>
-#include <array>
-#include <string>
 
 #include <Eve/Debug.hpp>
 #include <Eve/Utils.hpp>
@@ -15,13 +12,14 @@ class Application
 {
     public:
 
-        bool Initialize();
-        void Start();
-        void Run();
-        void Shutdown();
+        static bool Initialize();
+        static void Start();
+        static void Run();
+        static void Shutdown();
 
     private:
 
-        bool isAppRunning = true;
+        inline static bool isAppRunning = true;
+        inline static uint64_t elapsedFrames = Eve::Settings::MAX_FRAMES_IN_FLIGHT;
 
 };

@@ -14,7 +14,7 @@ namespace Eve::Graphics
             static bool Initialize();
             static void Destroy();
 
-            static bool Render(uint64_t elapsedFrames, uint32_t frameIndex);
+            static bool Render(uint64_t elapsedFrames);
             
             inline static Window Window;
             inline static Context Context;

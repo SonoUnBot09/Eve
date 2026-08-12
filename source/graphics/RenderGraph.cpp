@@ -1256,6 +1256,14 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
 bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
 {
+    VkCommandBufferBeginInfo beginInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+    };
+
+    vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+
     std::vector<VkImageMemoryBarrier2> textureMemoryBarriers;
     std::vector<VkBufferMemoryBarrier2> bufferMemoryBarriers;
 
@@ -1439,6 +1447,8 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
     }
 
     RecordSwapchainDrawingPass(cmdBuffer, frameIndex, swapchainImageIndex);
+
+    vkEndCommandBuffer(cmdBuffer);
 
     return true;
 }

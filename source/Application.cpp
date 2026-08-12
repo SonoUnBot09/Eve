@@ -1,5 +1,5 @@
-#include <Application.hpp>
 #include <graphics/GraphicsCore.hpp>
+#include <Application.hpp>
 #include <Eve/entities/SystemDispatcher.hpp>
 
 using namespace Eve::Graphics;
@@ -92,8 +92,9 @@ void Application::Run()
 
         SystemDispatcher::ExecuteUpdateStage(deltaTime);
 
-        //Render();
+        GraphicsCore::Render(elapsedFrames);
         
+        elapsedFrames++;
     }
 }
 
