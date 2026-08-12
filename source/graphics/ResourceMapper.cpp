@@ -321,7 +321,7 @@ void ResourceMapper::DestroyGlobalDescriptor()
     }
 }
 
-bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex)
+void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex)
 {
     descriptorSetWrites.clear();
     buffersAddress.clear();
@@ -807,13 +807,6 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         descriptorSetWrites.data(), 0, nullptr);
     }
 
-    if(buffersAddress.empty())
-    {
-        // No need to wait for a closer stage in the timeline semaphore because we do not need to wait that the copy command is finished
-        // because there is any copy command since there are no buffers that need to be updated in the descriptor set
-        return false; 
-    }
-
     memcpy(stagingBuffers[frameIndex].AllocationInfo.pMappedData, buffersAddress.data(), buffersAddress.size() * sizeof(uint64_t));
 
     vkCmdCopyBuffer
@@ -835,8 +828,6 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         .dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
         .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
         .buffer = MemoryRegistry::GetBuffer(BDABuffers[frameIndex]).Buffer,
-        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .offset = 0,
         .size = VK_WHOLE_SIZE
     };
@@ -849,9 +840,6 @@ bool ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     };
 
     vkCmdPipelineBarrier2(cmdBuffer, &dependencyInfo);
-
-    // Need to wait for a closer stage in the timeline semaphore because we need to wait that the copy command is finished
-    return true;
 }
 
 void  ResourceMapper::ScheduleImageMapping(TextureHandle handle, VkImageView imageView, TextureInfo& textureInfo)
@@ -898,7 +886,7 @@ void  ResourceMapper::ScheduleImageMapping(TextureHandle handle, VkImageView ima
     }
 }
 
-void  ResourceMapper::ScheduleImageMapping(TransientTextureHandle handle, VkImageView imageView, TextureInfo& textureInfo)
+void ResourceMapper::ScheduleImageMapping(TransientTextureHandle handle, VkImageView imageView, TextureInfo& textureInfo)
 {
     std::lock_guard<std::mutex> lock(imagesMutex);
 
