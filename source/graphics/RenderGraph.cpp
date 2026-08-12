@@ -1,6 +1,8 @@
 #include "RenderGraph.hpp"
 #include <graphics/registers/ShaderRegistry.hpp>
 #include "graphics/builders/ContextBuilder.hpp"
+#include "graphics/helpers/VulkanMapping.hpp"
+#include "helpers/VulkanMapping.hpp"
 #include "registers/ResourceTracker.hpp"
 #include <graphics/registers/MeshRegistry.hpp>
 #include <graphics/registers/TransientResourcePool.hpp>
@@ -619,13 +621,13 @@ namespace
     }
 };
 
-bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex)
+bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
 {
     bool success = CompileGraph(frameIndex);
 
     ResourceMapper::MapResources(cmdBuffer, frameIndex);
 
-    RecordCommands(cmdBuffer, frameIndex);
+    RecordCommands(cmdBuffer, frameIndex, swapchainImageIndex);
 
     Clear();
 }
@@ -720,8 +722,10 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         texturesBarriersOffset += barriersCount;
         barriersOffsetPerTexture.push_back(texturesBarriersOffset);
 
+        uint32_t resourceId = transientRequestedTextureHandles[textureId].Id;
+
         bool isPresentTexture = false;
-        if(textureId == presentTexture.Id)
+        if(resourceId == presentTexture.Id)
         {
             usage |= TextureUsage::USAGE_SAMPLED;
             isPresentTexture = true;
@@ -731,8 +735,6 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
         TextureInfo newTextureInfo = transientRequestedTextures[textureId];
         newTextureInfo.Usage = usage;
-
-        uint32_t resourceId = transientRequestedTextureHandles[textureId].Id;
        
         TransientResourcePool::AddTextureResource(newTextureInfo, resourceId, frameIndex);
 
@@ -1252,7 +1254,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
     return true;
 }
 
-bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex)
+bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
 {
     std::vector<VkImageMemoryBarrier2> textureMemoryBarriers;
     std::vector<VkBufferMemoryBarrier2> bufferMemoryBarriers;
@@ -1436,173 +1438,7 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex)
 
     }
 
-    // No need to create a pass to copy the colors into the swapchain
-    if(presentTexture.Id == UINT32_MAX) { return true; }
-
-    TextureResource& colorTexture = TransientResourcePool::GetTextureObject(presentTexture.Id, frameIndex);
-
-    TextureBarrierInfo srcBarrierInfo
-    {
-        .StageMask = VK_PIPELINE_STAGE_2_NONE,
-        .AccessMask = VK_ACCESS_2_NONE,
-        .Layout = VK_IMAGE_LAYOUT_UNDEFINED
-    };
-
-    uint32_t offset = barriersOffsetPerTexture[presentTexture.Id];
-    uint32_t size = barriersOffsetPerTexture[presentTexture.Id + 1] - offset;
-    for(uint32_t i = 0; i < size; i++)
-    {
-        std::pair<TextureBarrierInfo, uint32_t>& barrierInfo = texturesBarriersInfo[i + offset];
-        if(barrierInfo.first.TextureId != presentTexture.Id) { continue; }
-
-        srcBarrierInfo = barrierInfo.first;
-    }
-
-    VkImage swapchainImage = GraphicsCore::Swapchain.swapchainImages[frameIndex];
-    VkImageView swapchainImageView = GraphicsCore::Swapchain.swapchainImageViews[frameIndex];
-
-    std::vector<VkImageMemoryBarrier2> barriers
-    {
-        VkImageMemoryBarrier2
-        {
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask = srcBarrierInfo.StageMask,
-            .srcAccessMask = srcBarrierInfo.AccessMask,
-            .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-            .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-            .oldLayout = srcBarrierInfo.Layout,
-            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = colorTexture.Image,
-            .subresourceRange
-            {
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                .baseMipLevel = 0,
-                .levelCount = 1,
-                .baseArrayLayer = 0,
-                .layerCount = 1
-            }
-        },
-        VkImageMemoryBarrier2
-        {
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
-            .srcAccessMask = VK_ACCESS_2_NONE,
-            .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = swapchainImage,
-            .subresourceRange
-            {
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                .baseMipLevel = 0,
-                .levelCount = 1,
-                .baseArrayLayer = 0,
-                .layerCount = 1
-            }
-        }
-    };
-
-    VkDependencyInfo drawDep
-    {
-        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-        .imageMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
-        .pImageMemoryBarriers = barriers.data()
-    };
-
-    vkCmdPipelineBarrier2(cmdBuffer, &drawDep);
-
-    VkRenderingAttachmentInfo colorAttachment
-    {
-        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView = swapchainImageView,
-        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue {.color{.float32{
-            0, 
-            0, 
-            0, 
-            1.0}}}
-    };
-
-    VkRenderingInfo renderInfo
-    {
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-        .renderArea
-        {
-            .offset {.x = 0, .y = 0},
-            .extent {.width = GraphicsCore::Swapchain.Width, .height = GraphicsCore::Swapchain.Height}
-        },
-        .layerCount = 1,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &colorAttachment
-    };
-
-    vkCmdBeginRendering(cmdBuffer, &renderInfo);
-    {
-
-        VkViewport viewport
-        {
-            .x = 0, .y = static_cast<float>(GraphicsCore::Swapchain.Height),
-            .width = static_cast<float>(GraphicsCore::Swapchain.Width),
-            .height =  -static_cast<float>(GraphicsCore::Swapchain.Height),
-            .minDepth = 0.0f,
-            .maxDepth = 1.0f
-        };
-
-        VkRect2D scissor
-        {
-            .offset {.x = 0, .y = 0},
-            .extent {.width = GraphicsCore::Swapchain.Width, .height = GraphicsCore::Swapchain.Height}
-        };
-
-        vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
-        vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
-
-        GraphicsShaderObject shaderObject = ShaderRegistry::GetShaderObject(GraphicsCore::Swapchain.shader);
-
-        vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderObject.Pipeline);
-
-        vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
-
-    }
-    vkCmdEndRendering(cmdBuffer);
-
-    VkImageMemoryBarrier2 presentBarrier
-    {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-        .dstStageMask = VK_PIPELINE_STAGE_2_NONE,
-        .dstAccessMask = VK_ACCESS_2_NONE,
-        .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .image = swapchainImage,
-        .subresourceRange
-        {
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = 0,
-            .levelCount = 1,
-            .baseArrayLayer = 0,
-            .layerCount = 1
-        }
-    };
-
-    VkDependencyInfo presentDep
-    {
-        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-        .imageMemoryBarrierCount = 1,
-        .pImageMemoryBarriers = &presentBarrier
-    };
-
-    vkCmdPipelineBarrier2(cmdBuffer, &presentDep);
+    RecordSwapchainDrawingPass(cmdBuffer, frameIndex, swapchainImageIndex);
 
     return true;
 }
@@ -1632,7 +1468,7 @@ void RenderGraph::Clear()
     presentTexture.Id = UINT32_MAX;
 }
 
-void RenderGraph::RecordTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordTransientBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<BufferCopy>& copies = pass.transientBufferCopies;
 
@@ -1654,7 +1490,7 @@ void RenderGraph::RecordTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pa
     }
 }
 
-void RenderGraph::RecordPersistentBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordPersistentBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<BufferCopy>& copies = pass.persistentBufferCopies;
 
@@ -1676,7 +1512,7 @@ void RenderGraph::RecordPersistentBufferCopy(VkCommandBuffer& cmdBuffer, Pass& p
     }
 }
 
-void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<TextureCopy>& copies = pass.transientTextureCopies;
 
@@ -1730,7 +1566,7 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& p
 
 }
 
-void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<TextureCopy>& copies = pass.persistentTextureCopies;
 
@@ -1784,7 +1620,7 @@ void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& 
 
 }
 
-void RenderGraph::RecordTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordTransientBufferToTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<BufferToTextureCopy>& copies = pass.transientBufferToTextureCopies;
 
@@ -1825,7 +1661,7 @@ void RenderGraph::RecordTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer,
     }
 }
 
-void RenderGraph::RecordPersistentBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordPersistentBufferToTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<BufferToTextureCopy>& copies = pass.persistentBufferToTextureCopies;
 
@@ -1866,7 +1702,7 @@ void RenderGraph::RecordPersistentBufferToTextureCopy(VkCommandBuffer& cmdBuffer
     }
 }
 
-void RenderGraph::RecordTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordTransientTextureToBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<TextureToBufferCopy>& copies = pass.transientTextureToBufferCopies;
 
@@ -1907,7 +1743,7 @@ void RenderGraph::RecordTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer,
     }
 }
 
-void RenderGraph::RecordPersistentTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordPersistentTextureToBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<TextureToBufferCopy>& copies = pass.persistentTextureToBufferCopies;
 
@@ -1948,7 +1784,7 @@ void RenderGraph::RecordPersistentTextureToBufferCopy(VkCommandBuffer& cmdBuffer
     }
 }
 
-void RenderGraph::RecordTransientBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordTransientBufferUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<BufferUpload>& uploads = pass.transientBufferUploads;
 
@@ -1972,7 +1808,7 @@ void RenderGraph::RecordTransientBufferUpload(VkCommandBuffer& cmdBuffer, Pass& 
     }
 }
 
-void RenderGraph::RecordPersistentBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordPersistentBufferUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<BufferUpload>& uploads = pass.persistentBufferUploads;
 
@@ -1996,7 +1832,7 @@ void RenderGraph::RecordPersistentBufferUpload(VkCommandBuffer& cmdBuffer, Pass&
     }
 }
 
-void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<TextureUpload>& uploads = pass.transientTextureUploads;
     // To complete
@@ -2039,7 +1875,7 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass&
     }
 }
 
-void RenderGraph::RecordPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordPersistentTextureUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<TextureUpload>& uploads = pass.persistentTextureUploads;
     // To complete
@@ -2082,7 +1918,7 @@ void RenderGraph::RecordPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass
     }
 }
 
-void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex)
+void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<std::pair<TransientTextureHandle, Usage>>& textures = pass.transientTextures;
     std::vector<std::pair<TransientTextureHandle, LoadStoreOp>>& loadStoreOps = pass.loadStoreOps;
@@ -2309,6 +2145,179 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32
         }
     }
     vkCmdEndRendering(cmdBuffer);
+}
+
+void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
+{
+    VkImage swapchainImage = GraphicsCore::Swapchain.swapchainImages[swapchainImageIndex];
+    VkImageView swapchainImageView = GraphicsCore::Swapchain.swapchainImageViews[swapchainImageIndex];
+
+    std::vector<VkImageMemoryBarrier2> barriers
+    {
+        VkImageMemoryBarrier2
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+            .srcAccessMask = VK_ACCESS_2_NONE,
+            .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .image = swapchainImage,
+            .subresourceRange
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        }
+    };
+
+    if(presentTexture.Id != UINT32_MAX)
+    {
+        uint32_t resourceIndex = transientTextureHandleToIndex[presentTexture.Id];
+
+        TextureResource& colorTexture = TransientResourcePool::GetTextureObject(resourceIndex, frameIndex);
+
+        TextureBarrierInfo srcBarrierInfo
+        {
+            .StageMask = VK_PIPELINE_STAGE_2_NONE,
+            .AccessMask = VK_ACCESS_2_NONE,
+            .Layout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+
+        uint32_t offset = barriersOffsetPerTexture[resourceIndex];
+        uint32_t size = barriersOffsetPerTexture[resourceIndex + 1] - offset;
+        for(uint32_t i = 0; i < size; i++)
+        {
+            std::pair<TextureBarrierInfo, uint32_t>& barrierInfo = texturesBarriersInfo[i + offset];
+            if(barrierInfo.first.TextureId != resourceIndex) { continue; }
+
+            srcBarrierInfo = barrierInfo.first;
+        }
+
+        VkFormat format = GetVkImageFormat(colorTexture.TextureInfo.Format);
+        VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
+
+        VkImageMemoryBarrier2 colorBarrier
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask = srcBarrierInfo.StageMask,
+            .srcAccessMask = srcBarrierInfo.AccessMask,
+            .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+            .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+            .oldLayout = srcBarrierInfo.Layout,
+            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .image = colorTexture.Image,
+            .subresourceRange
+            {
+                .aspectMask = aspectMask,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        };
+
+        barriers.push_back(colorBarrier);
+    }
+
+    VkDependencyInfo drawDep
+    {
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
+        .pImageMemoryBarriers = barriers.data()
+    };
+
+    vkCmdPipelineBarrier2(cmdBuffer, &drawDep);
+
+    VkRenderingAttachmentInfo colorAttachment
+    {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .imageView = swapchainImageView,
+        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .clearValue {.color{.float32{
+            0, 
+            0, 
+            0, 
+            1.0}}}
+    };
+
+    VkRenderingInfo renderInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+        .renderArea
+        {
+            .offset {.x = 0, .y = 0},
+            .extent {.width = GraphicsCore::Swapchain.Width, .height = GraphicsCore::Swapchain.Height}
+        },
+        .layerCount = 1,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &colorAttachment
+    };
+
+    vkCmdBeginRendering(cmdBuffer, &renderInfo);
+    {
+
+        VkViewport viewport
+        {
+            .x = 0, .y = static_cast<float>(GraphicsCore::Swapchain.Height),
+            .width = static_cast<float>(GraphicsCore::Swapchain.Width),
+            .height =  -static_cast<float>(GraphicsCore::Swapchain.Height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f
+        };
+
+        VkRect2D scissor
+        {
+            .offset {.x = 0, .y = 0},
+            .extent {.width = GraphicsCore::Swapchain.Width, .height = GraphicsCore::Swapchain.Height}
+        };
+
+        vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
+
+        GraphicsShaderObject shaderObject = ShaderRegistry::GetShaderObject(GraphicsCore::Swapchain.shader);
+
+        vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderObject.Pipeline);
+
+        vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
+
+    }
+    vkCmdEndRendering(cmdBuffer);
+
+    VkImageMemoryBarrier2 presentBarrier
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+        .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_2_NONE,
+        .dstAccessMask = VK_ACCESS_2_NONE,
+        .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        .image = swapchainImage,
+        .subresourceRange
+        {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+
+    VkDependencyInfo presentDep
+    {
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers = &presentBarrier
+    };
+
+    vkCmdPipelineBarrier2(cmdBuffer, &presentDep);
 }
 
 RenderGraph::TextureBarrierInfo RenderGraph::GetFirstTextureBarrierInfo(const uint32_t newAllocIndex, const uint64_t newAllocOffset, const uint64_t newAllocSize)

@@ -31,7 +31,7 @@ namespace Eve::Graphics
 
             static void SetPresentTexture(TransientTextureHandle handle);
 
-            static bool Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex);
+            static bool Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex);
 
             struct TextureBarrierInfo
             {
@@ -139,7 +139,7 @@ namespace Eve::Graphics
             };
 
             static bool CompileGraph(uint32_t frameIndex);
-            static bool RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex);
+            static bool RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swaphchainImageIndex);
             static void Clear();
 
             static uint32_t SetTextureMemoryInfo(const uint32_t frameIndex, const uint32_t textureId, const uint32_t passesCount);
@@ -149,23 +149,24 @@ namespace Eve::Graphics
             static BufferBarrierInfo GetFirstBufferBarrierInfo(const uint32_t newAllocId, const uint64_t newAllocOffset, const uint64_t newAllocSize);
 
             // --- Commands Recorders ---
-            static void RecordTransientBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RecordTransientTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RecordTransientBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RecordTransientTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientBufferToTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientTextureToBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
 
-            static void RecordPersistentBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RecordPersistentTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RecordPersistentBufferToTextureCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RecordPersistentTextureToBufferCopy(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentBufferToTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentTextureToBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
 
-            static void RecordTransientBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RecordTransientTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientBufferUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientTextureUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
 
-            static void RecordPersistentBufferUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
-            static void RecordPersistentTextureUpload(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentBufferUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentTextureUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
 
-            static void RecordDrawCalls(VkCommandBuffer& cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex);
 
             // Input
             inline static std::vector<TextureInfo> transientRequestedTextures;

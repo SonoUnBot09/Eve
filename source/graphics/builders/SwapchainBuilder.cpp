@@ -164,10 +164,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
 }
 
 bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
-{
-    vkDeviceWaitIdle(GraphicsCore::Context.Device);
-
-    
+{    
     Destroy(swapchain);
 
     VkSurfaceCapabilitiesKHR surfaceCaps;
