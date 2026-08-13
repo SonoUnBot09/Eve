@@ -258,7 +258,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
 
             BufferHandle handle = MemoryRegistry::CreateGPUBuffer(bufferInfo);
 
-            BDABuffers.push_back(handle);
+            BDABuffers[i] = handle;
 
             VkDescriptorBufferInfo bufferWriteInfo
             {
@@ -298,11 +298,11 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
 
             BufferHandle handle = MemoryRegistry::CreateCPUBuffer(bufferInfo);
 
-            stagingBufferHandles.push_back(handle);
+            stagingBufferHandles[i] = handle;
 
             BufferObject& buffer = MemoryRegistry::GetBuffer(handle);
 
-            stagingBuffers.push_back(buffer);
+            stagingBuffers[i] = buffer;
         }
         
     #pragma endregion
@@ -807,6 +807,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         descriptorSetWrites.data(), 0, nullptr);
     }
 
+    
     memcpy(stagingBuffers[frameIndex].AllocationInfo.pMappedData, buffersAddress.data(), buffersAddress.size() * sizeof(uint64_t));
 
     vkCmdCopyBuffer

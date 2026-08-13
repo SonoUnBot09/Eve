@@ -28,7 +28,7 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo bufferAllocInfo
         {
-            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
+            //.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
@@ -48,12 +48,14 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo bufferAllocInfo
         {
-            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
+            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST
         };
 
-        vmaCreateBuffer(GraphicsCore::Context.Allocator, &bufferCI, &bufferAllocInfo,
+        VkResult result = vmaCreateBuffer(GraphicsCore::Context.Allocator, &bufferCI, &bufferAllocInfo,
             &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
+        
+        std::cout << result << std::endl;
     }
 
     static inline void AllocateSampler(SamplerInfo samplerInfo, SamplerObject& sampler)

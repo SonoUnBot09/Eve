@@ -95,7 +95,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = surfaceCaps.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR
+        .presentMode = VK_PRESENT_MODE_FIFO_KHR
     };
 
     if(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain) != VK_SUCCESS)
@@ -214,7 +214,7 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = surfaceCaps.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR
+        .presentMode = VK_PRESENT_MODE_FIFO_KHR
     };
 
     if(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain) != VK_SUCCESS)

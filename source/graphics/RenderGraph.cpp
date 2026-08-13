@@ -1,5 +1,6 @@
 #include "RenderGraph.hpp"
 #include <graphics/registers/ShaderRegistry.hpp>
+#include "builders/ContextBuilder.hpp"
 #include "graphics/builders/ContextBuilder.hpp"
 #include "graphics/helpers/VulkanMapping.hpp"
 #include "helpers/VulkanMapping.hpp"
@@ -625,11 +626,23 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
 {
     bool success = CompileGraph(frameIndex);
 
+    VkCommandBufferBeginInfo beginInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+    };
+
+    vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+
     ResourceMapper::MapResources(cmdBuffer, frameIndex);
 
     RecordCommands(cmdBuffer, frameIndex, swapchainImageIndex);
 
+    vkEndCommandBuffer(cmdBuffer);
+
     Clear();
+
+    return true;
 }
 
 bool RenderGraph::CompileGraph(uint32_t frameIndex)
@@ -1256,14 +1269,6 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
 bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
 {
-    VkCommandBufferBeginInfo beginInfo
-    {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-    };
-
-    vkBeginCommandBuffer(cmdBuffer, &beginInfo);
-
     std::vector<VkImageMemoryBarrier2> textureMemoryBarriers;
     std::vector<VkBufferMemoryBarrier2> bufferMemoryBarriers;
 
@@ -1278,7 +1283,7 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
         std::vector<BufferBarrierInfoPair>& persistentBufferBarriers = pass.persistentBuffersBarriers;
 
         // --- Record Transient Textures Barriers ---
-        for(uint32_t i = 0; transientTextureBarriers.size(); i++)
+        for(uint32_t i = 0; i < transientTextureBarriers.size(); i++)
         {
             TextureBarrierInfoPair barrierInfo = transientTextureBarriers[i];
 
@@ -1315,7 +1320,7 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
         }
 
         // --- Record Transient Buffers Barriers ---
-        for(uint32_t i = 0; transientBufferBarriers.size(); i++)
+        for(uint32_t i = 0; i < transientBufferBarriers.size(); i++)
         {
             BufferBarrierInfoPair barrierInfo = transientBufferBarriers[i];
 
@@ -1341,7 +1346,7 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
         }
 
         // --- Record Persistent Textures Barriers ---
-        for(uint32_t i = 0; persistentTextureBarriers.size(); i++)
+        for(uint32_t i = 0; i < persistentTextureBarriers.size(); i++)
         {
             TextureBarrierInfoPair barrierInfo = persistentTextureBarriers[i];
 
@@ -1380,7 +1385,7 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
         }
 
         // --- Record Persistent Buffers Barriers ---
-        for(uint32_t i = 0; persistentBufferBarriers.size(); i++)
+        for(uint32_t i = 0; i < persistentBufferBarriers.size(); i++)
         {
             BufferBarrierInfoPair barrierInfo = persistentBufferBarriers[i];
 
@@ -1447,8 +1452,6 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
     }
 
     RecordSwapchainDrawingPass(cmdBuffer, frameIndex, swapchainImageIndex);
-
-    vkEndCommandBuffer(cmdBuffer);
 
     return true;
 }
@@ -2252,8 +2255,8 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue {.color{.float32{
             0, 
-            0, 
-            0, 
+            0.5f, 
+            0.3f, 
             1.0}}}
     };
 
@@ -2291,11 +2294,14 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
         vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 
-        GraphicsShaderObject shaderObject = ShaderRegistry::GetShaderObject(GraphicsCore::Swapchain.shader);
+        if(presentTexture.Id != UINT32_MAX)
+        {
+            GraphicsShaderObject shaderObject = ShaderRegistry::GetShaderObject(GraphicsCore::Swapchain.shader);
 
-        vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderObject.Pipeline);
+            vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderObject.Pipeline);
 
-        vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
+            vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
+        }
 
     }
     vkCmdEndRendering(cmdBuffer);

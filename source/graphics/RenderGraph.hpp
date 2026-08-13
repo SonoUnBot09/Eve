@@ -183,7 +183,7 @@ namespace Eve::Graphics
             inline static std::vector<std::vector<TexturesBucketPass>> texturesBucketPasses;
             inline static std::vector<std::vector<BuffersBucketPass>> buffersBucketPasses;
             
-            inline static TransientTextureHandle presentTexture;
+            inline static TransientTextureHandle presentTexture = {UINT32_MAX};
 
             inline static std::vector<uint32_t> barriersOffsetPerTexture;
             inline static std::vector<std::pair<TextureBarrierInfo, uint32_t>> texturesBarriersInfo; // The second element in the pair is the sync point index

@@ -3,6 +3,7 @@
 #include "ResourceMapper.hpp"
 #include "MemoryBin.hpp"
 #include "builders/Context.hpp"
+#include "builders/FrameData.hpp"
 #include <graphics/RenderGraph.hpp>
 #include <cstdint>
 
@@ -52,6 +53,7 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
     VkSemaphoreWaitInfo timelineWaitInfo
     {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
+        .semaphoreCount = 1,
         .pSemaphores = &timelineSemaphore,
         .pValues = &timelineWaitValue
     };
@@ -61,6 +63,8 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
     FrameData& frameData = framesData[frameIndex];
 
     vkResetCommandPool(Context.Device, frameData.CmdPool, 0);
+
+    
 
     uint32_t swaphchainImageIndex = 0;
     VkResult result = vkAcquireNextImageKHR(Context.Device, Swapchain.Swapchain, UINT64_MAX, 
@@ -141,6 +145,8 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
     vkQueuePresentKHR(Context.GraphicsQueue, &presentInfo);
 
     MemoryBin::DestroyPendingResources();
+
+    return true;
 }
 
 void GraphicsCore::Destroy()
@@ -159,13 +165,23 @@ void GraphicsCore::Destroy()
     
     vkDeviceWaitIdle(Context.Device);
 
+    for(uint32_t i = 0; i < framesData.size(); i++)
+    {
+        FrameData& frameData = framesData[i];
+
+        vkDestroyCommandPool(Context.Device, frameData.CmdPool, nullptr);
+
+        vkDestroySemaphore(Context.Device, frameData.AcquiredImageSemaphore, nullptr);
+        vkDestroySemaphore(Context.Device, frameData.RenderCompletedSemaphore, nullptr);
+    }
+
+    vkDestroySemaphore(Context.Device, timelineSemaphore, nullptr);
+
     ResourceMapper::DestroyGlobalDescriptor();
 
-    std::cout << "A" <<std::endl;
     SwapchainBuilder::Destroy(Swapchain);
-    std::cout << "B" <<std::endl;
+
     MemoryBin::DestroyEverything();
-    std::cout << "C" <<std::endl;
 
     if(Context.Allocator)
     {
