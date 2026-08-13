@@ -54,8 +54,6 @@ namespace Eve::Graphics::Helpers
 
         VkResult result = vmaCreateBuffer(GraphicsCore::Context.Allocator, &bufferCI, &bufferAllocInfo,
             &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
-        
-        std::cout << result << std::endl;
     }
 
     static inline void AllocateSampler(SamplerInfo samplerInfo, SamplerObject& sampler)

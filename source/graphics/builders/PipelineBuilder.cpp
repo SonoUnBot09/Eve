@@ -9,39 +9,14 @@
 using namespace Eve::Graphics;
 using namespace Debug;
 
-bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo pipelineInfo, GraphicsShaderObject& shaderObject)
+bool PipelineBuilder::Initialize()
 {
-    std::vector<VkPushConstantRange> pushConstantRanges;
-
-    if((pipelineInfo.VertOffset + pipelineInfo.VertStride) > 128 || (pipelineInfo.FragOffset + pipelineInfo.FragStride) > 128)
+    VkPushConstantRange pushConstantRange
     {
-        printError("Unable to create the graphics pipeline. Push Constant data cannot be more than 128 bytes");
-        return false;
-    }
-
-    if(pipelineInfo.VertStride > 0)
-    {
-        VkPushConstantRange pushConstant
-        {
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .offset = pipelineInfo.VertOffset,
-            .size = pipelineInfo.VertStride
-        };
-
-        pushConstantRanges.push_back(pushConstant);
-    }
-
-    if(pipelineInfo.FragStride > 0)
-    {
-        VkPushConstantRange pushConstant
-        {
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .offset = pipelineInfo.FragOffset,
-            .size = pipelineInfo.FragStride
-        };
-
-        pushConstantRanges.push_back(pushConstant);
-    }
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .offset = 0,
+        .size = 128
+    };
 
     VkDescriptorSetLayout descriptorSetLayout = ResourceMapper::GetDescriptorSetLayout();
     VkPipelineLayoutCreateInfo pipelineLayoutCI
@@ -49,16 +24,32 @@ bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo pipelineInfo, GraphicsSha
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .setLayoutCount = 1,
         .pSetLayouts = &descriptorSetLayout,
-        .pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()),
-        .pPushConstantRanges = pushConstantRanges.data()
+        .pushConstantRangeCount = 1,
+        .pPushConstantRanges = &pushConstantRange
     };
 
-    if(vkCreatePipelineLayout(GraphicsCore::Context.Device, &pipelineLayoutCI, nullptr, &shaderObject.Layout) != VK_SUCCESS)
+    if(vkCreatePipelineLayout(GraphicsCore::Context.Device, &pipelineLayoutCI, nullptr, &graphicsPipelineLayout) != VK_SUCCESS)
     {
         printError("Unable to create the graphics pipeline layout");
         return false;
     }
 
+    return true;
+}
+
+bool PipelineBuilder::GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipelineLayout)
+{
+    if(PipelineBuilder::graphicsPipelineLayout)
+    {
+        graphicsPipelineLayout = PipelineBuilder::graphicsPipelineLayout;
+        return true;
+    }
+
+    return false;
+}
+
+bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo pipelineInfo, GraphicsShaderObject& shaderObject)
+{
     ShaderBytecode shaders = SlangCompiler::CompileVertFrag(pipelineInfo.ShaderPath.c_str());
     VkShaderModule vertexShader = CreateVertexModule(shaders);
     VkShaderModule fragmentShader = CreateFragmentModule(shaders);
@@ -189,7 +180,7 @@ bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo pipelineInfo, GraphicsSha
         .pDepthStencilState = &depthStencilInfo,
         .pColorBlendState = &colorBlendInfo,
         .pDynamicState = &dynamicStateInfo,
-        .layout = shaderObject.Layout
+        .layout = graphicsPipelineLayout
     };
 
     if(vkCreateGraphicsPipelines(GraphicsCore::Context.Device, nullptr, 1, &pipelineCI, nullptr, &shaderObject.Pipeline) != VK_SUCCESS)

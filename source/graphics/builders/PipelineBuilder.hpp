@@ -17,6 +17,8 @@ namespace Eve::Graphics
     {
         public:
 
+            static bool Initialize();
+            static bool GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipelineLayout);
             static bool BuildGraphicsPipeline(ShaderInfo shaderInfo,  GraphicsShaderObject& pipeline);
 
         private:
@@ -24,5 +26,7 @@ namespace Eve::Graphics
             inline static VkShaderModule CreateVertexModule(ShaderBytecode& input);
             inline static VkShaderModule CreateFragmentModule(ShaderBytecode& input);
             inline static VkShaderModule CreateComputeModule(ShaderBytecode& input);
+
+            inline static VkPipelineLayout graphicsPipelineLayout = nullptr;
     };
 }

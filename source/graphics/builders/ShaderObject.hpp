@@ -12,7 +12,6 @@ namespace Eve::Graphics
 {
     struct GraphicsShaderObject
     {
-        VkPipelineLayout Layout;
         VkPipeline Pipeline;
         VkShaderModule VertexModule;
         VkShaderModule FragmentModule;

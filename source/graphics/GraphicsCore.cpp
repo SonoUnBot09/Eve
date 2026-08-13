@@ -4,6 +4,7 @@
 #include "MemoryBin.hpp"
 #include "builders/Context.hpp"
 #include "builders/FrameData.hpp"
+#include "graphics/builders/PipelineBuilder.hpp"
 #include "registers/ShaderRegistry.hpp"
 #include <graphics/RenderGraph.hpp>
 #include <cstdint>
@@ -22,6 +23,13 @@ bool GraphicsCore::Initialize()
         return false;
     }
 
+    ResourceMapper::CreateGlobalDescriptor(1024, 8, 1024);
+
+    if(!PipelineBuilder::Initialize())
+    {
+        return false;
+    }
+
     if(!SwapchainBuilder::Build(Swapchain))
     {
         return false;
@@ -31,8 +39,6 @@ bool GraphicsCore::Initialize()
     {
         return false;
     }
-
-    ResourceMapper::CreateGlobalDescriptor(1024, 8, 1024);
 
     return true;
 }
@@ -64,8 +70,6 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
     FrameData& frameData = framesData[frameIndex];
 
     vkResetCommandPool(Context.Device, frameData.CmdPool, 0);
-
-    
 
     uint32_t swaphchainImageIndex = 0;
     VkResult result = vkAcquireNextImageKHR(Context.Device, Swapchain.Swapchain, UINT64_MAX, 
