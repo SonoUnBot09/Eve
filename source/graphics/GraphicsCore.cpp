@@ -4,6 +4,7 @@
 #include "MemoryBin.hpp"
 #include "builders/Context.hpp"
 #include "builders/FrameData.hpp"
+#include "registers/ShaderRegistry.hpp"
 #include <graphics/RenderGraph.hpp>
 #include <cstdint>
 
@@ -176,6 +177,8 @@ void GraphicsCore::Destroy()
     }
 
     vkDestroySemaphore(Context.Device, timelineSemaphore, nullptr);
+
+    ShaderRegistry::DestroyAllShaders();
 
     ResourceMapper::DestroyGlobalDescriptor();
 
