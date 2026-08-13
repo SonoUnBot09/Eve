@@ -15,7 +15,6 @@
 
 namespace Eve::Graphics::Helpers
 {
-
     static inline void AllocateGPUBuffer(BufferInfo bufferInfo, BufferObject& buffer)
     {
         VkBufferCreateInfo bufferCI
@@ -28,7 +27,6 @@ namespace Eve::Graphics::Helpers
 
         VmaAllocationCreateInfo bufferAllocInfo
         {
-            //.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 

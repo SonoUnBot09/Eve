@@ -87,15 +87,15 @@ namespace Eve::Graphics
             inline static std::vector<SamplerToMap> samplersToMap;
             inline static std::vector<BufferToMap> buffersToMap;
 
-            inline static std::vector<uint32_t> imageSampled1DToMapFreeSlots;
-            inline static std::vector<uint32_t> imageStorage1DToMapFreeSlots;
-            inline static std::vector<uint32_t> imageSampled2DToMapFreeSlots;
-            inline static std::vector<uint32_t> imageStorage2DToMapFreeSlots;
-            inline static std::vector<uint32_t> imageSampled3DToMapFreeSlots;
-            inline static std::vector<uint32_t> imageStorage3DToMapFreeSlots;
-            inline static std::vector<uint32_t> imageSampledCubeToMapFreeSlots;
-            inline static std::vector<uint32_t> imageStorageCubeToMapFreeSlots;
-            inline static std::vector<uint32_t> samplerToMapFreeSlots;
-            inline static std::vector<uint32_t> bufferToMapFreeSlots;
+            inline static std::vector<uint32_t> imagesSampled1DToMapFreeSlots;
+            inline static std::vector<uint32_t> imagesStorage1DToMapFreeSlots;
+            inline static std::vector<uint32_t> imagesSampled2DToMapFreeSlots;
+            inline static std::vector<uint32_t> imagesStorage2DToMapFreeSlots;
+            inline static std::vector<uint32_t> imagesSampled3DToMapFreeSlots;
+            inline static std::vector<uint32_t> imagesStorage3DToMapFreeSlots;
+            inline static std::vector<uint32_t> imagesSampledCubeToMapFreeSlots;
+            inline static std::vector<uint32_t> imagesStorageCubeToMapFreeSlots;
+            inline static std::vector<uint32_t> samplersToMapFreeSlots;
+            inline static std::vector<uint32_t> buffersToMapFreeSlots;
     };
 }

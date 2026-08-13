@@ -306,6 +306,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
         }
         
     #pragma endregion
+
 }
 
 void ResourceMapper::DestroyGlobalDescriptor()
@@ -326,151 +327,6 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     descriptorSetWrites.clear();
     buffersAddress.clear();
     copyRegions.clear();
-
-    // --- Texture 1D Erase ---
-    uint32_t imagesSampled1DToErase = 0;
-    for(int32_t i = imagesSampled1DToMap.size() - 1; i >= 0; i--)
-    {
-        if(imagesSampled1DToMap[i].Countdown <= 0)
-        {
-            imagesSampled1DToErase++;
-        }
-        else 
-        {
-            break;
-        }
-    }
-    uint32_t imagesStorage1DToErase = 0;
-    for(int32_t i = imagesStorage1DToMap.size() - 1; i >= 0; i--)
-    {
-        if(imagesStorage1DToMap[i].Countdown <= 0)
-        {
-            imagesStorage1DToErase++;
-        }
-        else 
-        {
-            break;
-        }
-    }
-
-    // --- Texture 2D Erase ---
-    uint32_t imagesSampled2DToErase = 0;
-    for(int32_t i = imagesSampled2DToMap.size() - 1; i >= 0; i--)
-    {
-        if(imagesSampled2DToMap[i].Countdown <= 0)
-        {
-            imagesSampled2DToErase++;
-        }
-        else 
-        {
-            break;
-        }
-    }
-    uint32_t imagesStorage2DToErase = 0;
-    for(int32_t i = imagesStorage2DToMap.size() - 1; i >= 0; i--)
-    {
-        if(imagesStorage2DToMap[i].Countdown <= 0)
-        {
-            imagesStorage2DToErase++;
-        }
-        else 
-        {
-            break;
-        }
-    }
-
-    // --- Texture 3D Erase ---
-    uint32_t imagesSampled3DToErase = 0;
-    for(int32_t i = imagesSampled3DToMap.size() - 1; i >= 0; i--)
-    {
-        if(imagesSampled3DToMap[i].Countdown <= 0)
-        {
-            imagesSampled3DToErase++;
-        }
-        else 
-        {
-            break;
-        }
-    }
-    uint32_t imagesStorage3DToErase = 0;
-    for(int32_t i = imagesStorage3DToMap.size() - 1; i >= 0; i--)
-    {
-        if(imagesStorage3DToMap[i].Countdown <= 0)
-        {
-            imagesStorage3DToErase++;
-        }
-        else 
-        {
-            break;
-        }
-    }
-
-    // --- Texture Cube Erase ---
-    uint32_t imagesSampledCubeToErase = 0;
-    for(int32_t i = imagesSampledCubeToMap.size() - 1; i >= 0; i--)
-    {
-        if(imagesSampledCubeToMap[i].Countdown <= 0)
-        {
-            imagesSampledCubeToErase++;
-        }
-        else 
-        {
-            break;
-        }
-    }
-    uint32_t imagesStorageCubeToErase = 0;
-    for(int32_t i = imagesStorageCubeToMap.size() - 1; i >= 0; i--)
-    {
-        if(imagesStorageCubeToMap[i].Countdown <= 0)
-        {
-            imagesStorageCubeToErase++;
-        }
-        else 
-        {
-            break;
-        }
-    }
-
-    // --- Sampler Erase ---
-    uint32_t samplersToErase = 0;
-    for(int32_t i = samplersToMap.size() - 1; i >= 0; i--)
-    {
-        if(samplersToMap[i].Countdown <= 0)
-        {
-            samplersToErase++;
-        }
-        else 
-        {
-            break;
-        }
-    }
-
-    // --- Buffer Erase ---
-    uint32_t buffersToErase = 0;
-    for(int32_t i = buffersToMap.size() - 1; i >= 0; i--)
-    {
-        if(buffersToMap[i].Countdown <= 0)
-        {
-            buffersToErase++;
-        }
-        else 
-        {
-            break;
-        }
-    }
-
-    // --- Erase ---
-    imagesSampled1DToMap.erase(imagesSampled1DToMap.cend() - imagesSampled1DToErase, imagesSampled1DToMap.cend());
-    imagesStorage1DToMap.erase(imagesStorage1DToMap.cend() - imagesStorage1DToErase, imagesStorage1DToMap.cend());
-    imagesSampled2DToMap.erase(imagesSampled2DToMap.cend() - imagesSampled2DToErase, imagesSampled2DToMap.cend());
-    imagesStorage2DToMap.erase(imagesStorage2DToMap.cend() - imagesStorage2DToErase, imagesStorage2DToMap.cend());
-    imagesSampled3DToMap.erase(imagesSampled3DToMap.cend() - imagesSampled3DToErase, imagesSampled3DToMap.cend());
-    imagesStorage3DToMap.erase(imagesStorage3DToMap.cend() - imagesStorage3DToErase, imagesStorage3DToMap.cend());
-    imagesSampledCubeToMap.erase(imagesSampledCubeToMap.cend() - imagesSampledCubeToErase, imagesSampledCubeToMap.cend());
-    imagesStorageCubeToMap.erase(imagesStorageCubeToMap.cend() - imagesStorageCubeToErase, imagesStorageCubeToMap.cend());
-    samplersToMap.erase(samplersToMap.cend() - samplersToErase, samplersToMap.cend());
-    buffersToMap.erase(buffersToMap.cend() - buffersToErase, buffersToMap.cend());
-
 
     std::vector<VkDescriptorImageInfo> imagesSampled1DInfo;
     std::vector<VkDescriptorImageInfo> imagesStorage1DInfo;
@@ -501,6 +357,11 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         resource.Countdown--;
 
+        if(resource.Countdown == 0)
+        {
+            imagesSampled1DToMapFreeSlots.push_back(i);
+        }
+
         VkDescriptorImageInfo imageInfo
         {
             .imageView = resource.ImageView,
@@ -530,6 +391,11 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         if(resource.Countdown == 0) { continue; }
 
         resource.Countdown--;
+
+        if(resource.Countdown == 0)
+        {
+            imagesStorage1DToMapFreeSlots.push_back(i);
+        }
 
         VkDescriptorImageInfo imageInfo
         {
@@ -563,6 +429,11 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         resource.Countdown--;
 
+        if(resource.Countdown == 0)
+        {
+            imagesSampled2DToMapFreeSlots.push_back(i);
+        }
+
         VkDescriptorImageInfo imageInfo
         {
             .imageView = resource.ImageView,
@@ -592,6 +463,11 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         if(resource.Countdown == 0) { continue; }
 
         resource.Countdown--;
+
+        if(resource.Countdown == 0)
+        {
+            imagesStorage2DToMapFreeSlots.push_back(i);
+        }
 
         VkDescriptorImageInfo imageInfo
         {
@@ -625,6 +501,11 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         resource.Countdown--;
 
+        if(resource.Countdown == 0)
+        {
+            imagesSampled3DToMapFreeSlots.push_back(i);
+        }
+
         VkDescriptorImageInfo imageInfo
         {
             .imageView = resource.ImageView,
@@ -654,6 +535,11 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         if(resource.Countdown == 0) { continue; }
 
         resource.Countdown--;
+
+        if(resource.Countdown == 0)
+        {
+            imagesStorage3DToMapFreeSlots.push_back(i);
+        }
 
         VkDescriptorImageInfo imageInfo
         {
@@ -687,6 +573,11 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         resource.Countdown--;
 
+        if(resource.Countdown == 0)
+        {
+            imagesSampledCubeToMapFreeSlots.push_back(i);
+        }
+
         VkDescriptorImageInfo imageInfo
         {
             .imageView = resource.ImageView,
@@ -717,6 +608,11 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         resource.Countdown--;
 
+        if(resource.Countdown == 0)
+        {
+            imagesStorageCubeToMapFreeSlots.push_back(i);
+        }
+
         VkDescriptorImageInfo imageInfo
         {
             .imageView = resource.ImageView,
@@ -743,11 +639,16 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     // --- Samplers ---
     for(uint32_t i = 0; i < samplersToMap.size(); i++)
     {
-        SamplerToMap resource = samplersToMap[i];
+        SamplerToMap& resource = samplersToMap[i];
 
         if(resource.Countdown == 0) { continue; }
 
         resource.Countdown--;
+
+        if(resource.Countdown == 0)
+        {
+            samplersToMapFreeSlots.push_back(i);
+        }
 
         VkDescriptorImageInfo imageInfo
         {
@@ -775,11 +676,16 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     // --- Buffers ---
     for (uint32_t i = 0; i < buffersToMap.size(); i++)
     {
-        BufferToMap resource = buffersToMap[i];
+        BufferToMap& resource = buffersToMap[i];
 
         if(resource.Countdown == 0) { continue; }
 
         resource.Countdown--;
+
+        if(resource.Countdown == 0)
+        {
+            buffersToMapFreeSlots.push_back(i);
+        }
 
         VkBufferDeviceAddressInfo addressInfo
         {
@@ -807,7 +713,8 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         descriptorSetWrites.data(), 0, nullptr);
     }
 
-    
+    if(buffersAddress.empty()) { return; }
+
     memcpy(stagingBuffers[frameIndex].AllocationInfo.pMappedData, buffersAddress.data(), buffersAddress.size() * sizeof(uint64_t));
 
     vkCmdCopyBuffer
@@ -942,14 +849,14 @@ void ResourceMapper::ScheduleSamplerMapping(SamplerHandle handle, VkSampler samp
         .Countdown = Eve::Settings::MAX_FRAMES_IN_FLIGHT
     };
 
-    if(samplerToMapFreeSlots.empty())
+    if(samplersToMapFreeSlots.empty())
     {
         samplersToMap.push_back(resource);
     }
     else 
     {
-        uint32_t index = samplerToMapFreeSlots.back();
-        samplerToMapFreeSlots.pop_back();
+        uint32_t index = samplersToMapFreeSlots.back();
+        samplersToMapFreeSlots.pop_back();
         
         samplersToMap[index] = resource;
     }
@@ -966,14 +873,14 @@ void ResourceMapper::ScheduleBufferMapping(BufferHandle handle, VkBuffer buffer)
         .Countdown = Eve::Settings::MAX_FRAMES_IN_FLIGHT
     };
 
-    if(bufferToMapFreeSlots.empty())
+    if(buffersToMapFreeSlots.empty())
     {
         buffersToMap.push_back(resource);
     }
     else 
     {
-        uint32_t index = bufferToMapFreeSlots.back();
-        bufferToMapFreeSlots.pop_back();
+        uint32_t index = buffersToMapFreeSlots.back();
+        buffersToMapFreeSlots.pop_back();
         
         buffersToMap[index] = resource;
     }
@@ -990,14 +897,14 @@ void ResourceMapper::ScheduleBufferMapping(TransientBufferHandle handle, VkBuffe
         .Countdown = Eve::Settings::MAX_FRAMES_IN_FLIGHT
     };
 
-    if(bufferToMapFreeSlots.empty())
+    if(buffersToMapFreeSlots.empty())
     {
         buffersToMap.push_back(resource);
     }
     else 
     {
-        uint32_t index = bufferToMapFreeSlots.back();
-        bufferToMapFreeSlots.pop_back();
+        uint32_t index = buffersToMapFreeSlots.back();
+        buffersToMapFreeSlots.pop_back();
         
         buffersToMap[index] = resource;
     }
@@ -1046,16 +953,16 @@ std::vector<uint32_t>& ResourceMapper::GetFreeSampledSlotsVector(TextureType tex
     switch(textureType)
     {
         case(TextureType::TEXTURE_1D) :
-            return imageSampled1DToMapFreeSlots;
+            return imagesSampled1DToMapFreeSlots;
             break;
         case(TextureType::TEXTURE_2D) :
-            return imageSampled2DToMapFreeSlots;
+            return imagesSampled2DToMapFreeSlots;
             break;
         case(TextureType::TEXTURE_3D) :
-            return imageSampled3DToMapFreeSlots;
+            return imagesSampled3DToMapFreeSlots;
             break;
         case(TextureType::TEXTURE_CUBE) :
-            return imageSampledCubeToMapFreeSlots;
+            return imagesSampledCubeToMapFreeSlots;
             break;
     }
 }
@@ -1065,16 +972,16 @@ std::vector<uint32_t>& ResourceMapper::GetFreeStorageSlotsVector(TextureType tex
     switch(textureType)
     {
         case(TextureType::TEXTURE_1D) :
-            return imageStorage1DToMapFreeSlots;
+            return imagesStorage1DToMapFreeSlots;
             break;
         case(TextureType::TEXTURE_2D) :
-            return imageStorage2DToMapFreeSlots;
+            return imagesStorage2DToMapFreeSlots;
             break;
         case(TextureType::TEXTURE_3D) :
-            return imageStorage3DToMapFreeSlots;
+            return imagesStorage3DToMapFreeSlots;
             break;
         case(TextureType::TEXTURE_CUBE) :
-            return imageStorageCubeToMapFreeSlots;
+            return imagesStorageCubeToMapFreeSlots;
             break;
     }
 }
