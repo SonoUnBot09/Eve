@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Eve/utils/Vec.hpp"
+#include <array>
 #include <vector>
 #include <utility>
 #include <Eve/graphics/Texture.hpp>
@@ -65,7 +66,10 @@ namespace Eve::Graphics
     {
         MeshHandle MeshHandle;
         ShaderHandle ShaderHandle;
-        uint32_t instanceCount;
+        uint32_t InstanceCount;
+        std::array<std::byte, 128> PushCostant;
+        uint32_t Offset;
+        uint32_t Size;
     };
 
     struct LoadStoreOp
@@ -147,7 +151,7 @@ namespace Eve::Graphics
             void UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
             void UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
 
-            void DrawMesh(MeshHandle mesh, ShaderHandle shader, uint32_t instanceCount);
+            void DrawMesh(MeshHandle mesh, ShaderHandle shader, const void* pushConstant, uint32_t offset, uint32_t size);
 
             inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTransientTextures() { return transientTextures; }
             inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }

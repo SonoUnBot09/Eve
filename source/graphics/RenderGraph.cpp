@@ -1,6 +1,7 @@
 #include "RenderGraph.hpp"
 #include <graphics/registers/ShaderRegistry.hpp>
 #include "builders/ContextBuilder.hpp"
+#include "builders/PipelineBuilder.hpp"
 #include "graphics/builders/ContextBuilder.hpp"
 #include "graphics/helpers/VulkanMapping.hpp"
 #include "helpers/VulkanMapping.hpp"
@@ -1936,6 +1937,8 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
     std::vector<std::pair<TransientTextureHandle, Usage>>& textures = pass.transientTextures;
     std::vector<std::pair<TransientTextureHandle, LoadStoreOp>>& loadStoreOps = pass.loadStoreOps;
     std::vector<DrawCall>& drawCalls = pass.drawCalls;
+
+    std::array<std::byte, 128> currentPushConstantData {};
     
     // No draw calls
     if(drawCalls.empty()) { return; }
@@ -2143,9 +2146,10 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
         {
             DrawCall drawCall = drawCalls[i];
 
+            uint32_t pushConstantSize = drawCall.Size;
+            uint32_t pushConstantOffset = drawCall.Offset;
             GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(drawCall.ShaderHandle);
-
-            //CPUMesh& cpuMesh = MeshRegistry::GetCPUMesh(drawCall.MeshHandle);
+            
             GraphicsMesh& graphicsMesh = MeshRegistry::GetGraphicsMesh(drawCall.MeshHandle);
             VkBuffer indexBuffer = MemoryRegistry::GetBuffer(graphicsMesh.IndexBuffer).Buffer;
 
@@ -2154,7 +2158,30 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             VkDeviceSize offset {0};
             vkCmdBindIndexBuffer(cmdBuffer, indexBuffer, offset, VK_INDEX_TYPE_UINT32);
 
-            vkCmdDrawIndexed(cmdBuffer, graphicsMesh.IndiciesCount, drawCall.instanceCount, 0, 0, 0);
+            // --- Push Constant ---
+            std::byte* currentData = currentPushConstantData.data() + pushConstantOffset;
+            const std::byte* newData = drawCall.PushCostant.data() + pushConstantOffset;
+
+            if(std::memcmp(currentData, newData, pushConstantSize) != 0)
+            {
+                vkCmdPushConstants(
+                    cmdBuffer, 
+                    PipelineBuilder::GetGraphicsPipelineLayout(), 
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 
+                    pushConstantOffset,
+                    pushConstantSize,
+                    newData
+                );
+
+                std::memcpy(
+                    currentData,
+                    newData,
+                    pushConstantSize
+                );
+            }
+
+            // --- Draw ---
+            vkCmdDrawIndexed(cmdBuffer, graphicsMesh.IndiciesCount, drawCall.InstanceCount, 0, 0, 0);
         }
     }
     vkCmdEndRendering(cmdBuffer);

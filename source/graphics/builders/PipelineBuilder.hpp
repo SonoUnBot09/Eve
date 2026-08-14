@@ -19,6 +19,7 @@ namespace Eve::Graphics
 
             static bool Initialize();
             static bool GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipelineLayout);
+            inline static VkPipelineLayout GetGraphicsPipelineLayout() { return graphicsPipelineLayout; }
             static bool BuildGraphicsPipeline(ShaderInfo shaderInfo,  GraphicsShaderObject& pipeline);
 
         private:

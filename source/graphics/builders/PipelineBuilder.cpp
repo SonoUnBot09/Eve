@@ -48,6 +48,8 @@ bool PipelineBuilder::GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipeli
     return false;
 }
 
+
+
 bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo pipelineInfo, GraphicsShaderObject& shaderObject)
 {
     ShaderBytecode shaders = SlangCompiler::CompileVertFrag(pipelineInfo.ShaderPath.c_str());
