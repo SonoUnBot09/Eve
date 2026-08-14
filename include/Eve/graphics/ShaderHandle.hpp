@@ -15,10 +15,7 @@ namespace Eve::Graphics
 
     struct ShaderInfo
     {
-        std::string ShaderPath;
-
-        // Push Constant Offsets & Strides
-        uint32_t VertOffset, VertStride, FragOffset, FragStride;
+        std::string ShaderModule;
 
         // Geometry
         enum Topology Topology = Topology::TOPOLOGY_TRIANGLE_LIST;

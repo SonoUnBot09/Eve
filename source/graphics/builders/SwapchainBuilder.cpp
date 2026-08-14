@@ -2,6 +2,7 @@
 #include "SwapchainBuilder.hpp"
 #include "Eve/graphics/Geometry.hpp"
 #include <graphics/MemoryBin.hpp>
+#include <graphics/registers/ShaderRegistry.hpp>
 
 #include <EveSettings.hpp>
 #include <Eve/Debug.hpp>
@@ -142,10 +143,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
     
     ShaderInfo shaderInfo
     {
-        .VertOffset = 0,
-        .VertStride = 0,
-        .FragOffset = 0,
-        .FragStride = 0,
+        .ShaderModule = "triangle",
         .Topology = Topology::TOPOLOGY_TRIANGLE_LIST,
         .PolygonMode = PolygonMode::POLYGON_MODE_FILL,
         .CullMode = CullMode::CULL_MODE_NONE,
@@ -158,7 +156,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
         .ColorFormat = format
     };
 
-    //swapchain.shader = ShaderRegistry::CreateGraphicsShader(shaderInfo);
+    swapchain.shader = ShaderRegistry::CreateGraphicsShader(shaderInfo);
 
     return true;
 }

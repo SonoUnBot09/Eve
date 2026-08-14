@@ -32,6 +32,7 @@ namespace Eve::Graphics
             static void MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex);
 
             static inline VkDescriptorSetLayout GetDescriptorSetLayout() { return layout; }
+            static inline VkDescriptorSet GetDescriptorSet(uint32_t frameIndex) { return sets[frameIndex]; }
         private:
 
             struct TextureToMap

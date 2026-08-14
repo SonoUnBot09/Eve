@@ -48,11 +48,9 @@ bool PipelineBuilder::GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipeli
     return false;
 }
 
-
-
-bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo pipelineInfo, GraphicsShaderObject& shaderObject)
+bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo shaderInfo, GraphicsShaderObject& shaderObject)
 {
-    ShaderBytecode shaders = SlangCompiler::CompileVertFrag(pipelineInfo.ShaderPath.c_str());
+    ShaderBytecode shaders = SlangCompiler::CompileVertFrag(shaderInfo.ShaderModule.c_str());
     VkShaderModule vertexShader = CreateVertexModule(shaders);
     VkShaderModule fragmentShader = CreateFragmentModule(shaders);
 
@@ -75,14 +73,14 @@ bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo pipelineInfo, GraphicsSha
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
             .module = vertexShader,
-            .pName = "vertex"
+            .pName = "main"
         },
         VkPipelineShaderStageCreateInfo
         {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
             .module = fragmentShader,
-            .pName = "fragment"
+            .pName = "main"
         }
     };
 
@@ -98,16 +96,16 @@ bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo pipelineInfo, GraphicsSha
     VkPipelineInputAssemblyStateCreateInfo inputAsseblyInfo
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology = GetVkTopology(pipelineInfo.Topology)
+        .topology = GetVkTopology(shaderInfo.Topology)
     };
 
     VkPipelineDepthStencilStateCreateInfo depthStencilInfo
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-        .depthTestEnable = static_cast<VkBool32>(pipelineInfo.DepthTest),
-        .depthWriteEnable = static_cast<VkBool32>(pipelineInfo.DepthWrite),
-        .depthCompareOp = GetVkCompareOp(pipelineInfo.CompareOp),
-        .stencilTestEnable = static_cast<VkBool32>(pipelineInfo.StencilTest)
+        .depthTestEnable = static_cast<VkBool32>(shaderInfo.DepthTest),
+        .depthWriteEnable = static_cast<VkBool32>(shaderInfo.DepthWrite),
+        .depthCompareOp = GetVkCompareOp(shaderInfo.CompareOp),
+        .stencilTestEnable = static_cast<VkBool32>(shaderInfo.StencilTest)
     };
 
     VkPipelineViewportStateCreateInfo viewportInfo
@@ -122,16 +120,17 @@ bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo pipelineInfo, GraphicsSha
     VkPipelineRasterizationStateCreateInfo rasterizationInfo
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .polygonMode = GetVkPolygonMode(pipelineInfo.PolygonMode),
-        .cullMode = GetVkCullMode(pipelineInfo.CullMode),
+        .polygonMode = GetVkPolygonMode(shaderInfo.PolygonMode),
+        .cullMode = GetVkCullMode(shaderInfo.CullMode),
         .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
-        .lineWidth = pipelineInfo.LineWidth
+        .lineWidth = shaderInfo.LineWidth
     };
 
     VkPipelineMultisampleStateCreateInfo multisampleInfo
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .rasterizationSamples = GetVkImageSamplesCount(pipelineInfo.samplesCount)
+        //.rasterizationSamples = GetVkImageSamplesCount(shaderInfo.samplesCount)
+        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
     };
 
     VkPipelineColorBlendAttachmentState colorAttachmentState
@@ -159,13 +158,13 @@ bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo pipelineInfo, GraphicsSha
         .pDynamicStates = dynamicStates.data()
     };
 
-    VkFormat colorFormat = GetVkImageFormat(pipelineInfo.ColorFormat);
+    VkFormat colorFormat = GetVkImageFormat(shaderInfo.ColorFormat);
     VkPipelineRenderingCreateInfo renderInfo
     {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
         .colorAttachmentCount = 1,
         .pColorAttachmentFormats = &colorFormat,
-        .depthAttachmentFormat = GetVkImageFormat(pipelineInfo.DepthFormat)
+        .depthAttachmentFormat = GetVkImageFormat(shaderInfo.DepthFormat)
     };
 
     VkGraphicsPipelineCreateInfo pipelineCI

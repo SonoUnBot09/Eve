@@ -6,6 +6,7 @@
 #include <string>
 #include <stdexcept>
 #include <iostream>
+#include <filesystem>
 
 namespace Eve::Graphics
 {
@@ -31,20 +32,29 @@ namespace Eve::Graphics
                 targetDesc.format = SLANG_SPIRV;
                 targetDesc.profile = globalSession->findProfile("glsl_450");
 
+                std::cout << "AAAAAAAAAAAAAAA" << std::filesystem::current_path() / ".." / ".." / "source" / "shaders" << std::endl;
+
+                const char* searchPaths[]
+                {
+                    "C:/Users/sonou/Desktop/LearnVulkan/Eve/source/shaders"
+                };
+
                 slang::SessionDesc sessionDesc = {};
                 sessionDesc.targets = &targetDesc;
                 sessionDesc.targetCount = 1;
+                sessionDesc.searchPaths = searchPaths;
+                sessionDesc.searchPathCount = 1;
 
                 if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) {
                     throw std::runtime_error("Errore Session");
                 }
             }
 
-            inline static ShaderBytecode CompileVertFrag(const char* shaderPath)
+            inline static ShaderBytecode CompileVertFrag(const char* shaderModule)
             {
                 Slang::ComPtr<slang::IBlob> diagnostics;
                 
-                slang::IModule* module = session->loadModule(shaderPath, diagnostics.writeRef());
+                slang::IModule* module = session->loadModule(shaderModule, diagnostics.writeRef());
 
                 if (diagnostics) {
                     std::cerr << "Slang Log:\n" << (const char*)diagnostics->getBufferPointer() << "\n";
@@ -92,11 +102,11 @@ namespace Eve::Graphics
                 return result;
             }
 
-            inline static ShaderBytecode CompileCompute(const char* shaderPath)
+            inline static ShaderBytecode CompileCompute(const char* shaderModule)
             {
                 Slang::ComPtr<slang::IBlob> diagnostics;
                 
-                slang::IModule* module = session->loadModule(shaderPath, diagnostics.writeRef());
+                slang::IModule* module = session->loadModule(shaderModule, diagnostics.writeRef());
 
                 if (diagnostics) {
                     std::cerr << "Slang Log:\n" << (const char*)diagnostics->getBufferPointer() << "\n";

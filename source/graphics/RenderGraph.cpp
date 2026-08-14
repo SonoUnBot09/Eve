@@ -1,7 +1,10 @@
 #include "RenderGraph.hpp"
 #include <graphics/registers/ShaderRegistry.hpp>
+#include "SDL3/SDL_timer.h"
 #include "builders/ContextBuilder.hpp"
 #include "builders/PipelineBuilder.hpp"
+#include "builders/ShaderObject.hpp"
+#include "graphics/ResourceMapper.hpp"
 #include "graphics/builders/ContextBuilder.hpp"
 #include "graphics/helpers/VulkanMapping.hpp"
 #include "helpers/VulkanMapping.hpp"
@@ -636,6 +639,19 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
     vkBeginCommandBuffer(cmdBuffer, &beginInfo);
 
     ResourceMapper::MapResources(cmdBuffer, frameIndex);
+
+    VkDescriptorSet descriptorSet = ResourceMapper::GetDescriptorSet(frameIndex);
+
+    vkCmdBindDescriptorSets(
+        cmdBuffer, 
+        VK_PIPELINE_BIND_POINT_GRAPHICS, 
+        PipelineBuilder::GetGraphicsPipelineLayout(), 
+        0, 
+        1, 
+        &descriptorSet, 
+        0, 
+        nullptr
+    );
 
     RecordCommands(cmdBuffer, frameIndex, swapchainImageIndex);
 
@@ -2151,12 +2167,8 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(drawCall.ShaderHandle);
 
             GraphicsMesh& graphicsMesh = MeshRegistry::GetGraphicsMesh(drawCall.MeshHandle);
-            VkBuffer indexBuffer = MemoryRegistry::GetBuffer(graphicsMesh.IndexBuffer).Buffer;
 
             vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.Pipeline);
-
-            VkDeviceSize offset {0};
-            vkCmdBindIndexBuffer(cmdBuffer, indexBuffer, offset, VK_INDEX_TYPE_UINT32);
 
             // --- Push Constant ---
             std::byte* currentData = currentPushConstantData.data() + pushConstantOffset;
@@ -2322,7 +2334,7 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
         vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 
-        if(presentTexture.Id != UINT32_MAX)
+        if(presentTexture.Id == UINT32_MAX)
         {
             GraphicsShaderObject shaderObject = ShaderRegistry::GetShaderObject(GraphicsCore::Swapchain.shader);
 

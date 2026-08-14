@@ -218,7 +218,8 @@ bool ContextBuilder::CreateDevice(Context& context)
     VkPhysicalDeviceVulkan14Features availableFeatures14 {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES, .pNext = nullptr};
     VkPhysicalDeviceVulkan13Features availableFeatures13 {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &availableFeatures14};
     VkPhysicalDeviceVulkan12Features availableFeatures12 {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, .pNext = &availableFeatures13};
-    VkPhysicalDeviceFeatures2 availableFeatures {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &availableFeatures12};
+    VkPhysicalDeviceVulkan11Features availableFeatures11 {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &availableFeatures12};
+    VkPhysicalDeviceFeatures2 availableFeatures {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &availableFeatures11};
 
     vkGetPhysicalDeviceFeatures2(context.PhysicalDevice, &availableFeatures);
 
@@ -228,7 +229,7 @@ bool ContextBuilder::CreateDevice(Context& context)
        !availableFeatures12.descriptorBindingVariableDescriptorCount || !availableFeatures12.runtimeDescriptorArray || 
        !availableFeatures12.shaderSampledImageArrayNonUniformIndexing || !availableFeatures12.descriptorBindingSampledImageUpdateAfterBind ||
        !availableFeatures12.descriptorBindingStorageImageUpdateAfterBind || !availableFeatures12.descriptorBindingUniformBufferUpdateAfterBind ||
-       !availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind)
+       !availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind || !availableFeatures11.shaderDrawParameters)
     {
         printError("Available device features do not respect application features requirement");
     }
@@ -263,10 +264,17 @@ bool ContextBuilder::CreateDevice(Context& context)
         .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE
     };
 
+    VkPhysicalDeviceVulkan11Features features11
+    {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+        .pNext = &features12,
+        .shaderDrawParameters = VK_TRUE
+    };
+
     VkPhysicalDeviceFeatures2 features
     {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-        .pNext = &features12,
+        .pNext = &features11,
         .features
         {
             .fillModeNonSolid = VK_TRUE
