@@ -2149,7 +2149,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             uint32_t pushConstantSize = drawCall.Size;
             uint32_t pushConstantOffset = drawCall.Offset;
             GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(drawCall.ShaderHandle);
-            
+
             GraphicsMesh& graphicsMesh = MeshRegistry::GetGraphicsMesh(drawCall.MeshHandle);
             VkBuffer indexBuffer = MemoryRegistry::GetBuffer(graphicsMesh.IndexBuffer).Buffer;
 
@@ -2215,9 +2215,10 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         }
     };
 
+    uint32_t resourceIndex;
     if(presentTexture.Id != UINT32_MAX)
     {
-        uint32_t resourceIndex = transientTextureHandleToIndex[presentTexture.Id];
+        resourceIndex = transientTextureHandleToIndex[presentTexture.Id];
 
         TextureResource& colorTexture = TransientResourcePool::GetTextureObject(resourceIndex, frameIndex);
 
@@ -2326,6 +2327,15 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
             GraphicsShaderObject shaderObject = ShaderRegistry::GetShaderObject(GraphicsCore::Swapchain.shader);
 
             vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderObject.Pipeline);
+
+            vkCmdPushConstants(
+                cmdBuffer, 
+                PipelineBuilder::GetGraphicsPipelineLayout(), 
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 
+                0, 
+                sizeof(uint32_t), 
+                &resourceIndex
+            );
 
             vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
         }
