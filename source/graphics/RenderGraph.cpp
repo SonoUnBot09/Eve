@@ -204,7 +204,7 @@ namespace
                 {
                     VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
                     VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                    VK_IMAGE_LAYOUT_GENERAL
                 };
 
             case(Usage::FRAGMENT_READ_TEXTURE_STORAGE) :
@@ -212,7 +212,7 @@ namespace
                 {
                     VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                     VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                    VK_IMAGE_LAYOUT_GENERAL
                 };
 
             case(Usage::VERTEX_FRAGMENT_READ_TEXTURE_STORAGE) :
@@ -220,7 +220,7 @@ namespace
                 {
                     VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                     VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                    VK_IMAGE_LAYOUT_GENERAL
                 };
 
             case(Usage::COMPUTE_READ_TEXTURE_STORAGE) :
@@ -393,29 +393,24 @@ namespace
         }
     }
 
-    void CreateTransientTexture(TextureInfo& textureInfo, VkImage& image, VkImageView& imageView)
+    void CreateTransientTexture(TextureInfo& textureInfo, VkImage& image)
     {
         VkImageType imageType;
-        VkImageViewType imageViewType;
         VkImageCreateFlags flags = static_cast<VkImageCreateFlags>(0);
         
         switch (textureInfo.TextureType) 
         {
             case (TextureType::TEXTURE_1D):
                 imageType = VK_IMAGE_TYPE_1D;
-                imageViewType = VK_IMAGE_VIEW_TYPE_1D;
                 break;
             case (TextureType::TEXTURE_2D):
                 imageType = VK_IMAGE_TYPE_2D;
-                imageViewType = VK_IMAGE_VIEW_TYPE_2D;
                 break;
             case (TextureType::TEXTURE_3D):
                 imageType = VK_IMAGE_TYPE_3D;
-                imageViewType = VK_IMAGE_VIEW_TYPE_3D;
                 break;
             case (TextureType::TEXTURE_CUBE):
                 imageType = VK_IMAGE_TYPE_2D;
-                imageViewType = VK_IMAGE_VIEW_TYPE_CUBE;
                 flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
                 break;
         }
@@ -443,7 +438,31 @@ namespace
         };
 
         vkCreateImage(GraphicsCore::Context.Device, &imageCI, nullptr, &image);
-        
+    }
+
+    void CreateImageView(TextureInfo& textureInfo, VkImage image, VkImageView& imageView)
+    {
+        VkImageViewType imageViewType;
+        VkImageCreateFlags flags = static_cast<VkImageCreateFlags>(0);
+
+        switch (textureInfo.TextureType) 
+        {
+            case (TextureType::TEXTURE_1D):
+                imageViewType = VK_IMAGE_VIEW_TYPE_1D;
+                break;
+            case (TextureType::TEXTURE_2D):
+                imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+                break;
+            case (TextureType::TEXTURE_3D):
+                imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+                break;
+            case (TextureType::TEXTURE_CUBE):
+                imageViewType = VK_IMAGE_VIEW_TYPE_CUBE;
+                flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+                break;
+        }
+
+        VkFormat format = GetVkImageFormat(textureInfo.Format);
         VkImageViewCreateInfo imageViewCI
         {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -1168,16 +1187,19 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         else 
         {
             VkImage image;
-            VkImageView imageView;
-            CreateTransientTexture(pool.TextureInfo, image, imageView);
+            CreateTransientTexture(pool.TextureInfo, image);
 
             resource.Image = image;
-            resource.ImageView = imageView;
             resource.PooledResource = false;
 
             MemoryBucket& memoryPool = TransientResourcePool::GetTextureMemoryBucket(pool.MemoryInfo.BucketIndex);
             vmaBindImageMemory2(GraphicsCore::Context.Allocator, memoryPool.Allocation, 
                 memoryOffset, image, nullptr);
+
+            VkImageView imageView;
+            CreateImageView(pool.TextureInfo, image, imageView);
+
+            resource.ImageView = imageView;
 
             TransientTextureHandle handle = {resource.Id};
 
@@ -2166,8 +2188,6 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             uint32_t pushConstantOffset = drawCall.Offset.ToBytes();
             GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(drawCall.ShaderHandle);
 
-            GraphicsMesh& graphicsMesh = MeshRegistry::GetGraphicsMesh(drawCall.MeshHandle);
-
             vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.Pipeline);
 
             // --- Push Constant ---
@@ -2193,7 +2213,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             }
 
             // --- Draw ---
-            vkCmdDrawIndexed(cmdBuffer, graphicsMesh.IndiciesCount, drawCall.InstanceCount, 0, 0, 0);
+            vkCmdDrawIndexed(cmdBuffer, drawCall.VertexShaderInvocations, drawCall.InstanceCount, 0, 0, 0);
         }
     }
     vkCmdEndRendering(cmdBuffer);
@@ -2314,8 +2334,8 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
     };
 
     vkCmdBeginRendering(cmdBuffer, &renderInfo);
+    if(presentTexture.Id != UINT32_MAX)
     {
-
         VkViewport viewport
         {
             .x = 0, .y = static_cast<float>(GraphicsCore::Swapchain.Height),
@@ -2333,25 +2353,26 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
 
         vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
         vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
+        
+        GraphicsShaderObject shaderObject = ShaderRegistry::GetShaderObject(GraphicsCore::Swapchain.shader);
 
-        if(presentTexture.Id == UINT32_MAX)
-        {
-            GraphicsShaderObject shaderObject = ShaderRegistry::GetShaderObject(GraphicsCore::Swapchain.shader);
+        vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderObject.Pipeline);
 
-            vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderObject.Pipeline);
+        struct PushConstant{uint32_t textureId; uint32_t samplerId;} pushConstant;
 
-            vkCmdPushConstants(
-                cmdBuffer, 
-                PipelineBuilder::GetGraphicsPipelineLayout(), 
-                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 
-                0, 
-                sizeof(uint32_t), 
-                &resourceIndex
-            );
+        pushConstant.textureId = resourceIndex;
+        pushConstant.samplerId = GraphicsCore::Swapchain.sampler.Id;
 
-            vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
-        }
+        vkCmdPushConstants(
+            cmdBuffer, 
+            PipelineBuilder::GetGraphicsPipelineLayout(), 
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 
+            0, 
+            sizeof(PushConstant), 
+            &pushConstant
+        );
 
+        vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
     }
     vkCmdEndRendering(cmdBuffer);
 
@@ -2601,7 +2622,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture2D(TransientTextureIn
 
     if(transientTextureHandleToIndex.size() <= handle.Id)
     {
-        transientTextureHandleToIndex.resize(handle.Id);
+        transientTextureHandleToIndex.resize(handle.Id + 1);
     }
 
     transientTextureHandleToIndex[handle.Id] = index;

@@ -1,6 +1,8 @@
 #include <graphics/GraphicsCore.hpp>
 #include "SwapchainBuilder.hpp"
 #include "Eve/graphics/Geometry.hpp"
+#include "Eve/graphics/Sampler.hpp"
+#include "graphics/registers/MemoryRegistry.hpp"
 #include <graphics/MemoryBin.hpp>
 #include <graphics/registers/ShaderRegistry.hpp>
 
@@ -138,12 +140,10 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
     }
 
     Format format = swapchain.Format == VK_FORMAT_R8G8B8A8_SRGB ? Format::FORMAT_R8G8B8A8_SRGB : Format::FORMAT_B8G8R8A8_SRGB;
-
-    // TODO: Add the real shader path
     
     ShaderInfo shaderInfo
     {
-        .ShaderModule = "triangle",
+        .ShaderModule = "swapchain",
         .Topology = Topology::TOPOLOGY_TRIANGLE_LIST,
         .PolygonMode = PolygonMode::POLYGON_MODE_FILL,
         .CullMode = CullMode::CULL_MODE_NONE,
@@ -157,6 +157,15 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
     };
 
     swapchain.shader = ShaderRegistry::CreateGraphicsShader(shaderInfo);
+
+    SamplerInfo samplerInfo
+    {
+        .MinFilter = Filter::FILTER_LINEAR,
+        .MagFilter = Filter::FILTER_LINEAR,
+        .MipmapMode = MipmapMode::MIPMAP_LINEAR
+    };
+
+    swapchain.sampler = MemoryRegistry::CreateSampler(samplerInfo);
 
     return true;
 }

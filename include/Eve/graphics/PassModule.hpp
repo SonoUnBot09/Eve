@@ -76,9 +76,9 @@ namespace Eve::Graphics
 
     struct DrawCall
     {
-        MeshHandle MeshHandle;
-        ShaderHandle ShaderHandle;
+        uint32_t VertexShaderInvocations;
         uint32_t InstanceCount;
+        ShaderHandle ShaderHandle;
         std::array<std::byte, 128> PushCostant;
         Words32 Offset;
         Words32 Size;
@@ -163,7 +163,7 @@ namespace Eve::Graphics
             void UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
             void UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
 
-            void DrawMesh(MeshHandle mesh, ShaderHandle shader, const void* pushConstant, Words32 offset, Words32 size);
+            void Draw(uint32_t vertexShaderInvocations, ShaderHandle shader, const void* pushConstant, Words32 offset, Words32 size);
 
             inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTransientTextures() { return transientTextures; }
             inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }

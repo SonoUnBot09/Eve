@@ -5,7 +5,7 @@
 
 using namespace Eve::Graphics;
 
-void GraphicsPass::DrawMesh(MeshHandle mesh, ShaderHandle shader, const void* pushConstant, Words32 offset, Words32 size)
+void GraphicsPass::Draw(uint32_t vertexShaderInvocations, ShaderHandle shader, const void* pushConstant, Words32 offset, Words32 size)
 {
     static constexpr uint32_t maxPushCostantSize = 128;
 
@@ -28,7 +28,7 @@ void GraphicsPass::DrawMesh(MeshHandle mesh, ShaderHandle shader, const void* pu
 
     memcpy(pushConstantData.data() + sizeBytes, (std::byte*)pushConstant, sizeBytes);
     
-    drawCalls.emplace_back(mesh, shader, 1, pushConstantData, offset, size);
+    drawCalls.emplace_back(vertexShaderInvocations, 1, shader, pushConstantData, offset, size);
 }
 
 void TransferPass::CopyBuffer(TransientBufferHandle SrcBuffer, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset, uint64_t DstOffset)

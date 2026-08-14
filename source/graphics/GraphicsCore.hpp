@@ -1,9 +1,13 @@
 #pragma once
 
+#include "graphics/builders/Window.hpp"
 #include <graphics/builders/WindowBuilder.hpp>
 #include <graphics/builders/ContextBuilder.hpp>
 #include <graphics/builders/SwapchainBuilder.hpp>
 #include <graphics/builders/FrameDataBuilder.hpp>
+#include <Eve/utils/Vec.hpp>
+
+using namespace Eve::Utils;
 
 namespace Eve::Graphics
 {
@@ -14,6 +18,7 @@ namespace Eve::Graphics
             static bool Initialize();
             static void Destroy();
 
+            static Vec2Int GetWindowSize() { return {Window.Width, Window.Height}; }
             static bool Render(uint64_t elapsedFrames);
             
             inline static Window Window;

@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <Eve/graphics/Texture.hpp>
 #include <Eve/graphics/ShaderHandle.hpp>
+#include <Eve/graphics/Sampler.hpp>
 
 namespace Eve::Graphics
 {
@@ -13,6 +14,8 @@ namespace Eve::Graphics
         VkFormat Format;
         std::vector<VkImage> swapchainImages;
         std::vector<VkImageView> swapchainImageViews;
+
+        SamplerHandle sampler;
         ShaderHandle shader;
     };
 }

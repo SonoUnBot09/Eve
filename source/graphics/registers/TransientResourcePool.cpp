@@ -132,7 +132,7 @@ uint32_t TransientResourcePool::FindTexturePoolIndex(const TextureInfo& textureI
     // Texture Pool not found, need to create a new one
     // --- Texture Pool Creation ---
 
-    VkImageCreateInfo imageCI;
+    VkImageCreateInfo imageCI {};
     CreateVkImageCreateInfo(textureInfo, imageCI);
 
     VkDeviceImageMemoryRequirements reqs
@@ -182,7 +182,7 @@ uint32_t TransientResourcePool::FindBufferPoolIndex(const BufferInfo& bufferInfo
     // Texture Pool not found, need to create a new one
     // --- Texture Pool Creation ---
 
-    VkBufferCreateInfo bufferCI;
+    VkBufferCreateInfo bufferCI {};
     CreateVkBufferCreateInfo(bufferInfo, bufferCI);
 
     VkDeviceBufferMemoryRequirements reqs
@@ -310,7 +310,7 @@ bool TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(const uint32_t buc
 
     VmaAllocationCreateInfo allocInfo
     {
-        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+        .usage = VMA_MEMORY_USAGE_UNKNOWN
     };
 
     VkResult result = vmaAllocateMemory(GraphicsCore::Context.Allocator, &memReqs, &allocInfo, 
@@ -368,7 +368,7 @@ bool TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(const uint32_t buck
 
     VmaAllocationCreateInfo allocInfo
     {
-        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+        .usage = VMA_MEMORY_USAGE_UNKNOWN
     };
 
     VkResult result = vmaAllocateMemory(GraphicsCore::Context.Allocator, &memReqs, &allocInfo, 
