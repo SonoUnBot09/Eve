@@ -62,14 +62,26 @@ namespace Eve::Graphics
         DISCARD
     };
 
+    struct Words32
+    {
+        uint32_t count;
+
+        explicit Words32(uint32_t c) : count(c) {};
+
+        uint32_t ToBytes() const
+        {
+            return count * 4;
+        }
+    };
+
     struct DrawCall
     {
         MeshHandle MeshHandle;
         ShaderHandle ShaderHandle;
         uint32_t InstanceCount;
         std::array<std::byte, 128> PushCostant;
-        uint32_t Offset;
-        uint32_t Size;
+        Words32 Offset;
+        Words32 Size;
     };
 
     struct LoadStoreOp
@@ -151,7 +163,7 @@ namespace Eve::Graphics
             void UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
             void UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
 
-            void DrawMesh(MeshHandle mesh, ShaderHandle shader, const void* pushConstant, uint32_t offset, uint32_t size);
+            void DrawMesh(MeshHandle mesh, ShaderHandle shader, const void* pushConstant, Words32 offset, Words32 size);
 
             inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTransientTextures() { return transientTextures; }
             inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }

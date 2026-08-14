@@ -5,25 +5,28 @@
 
 using namespace Eve::Graphics;
 
-void GraphicsPass::DrawMesh(MeshHandle mesh, ShaderHandle shader, const void* pushConstant, uint32_t offset, uint32_t size)
+void GraphicsPass::DrawMesh(MeshHandle mesh, ShaderHandle shader, const void* pushConstant, Words32 offset, Words32 size)
 {
     static constexpr uint32_t maxPushCostantSize = 128;
 
-    if(offset > maxPushCostantSize)
+    uint32_t offsetBytes = offset.ToBytes();
+    uint32_t sizeBytes = size.ToBytes();
+
+    if(offsetBytes > maxPushCostantSize)
     {
-        offset = maxPushCostantSize;
+        offsetBytes = maxPushCostantSize;
     }
 
-    uint32_t availableSpace = maxPushCostantSize - offset;
+    uint32_t availableSpace = maxPushCostantSize - offsetBytes;
 
-    if(size > availableSpace)
+    if(sizeBytes > availableSpace)
     {
-        size = availableSpace;
+        sizeBytes = availableSpace;
     }
 
     std::array<std::byte, maxPushCostantSize> pushConstantData;
 
-    memcpy(pushConstantData.data() + offset, (std::byte*)pushConstant, size);
+    memcpy(pushConstantData.data() + sizeBytes, (std::byte*)pushConstant, sizeBytes);
     
     drawCalls.emplace_back(mesh, shader, 1, pushConstantData, offset, size);
 }

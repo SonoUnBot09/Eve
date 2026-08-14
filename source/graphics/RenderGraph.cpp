@@ -2146,8 +2146,8 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
         {
             DrawCall drawCall = drawCalls[i];
 
-            uint32_t pushConstantSize = drawCall.Size;
-            uint32_t pushConstantOffset = drawCall.Offset;
+            uint32_t pushConstantSize = drawCall.Size.ToBytes();
+            uint32_t pushConstantOffset = drawCall.Offset.ToBytes();
             GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(drawCall.ShaderHandle);
 
             GraphicsMesh& graphicsMesh = MeshRegistry::GetGraphicsMesh(drawCall.MeshHandle);
