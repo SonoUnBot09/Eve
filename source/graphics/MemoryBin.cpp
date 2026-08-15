@@ -105,6 +105,9 @@ void MemoryBin::DestroyPendingResources()
             continue;
         }
 
+        // No need to free memory
+        if(!memoryBucket.first.IsActive) { memoryBucketsToDestroy.erase(memoryBucketsToDestroy.begin() + i); continue; }
+
         vmaFreeMemory(GraphicsCore::Context.Allocator, memoryBucket.first.Allocation);
 
         memoryBucketsToDestroy.erase(memoryBucketsToDestroy.begin() + i);
@@ -171,6 +174,9 @@ void MemoryBin::DestroyAllPendingResources()
     for(int32_t i = static_cast<int32_t>(memoryBucketsToDestroy.size()) - 1; i >= 0; i--)
     {
         MemoryBucket& memoryBucket = memoryBucketsToDestroy[i].first;
+
+        // No need to free memory
+        if(!memoryBucket.IsActive) { memoryBucketsToDestroy.erase(memoryBucketsToDestroy.begin() + i); continue; }
 
         vmaFreeMemory(GraphicsCore::Context.Allocator, memoryBucket.Allocation);
 
@@ -293,6 +299,24 @@ void MemoryBin::DestroyEverything()
         pool.Buffers.clear();
     }
     TransientResourcePool::bufferPools.clear();
+
+    // --- Transient Buffer Memory Buckets ---
+    for(uint32_t bufferMemoryBucket = 0; bufferMemoryBucket < TransientResourcePool::buffersMemoryBucket.size(); bufferMemoryBucket++)
+    {
+        MemoryBucket& memoryBucket = TransientResourcePool::buffersMemoryBucket[bufferMemoryBucket];
+
+        DestroyMemoryBucket(memoryBucket);
+    }
+    TransientResourcePool::buffersMemoryBucket.clear();
+
+    // --- Transient Texture Memory Bucket ---
+    for(uint32_t textureMemoryBucket = 0; textureMemoryBucket < TransientResourcePool::texturesMemoryBucket.size(); textureMemoryBucket++)
+    {
+        MemoryBucket& memoryBucket = TransientResourcePool::texturesMemoryBucket[textureMemoryBucket];
+
+        DestroyMemoryBucket(memoryBucket);
+    }
+    TransientResourcePool::texturesMemoryBucket.clear();
 
     // --- Transient Clear ---
     ResourceRegistry::persistentTextures.clear();

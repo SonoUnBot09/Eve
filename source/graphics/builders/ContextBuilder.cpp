@@ -103,12 +103,23 @@ bool ContextBuilder::CreateInstance(Context& context)
                             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
         .pfnUserCallback = PrintVulkanMessages
     };
+
+    VkValidationFeatureEnableEXT enabledFeatures[] = { VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT };
+
+    VkValidationFeaturesEXT validationFeatures{};
+    validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+    validationFeatures.pNext = nullptr;
+    validationFeatures.enabledValidationFeatureCount = 1;
+    validationFeatures.pEnabledValidationFeatures = enabledFeatures;
+    validationFeatures.disabledValidationFeatureCount = 0;
+    validationFeatures.pDisabledValidationFeatures = nullptr;
+
     #pragma endregion
 
     VkInstanceCreateInfo instanceCI
     {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        .pNext = nullptr,
+        .pNext = &validationFeatures,
         .pApplicationInfo = &appInfo,
         .enabledLayerCount = static_cast<uint32_t>(requestedLayers.size()),
         .ppEnabledLayerNames = requestedLayers.data(),
