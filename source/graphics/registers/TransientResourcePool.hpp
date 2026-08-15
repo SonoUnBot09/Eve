@@ -108,6 +108,9 @@ namespace Eve::Graphics
             inline static std::vector<TexturePool> texturePools;
             inline static std::vector<BufferPool> bufferPools;
 
+            inline static std::vector<uint32_t> texturePoolFreeSlots;
+            inline static std::vector<uint32_t> bufferPoolFreeSlots;
+
             // The index of the vector represent the bucket index and
             // its value represent the memory type index
             inline static std::vector<uint32_t> texturesMemoryTypeIndicies;

@@ -32,6 +32,7 @@ void Application::Run()
     Uint64 currentTick = 0;
     while(isAppRunning)
     {
+        std::cout << elapsedFrames << "   Start New Frame" << std::endl;
         currentTick = SDL_GetTicksNS();
 
         Uint64 elapsedNS = currentTick - lastTick;
@@ -95,6 +96,7 @@ void Application::Run()
         GraphicsCore::Render(elapsedFrames);
         
         elapsedFrames++;
+        std::cout << elapsedFrames << "  End Frame" << std::endl;
     }
 }
 

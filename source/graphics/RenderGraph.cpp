@@ -4,6 +4,7 @@
 #include "builders/ContextBuilder.hpp"
 #include "builders/PipelineBuilder.hpp"
 #include "builders/ShaderObject.hpp"
+#include "builders/Swapchain.hpp"
 #include "graphics/ResourceMapper.hpp"
 #include "graphics/builders/ContextBuilder.hpp"
 #include "graphics/helpers/VulkanMapping.hpp"
@@ -178,120 +179,120 @@ namespace
             case(Usage::VERTEX_READ_TEXTURE_SAMPLED) :
                 return 
                 {
-                    VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                 };
 
             case(Usage::FRAGMENT_READ_TEXTURE_SAMPLED) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                    .StageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                 };
 
             case(Usage::VERTEX_FRAGMENT_READ_TEXTURE_SAMPLED) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                 };
 
             case(Usage::VERTEX_READ_TEXTURE_STORAGE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                    VK_IMAGE_LAYOUT_GENERAL
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_GENERAL
                 };
 
             case(Usage::FRAGMENT_READ_TEXTURE_STORAGE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                    VK_IMAGE_LAYOUT_GENERAL
+                    .StageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_GENERAL
                 };
 
             case(Usage::VERTEX_FRAGMENT_READ_TEXTURE_STORAGE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                    VK_IMAGE_LAYOUT_GENERAL
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_GENERAL
                 };
 
             case(Usage::COMPUTE_READ_TEXTURE_STORAGE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                    VK_IMAGE_LAYOUT_GENERAL
+                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_GENERAL
                 };
 
             case(Usage::COMPUTE_WRITE_TEXTURE_STORAGE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
-                    VK_IMAGE_LAYOUT_GENERAL
+                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_GENERAL
                 };
             case(Usage::COLOR_ATTACHMENT) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                    VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                    VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
+                    .StageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                    .AccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
                 };
 
             case(Usage::DEPTH_STENCIL) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-                    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                    VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
+                    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
                 };
 
             case(Usage::DEPTH) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-                    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                    VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
+                    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
                 };
 
             case(Usage::STENCIL) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-                    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                    VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
+                    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
                 };
 
             case(Usage::COPY_SOURCE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                    VK_ACCESS_2_TRANSFER_READ_BIT,
-                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                    .AccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
                 };
 
             case(Usage::COPY_DESTINATION) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                    VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                    .AccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                    .Layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
                 };
 
             default:
                 return
                 {
-                    VK_PIPELINE_STAGE_2_NONE,
-                    VK_ACCESS_2_NONE,
-                    VK_IMAGE_LAYOUT_UNDEFINED
+                    .StageMask = VK_PIPELINE_STAGE_2_NONE,
+                    .AccessMask = VK_ACCESS_2_NONE,
+                    .Layout = VK_IMAGE_LAYOUT_UNDEFINED
                 };
         }
     }
@@ -302,92 +303,92 @@ namespace
             case(Usage::BUFFER_INDEX_READ_ONLY) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
-                    VK_ACCESS_2_INDEX_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_INDEX_READ_BIT
                 };
 
             case(Usage::VERTEX_READ_BUFFER_STORAGE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT
                 };
             
             case(Usage::VERTEX_READ_BUFFER_UNIFORM) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
-                    VK_ACCESS_2_UNIFORM_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT
                 };
 
             case(Usage::FRAGMENT_READ_BUFFER_STORAGE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT
                 };
             
             case(Usage::FRAGMENT_READ_BUFFER_UNIFORM) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    VK_ACCESS_2_UNIFORM_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT
                 };
 
             case(Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT
                 };
             
             case(Usage::VERTEX_FRAGMENT_READ_BUFFER_UNIFORM) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    VK_ACCESS_2_UNIFORM_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT
                 };
             
             case(Usage::COMPUTE_READ_BUFFER_STORAGE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT
                 };
 
             case(Usage::COMPUTE_READ_BUFFER_UNIFORM) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    VK_ACCESS_2_UNIFORM_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT
                 };
             
             case(Usage::COMPUTE_WRITE_BUFFER_STORAGE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT
                 };
 
             case(Usage::COPY_SOURCE) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                    VK_ACCESS_2_TRANSFER_READ_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                    .AccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
                 };
 
             case(Usage::COPY_DESTINATION) :
                 return
                 {
-                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                    VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                    .AccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
                 };
 
             default:
                 return
                 {
-                    VK_PIPELINE_STAGE_2_NONE,
-                    VK_ACCESS_2_NONE,
+                    .StageMask = VK_PIPELINE_STAGE_2_NONE,
+                    .AccessMask = VK_ACCESS_2_NONE,
                 };
             
         }
@@ -647,6 +648,7 @@ namespace
 
 bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
 {
+    std::cout << "Compile" << std::endl;
     bool success = CompileGraph(frameIndex);
 
     VkCommandBufferBeginInfo beginInfo
@@ -657,6 +659,7 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
 
     vkBeginCommandBuffer(cmdBuffer, &beginInfo);
 
+    //std::cout << "Map" << std::endl;
     ResourceMapper::MapResources(cmdBuffer, frameIndex);
 
     VkDescriptorSet descriptorSet = ResourceMapper::GetDescriptorSet(frameIndex);
@@ -672,10 +675,12 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
         nullptr
     );
 
+    //std::cout << "Commands" << std::endl;
     RecordCommands(cmdBuffer, frameIndex, swapchainImageIndex);
 
     vkEndCommandBuffer(cmdBuffer);
 
+    //std::cout << "Clear" << std::endl;
     Clear();
 
     return true;
@@ -685,9 +690,10 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 {
     MeshRegistry::UploadMeshes();
 
+    std::cout << "Update" << std::endl;
     TransientResourcePool::UpdateTexturesPool(frameIndex);
     TransientResourcePool::UpdateBuffersPool(frameIndex);
-
+    std::cout << "End Update" << std::endl;
     uint32_t transientTexturesCount = transientRequestedTextures.size();
     uint32_t transientBuffersCount = transientRequestedBuffers.size();
     uint32_t passesCount = passes.size();
@@ -701,6 +707,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         buffersBucketPasses[bucketIndex].resize(passesCount);
     }
 
+    std::cout << "First Spot" << std::endl;
     // Calculate first and last passes
     // Calculate resources usage
     // Calculate resource memory info
@@ -719,6 +726,8 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
             .Layout = VK_IMAGE_LAYOUT_UNDEFINED
         };
 
+        uint32_t resourceId = transientRequestedTextureHandles[textureId].Id;
+
         Usage oldUsage = static_cast<Usage>(0);
         TextureUsage usage = static_cast<TextureUsage>(0);
         for(uint32_t passIndex = 0; passIndex < passesCount; passIndex++)
@@ -729,7 +738,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
             {
                 // For each textures in that pass grab the texture usage
                 // and calculate the first and last passes
-                if(textures[i].first.Id != textureId) { continue; }
+                if(textures[i].first.Id != resourceId) { continue; }
 
                 if(firstPassIndex == -1)
                 {
@@ -771,8 +780,6 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         texturesBarriersOffset += barriersCount;
         barriersOffsetPerTexture.push_back(texturesBarriersOffset);
 
-        uint32_t resourceId = transientRequestedTextureHandles[textureId].Id;
-
         bool isPresentTexture = false;
         if(resourceId == presentTexture.Id)
         {
@@ -793,7 +800,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         resource.TexturePoolIndex = poolIndex;
 
         TexturePool& pool = TransientResourcePool::GetTexturePool(poolIndex);
-
+        
         texturesBucketPasses[pool.MemoryInfo.BucketIndex][firstPassIndex].TexturesToCreate.push_back(textureId);
         texturesBucketPasses[pool.MemoryInfo.BucketIndex][lastPassIndex].TexturesToDestroy.push_back(textureId);
 
@@ -813,6 +820,8 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
             .AccessMask = VK_ACCESS_2_NONE
         };
 
+        uint32_t resourceId = transientRequestedBufferHandles[bufferId].Id;
+
         Usage oldUsage = static_cast<Usage>(0);
         BufferUsage usage = static_cast<BufferUsage>(0);
         for(uint32_t passIndex = 0; passIndex < passesCount; passIndex++)
@@ -823,7 +832,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
             {
                 // For each buffer in that pass grab the texture usage
                 // and calculate the first and last passes
-                if(buffers[i].first.Id != bufferId) { continue; }
+                if(buffers[i].first.Id != resourceId) { continue; }
 
                 if(firstPassIndex == -1)
                 {
@@ -869,8 +878,6 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
         BufferInfo newBufferInfo = transientRequestedBuffers[bufferId];
         newBufferInfo.Usage = usage;
-
-        uint32_t resourceId = transientRequestedBufferHandles[bufferId].Id;
         
         TransientResourcePool::AddBufferResource(newBufferInfo, resourceId, frameIndex);
 
@@ -985,6 +992,8 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
         }
     }
+
+    std::cout << "Second Spot" << std::endl;
 
     VmaVirtualBlockCreateInfo virtualBlockCI
     {
@@ -1140,6 +1149,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
     vmaDestroyVirtualBlock(block);
 
+    std::cout << "Third Spot" << std::endl;
     // Create/Reuse textures and buffers
     // Insert the barriers info in the right passes so the barriers can be created later
     for(uint32_t textureId = 0; textureId < transientTexturesCount; textureId++)
@@ -1302,6 +1312,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
             passes[passIndex].transientBuffersBarriers.emplace_back(srcBarrierInfo, dstBarrierInfo);
         }
     }
+    std::cout << "Last Spot" << std::endl;
 
     return true;
 }
@@ -2213,7 +2224,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             }
 
             // --- Draw ---
-            vkCmdDrawIndexed(cmdBuffer, drawCall.VertexShaderInvocations, drawCall.InstanceCount, 0, 0, 0);
+            vkCmdDraw(cmdBuffer, drawCall.VertexShaderInvocations, drawCall.InstanceCount, 0, 0);
         }
     }
     vkCmdEndRendering(cmdBuffer);
@@ -2591,7 +2602,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureIn
 
     if(transientTextureHandleToIndex.size() <= handle.Id)
     {
-        transientTextureHandleToIndex.resize(handle.Id);
+        transientTextureHandleToIndex.resize(handle.Id + 1);
     }
 
     transientTextureHandleToIndex[handle.Id] = index;
@@ -2653,7 +2664,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture3D(TransientTextureIn
 
     if(transientTextureHandleToIndex.size() <= handle.Id)
     {
-        transientTextureHandleToIndex.resize(handle.Id);
+        transientTextureHandleToIndex.resize(handle.Id + 1);
     }
 
     transientTextureHandleToIndex[handle.Id] = index;
@@ -2684,7 +2695,7 @@ TransientTextureHandle RenderGraph::RequestTransientTextureCube(TransientTexture
 
     if(transientTextureHandleToIndex.size() <= handle.Id)
     {
-        transientTextureHandleToIndex.resize(handle.Id);
+        transientTextureHandleToIndex.resize(handle.Id + 1);
     }
 
     transientTextureHandleToIndex[handle.Id] = index;
@@ -2709,7 +2720,7 @@ TransientBufferHandle RenderGraph::RequestTransientBuffer(TransientBufferInfo bu
 
     if(transientBufferHandleToIndex.size() <= handle.Id)
     {
-        transientBufferHandleToIndex.resize(handle.Id);
+        transientBufferHandleToIndex.resize(handle.Id + 1);
     }
 
     transientBufferHandleToIndex[handle.Id] = index;

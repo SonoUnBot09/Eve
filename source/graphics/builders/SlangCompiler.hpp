@@ -32,8 +32,6 @@ namespace Eve::Graphics
                 targetDesc.format = SLANG_SPIRV;
                 targetDesc.profile = globalSession->findProfile("glsl_450");
 
-                std::cout << "AAAAAAAAAAAAAAA" << std::filesystem::current_path() / ".." / ".." / "source" / "shaders" << std::endl;
-
                 const char* searchPaths[]
                 {
                     "C:/Users/sonou/Desktop/LearnVulkan/Eve/source/shaders"

@@ -47,10 +47,12 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
 {
     if(isSwapchainRebuildNeeded)
     {
+        std::cout << "Recreate Swapchain" << std::endl;
         vkDeviceWaitIdle(Context.Device);
         SwapchainBuilder::Rebuild(Swapchain);
         MemoryBin::DestroyAllPendingResources();
         isSwapchainRebuildNeeded = false;
+        std::cout << "Recreate Swapchain Ended" << std::endl;
     }
 
     uint32_t frameIndex = elapsedFrames % Eve::Settings::MAX_FRAMES_IN_FLIGHT;

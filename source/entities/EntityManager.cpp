@@ -463,7 +463,7 @@ void EntityManager::CompactBatches()
         for (int32_t batchIndex = (int32_t)(table->GetLastBatchIndex()); batchIndex >= 0; batchIndex--)
         {
             std::vector<bool>& holesBit = table->holesBit[batchIndex];
-            for (int32_t j = (int32_t)(table->GetMaxComponentsCountPerBatch() - 1); j >= 0; j--)
+            for (int32_t j = (int32_t)(table->GetMaxComponentsCountPerBatch()) - 1; j >= 0; j--)
             {
                 if(holesBit[j]) { continue; }
 
@@ -519,7 +519,7 @@ void EntityManager::CompactBatches()
 
         uint32_t batchesCount = table->batches.size();
 
-        for(int32_t i = (int32_t)batchesCount - 1; i >= 0; i--)
+        for(int32_t i = (int32_t)(batchesCount) - 1; i >= 0; i--)
         {
             uint32_t componentsCount = table->GetComponentsCountPerBatch(i);
 

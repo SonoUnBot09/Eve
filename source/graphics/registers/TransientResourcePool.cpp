@@ -163,9 +163,21 @@ uint32_t TransientResourcePool::FindTexturePoolIndex(const TextureInfo& textureI
         .Textures = std::vector<TransientTextureObject>()
     };
 
-    texturePools.push_back(newPool);
+    uint32_t poolIndex;
+    if(texturePoolFreeSlots.empty())
+    {
+        texturePools.push_back(newPool);
+        poolIndex = texturePools.size() - 1;
+    }
+    else 
+    {
+        poolIndex = texturePoolFreeSlots.back();
+        texturePoolFreeSlots.pop_back();
 
-    return texturePools.size() - 1;
+        texturePools[poolIndex] = newPool;
+    }
+
+    return poolIndex;
 }
 
 uint32_t TransientResourcePool::FindBufferPoolIndex(const BufferInfo& bufferInfo, const uint32_t passesCount)
@@ -213,9 +225,21 @@ uint32_t TransientResourcePool::FindBufferPoolIndex(const BufferInfo& bufferInfo
         .Buffers = std::vector<TransientBufferObject>()
     };
 
-    bufferPools.push_back(newPool);
+    uint32_t poolIndex;
+    if(bufferPoolFreeSlots.empty())
+    {
+        bufferPools.push_back(newPool);
+        poolIndex = bufferPools.size() - 1;
+    }
+    else 
+    {
+        poolIndex = bufferPoolFreeSlots.back();
+        bufferPoolFreeSlots.pop_back();
 
-    return bufferPools.size() - 1;
+        bufferPools[poolIndex] = newPool;
+    }
+
+    return poolIndex;
 }
 
 uint32_t TransientResourcePool::GetTexturesBucketIndex(const uint32_t memoryTypeIndex, const uint32_t passesCount)
@@ -288,7 +312,7 @@ bool TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(const uint32_t buc
 
         if(pool.MemoryInfo.BucketIndex != bucketIndex) { continue; }
 
-        for(int32_t i = pool.Textures.size() - 1; i >= 0; i--)
+        for(int32_t i = static_cast<int32_t>(pool.Textures.size()) - 1; i >= 0; i--)
         {
             MemoryBin::DestroyTransientTexture(pool.Textures[i], Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 
@@ -346,7 +370,7 @@ bool TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(const uint32_t buck
 
         if(pool.MemoryInfo.BucketIndex != bucketIndex) { continue; }
 
-        for(int32_t i = pool.Buffers.size() - 1; i >= 0; i--)
+        for(int32_t i = static_cast<int32_t>(pool.Buffers.size()) - 1; i >= 0; i--)
         {
             MemoryBin::DestroyTransientBuffer(pool.Buffers[i], Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 
@@ -389,12 +413,15 @@ void TransientResourcePool::UpdateTexturesPool(const uint32_t frameIndex)
     std::vector<TextureResource>& textures = transientTextures[frameIndex];
     uint32_t texturesCount = textures.size();
 
+    std::cout << "A   " << texturesCount << std::endl;
     for(uint32_t i = 0; i < texturesCount; i++)
     {
         TextureResource& resource = textures[i];
         ResourceRegistry::FreeTransientTextureSlot(resource.Id);
+        std::cout<< resource.TexturePoolIndex << std::endl;
         
         TexturePool& pool = GetTexturePool(resource.TexturePoolIndex);
+        std::cout<< "DD" << std::endl;
 
         if(resource.PooledResource) { continue; }
 
@@ -411,18 +438,18 @@ void TransientResourcePool::UpdateTexturesPool(const uint32_t frameIndex)
     }
 
     textures.clear();
-
+    std::cout << "BBB" << std::endl;
     std::vector<TexturePool>& pools = GetTexturePools();
     uint32_t poolsCount = pools.size();
 
-    for(int32_t i = poolsCount - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(poolsCount) - 1; i >= 0; i--)
     {
         TexturePool& pool = pools[i];
 
         uint32_t resourcesCount = pool.Textures.size();
 
         // --- Destroy old unused resources ---
-        for(int32_t resourceIndex = resourcesCount - 1; resourceIndex >= 0; resourceIndex--)
+        for(int32_t resourceIndex = static_cast<int32_t>(resourcesCount) - 1; resourceIndex >= 0; resourceIndex--)
         {
             TransientTextureObject& object = pool.Textures[resourceIndex];
 
@@ -456,10 +483,11 @@ void TransientResourcePool::UpdateTexturesPool(const uint32_t frameIndex)
 
         if(pool.Countdown == 0)
         {
-            pools.erase(pools.begin() + i);
+            texturePoolFreeSlots.push_back(i);
         }
 
     }
+    std::cout << "CCC" << std::endl;
 }
 
 void TransientResourcePool::UpdateBuffersPool(const uint32_t frameIndex)
@@ -492,14 +520,14 @@ void TransientResourcePool::UpdateBuffersPool(const uint32_t frameIndex)
     std::vector<BufferPool>& pools = GetBufferPools();
     uint32_t poolsCount = pools.size();
 
-    for(int32_t i = poolsCount - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(poolsCount) - 1; i >= 0; i--)
     {
         BufferPool& pool = pools[i];
 
         uint32_t resourcesCount = pool.Buffers.size();
 
         // --- Destroy old unused resources ---
-        for(int32_t resourceIndex = resourcesCount - 1; resourceIndex >= 0; resourceIndex--)
+        for(int32_t resourceIndex = static_cast<int32_t>(resourcesCount) - 1; resourceIndex >= 0; resourceIndex--)
         {
             TransientBufferObject& object = pool.Buffers[resourceIndex];
 
@@ -533,7 +561,7 @@ void TransientResourcePool::UpdateBuffersPool(const uint32_t frameIndex)
 
         if(pool.Countdown == 0)
         {
-            pools.erase(pools.begin() + i);
+            bufferPoolFreeSlots.push_back(i);
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Eve::Graphics
             TEXTURE_1D,
             TEXTURE_2D,
             TEXTURE_3D,
-            TEXTURE_CUBE 
+            TEXTURE_CUBE
         };
 
         enum class TextureUsage : uint16_t
@@ -29,14 +29,13 @@ namespace Eve::Graphics
             LAYOUT_UNDEFINED,
             LAYOUT_GENERAL,
             LAYOUT_COLOR_ATTACHMENT,
-            LAYOUT_DEPTH_STENCIL_ATTACHMENT,
+            LAYOUT_DEPTH_STENCIL_ATTACHMENT ,
             LAYOUT_DEPTH_ATTACHMENT,
             LAYOUT_STENCIL_ATTACHMENT,
             LAYOUT_SHADER_READ_ONLY,
             LAYOUT_TRANSFER_SRC,
             LAYOUT_TRANSFER_DST,
-            LAYOUT_PRESENT,
-            LAYOUT_PREINITIALIZED
+            LAYOUT_PRESENT
         };
 
         enum class Format : uint16_t
@@ -114,10 +113,10 @@ namespace Eve::Graphics
 
         enum class TextureSample : uint16_t
         {
-            SAMPLE_1 = 1,
-            SAMPLE_2 = 2,
-            SAMPLE_4 = 4,
-            SAMPLE_8 = 8
+            SAMPLE_1 = 0,
+            SAMPLE_2,
+            SAMPLE_4,
+            SAMPLE_8
         };
 
         enum class TextureAspectMask : uint16_t

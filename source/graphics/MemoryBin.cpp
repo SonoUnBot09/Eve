@@ -11,7 +11,7 @@ using namespace Eve::Graphics;
 void MemoryBin::DestroyPendingResources()
 {
     // --- Persistent Buffer Destruction ---
-    for(int32_t i = persistentBuffersToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(persistentBuffersToDestroy.size()) - 1; i >= 0; i--)
     {
         if(persistentBuffersToDestroy[i].second > 0)
         {
@@ -27,7 +27,7 @@ void MemoryBin::DestroyPendingResources()
     }
 
     // --- Persistent Texture Destruction ---
-    for(int32_t i = persistentTexturesToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(persistentTexturesToDestroy.size()) - 1; i >= 0; i--)
     {
         if(persistentTexturesToDestroy[i].second > 0)
         {
@@ -45,7 +45,7 @@ void MemoryBin::DestroyPendingResources()
     }
 
     // --- Sampler Destruction ---
-    for(int32_t i = persistentSamplersToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(persistentSamplersToDestroy.size()) - 1; i >= 0; i--)
     {
         if(persistentSamplersToDestroy[i].second > 0)
         {
@@ -61,7 +61,7 @@ void MemoryBin::DestroyPendingResources()
     }
 
     // --- Transient Buffer Destruction ---
-    for(int32_t i = transientBuffersToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(transientBuffersToDestroy.size()) - 1; i >= 0; i--)
     {
         if(transientBuffersToDestroy[i].second > 0)
         {
@@ -77,7 +77,7 @@ void MemoryBin::DestroyPendingResources()
     }
 
     // --- Transient Texture Destruction ---
-    for(int32_t i = transientTexturesToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(transientTexturesToDestroy.size()) - 1; i >= 0; i--)
     {
         if(transientTexturesToDestroy[i].second > 0)
         {
@@ -95,7 +95,7 @@ void MemoryBin::DestroyPendingResources()
     }
 
     // --- Transient Memory Buckets Destruction ---
-    for(int32_t i = memoryBucketsToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(memoryBucketsToDestroy.size()) - 1; i >= 0; i--)
     {
         std::pair<MemoryBucket, uint32_t>& memoryBucket = memoryBucketsToDestroy[i];
 
@@ -107,14 +107,14 @@ void MemoryBin::DestroyPendingResources()
 
         vmaFreeMemory(GraphicsCore::Context.Allocator, memoryBucket.first.Allocation);
 
-        memoryBucketsToDestroy.erase(memoryBucketsToDestroy.begin() + 1);
+        memoryBucketsToDestroy.erase(memoryBucketsToDestroy.begin() + i);
     }
 }
 
 void MemoryBin::DestroyAllPendingResources()
 {
     // --- Persistent Buffer Destruction ---
-    for(int32_t i = persistentBuffersToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(persistentBuffersToDestroy.size()) - 1; i >= 0; i--)
     {
         BufferObject& buffer = persistentBuffersToDestroy[i].first;
 
@@ -124,7 +124,7 @@ void MemoryBin::DestroyAllPendingResources()
     }
 
     // --- Persistent Texture Destruction ---
-    for(int32_t i = persistentTexturesToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(persistentTexturesToDestroy.size()) - 1; i >= 0; i--)
     {
         TextureObject& texture = persistentTexturesToDestroy[i].first;
 
@@ -136,7 +136,7 @@ void MemoryBin::DestroyAllPendingResources()
     }
 
     // --- Sampler Destruction ---
-    for(int32_t i = persistentSamplersToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(persistentSamplersToDestroy.size()) - 1; i >= 0; i--)
     {
         SamplerObject& sampler = persistentSamplersToDestroy[i].first;
 
@@ -146,7 +146,7 @@ void MemoryBin::DestroyAllPendingResources()
     }
 
     // --- Transient Buffer Destruction ---
-    for(int32_t i = transientBuffersToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(transientBuffersToDestroy.size()) - 1; i >= 0; i--)
     {
         TransientBufferObject& buffer = transientBuffersToDestroy[i].first;
 
@@ -156,7 +156,7 @@ void MemoryBin::DestroyAllPendingResources()
     }
 
     // --- Transient Texture Destruction ---
-    for(int32_t i = transientTexturesToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(transientTexturesToDestroy.size()) - 1; i >= 0; i--)
     {
         TransientTextureObject& texture = transientTexturesToDestroy[i].first;
 
@@ -168,7 +168,7 @@ void MemoryBin::DestroyAllPendingResources()
     }
 
     // --- Transient Memory Buckets Destruction ---
-    for(int32_t i = memoryBucketsToDestroy.size() - 1; i >= 0; i--)
+    for(int32_t i = static_cast<int32_t>(memoryBucketsToDestroy.size()) - 1; i >= 0; i--)
     {
         MemoryBucket& memoryBucket = memoryBucketsToDestroy[i].first;
 
