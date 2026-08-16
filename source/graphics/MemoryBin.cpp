@@ -180,7 +180,7 @@ void MemoryBin::DestroyAllPendingResources()
 
         vmaFreeMemory(GraphicsCore::Context.Allocator, memoryBucket.Allocation);
 
-        memoryBucketsToDestroy.erase(memoryBucketsToDestroy.begin() + 1);
+        memoryBucketsToDestroy.erase(memoryBucketsToDestroy.begin() + i);
     }
 }
 
