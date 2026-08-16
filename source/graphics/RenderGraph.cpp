@@ -2349,9 +2349,9 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
     {
         VkViewport viewport
         {
-            .x = 0, .y = static_cast<float>(GraphicsCore::Swapchain.Height),
+            .x = 0, .y = 0,
             .width = static_cast<float>(GraphicsCore::Swapchain.Width),
-            .height =  -static_cast<float>(GraphicsCore::Swapchain.Height),
+            .height =  static_cast<float>(GraphicsCore::Swapchain.Height),
             .minDepth = 0.0f,
             .maxDepth = 1.0f
         };
