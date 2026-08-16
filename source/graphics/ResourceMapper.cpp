@@ -379,7 +379,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            .pImageInfo = &imageInfo
+            .pImageInfo = &imagesSampled1DInfo.back()
         };
 
         descriptorSetWrites.emplace_back(writeInfo);
@@ -414,7 +414,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .pImageInfo = &imageInfo
+            .pImageInfo = &imagesStorage1DInfo.back()
         };
 
         descriptorSetWrites.emplace_back(writeInfo);
@@ -451,7 +451,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            .pImageInfo = &imageInfo
+            .pImageInfo = &imagesSampled2DInfo.back()
         };
 
         descriptorSetWrites.emplace_back(writeInfo);
@@ -486,7 +486,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .pImageInfo = &imageInfo
+            .pImageInfo = &imagesStorage2DInfo.back()
         };
 
         descriptorSetWrites.emplace_back(writeInfo);
@@ -523,7 +523,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            .pImageInfo = &imageInfo
+            .pImageInfo = &imagesSampled3DInfo.back()
         };
 
         descriptorSetWrites.emplace_back(writeInfo);
@@ -558,7 +558,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .pImageInfo = &imageInfo
+            .pImageInfo = &imagesStorage3DInfo.back()
         };
 
         descriptorSetWrites.emplace_back(writeInfo);
@@ -595,7 +595,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            .pImageInfo = &imageInfo
+            .pImageInfo = &imagesSampledCubeInfo.back()
         };
 
         descriptorSetWrites.emplace_back(writeInfo);
@@ -630,7 +630,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .pImageInfo = &imageInfo
+            .pImageInfo = &imagesStorageCubeInfo.back()
         };
 
         descriptorSetWrites.emplace_back(writeInfo);
@@ -667,7 +667,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
             .dstArrayElement = resource.Id,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-            .pImageInfo = &imageInfo
+            .pImageInfo = &samplersInfo.back()
         };
 
         descriptorSetWrites.emplace_back(writeInfo);

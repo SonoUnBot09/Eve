@@ -2240,7 +2240,7 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         VkImageMemoryBarrier2
         {
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+            .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
             .srcAccessMask = VK_ACCESS_2_NONE,
             .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
             .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
@@ -2370,8 +2370,8 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderObject.Pipeline);
 
         struct PushConstant{uint32_t textureId; uint32_t samplerId;} pushConstant;
-
-        pushConstant.textureId = resourceIndex;
+        
+        pushConstant.textureId = presentTexture.Id;
         pushConstant.samplerId = GraphicsCore::Swapchain.sampler.Id;
 
         vkCmdPushConstants(

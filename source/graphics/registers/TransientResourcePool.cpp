@@ -305,7 +305,7 @@ bool TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(const uint32_t buc
 
     MemoryBin::DestroyMemoryBucket(memoryBucket);
 
-    std::vector<TexturePool> pools = GetTexturePools();
+    std::vector<TexturePool>& pools = GetTexturePools();
     for(uint32_t poolIndex = 0; poolIndex < pools.size(); poolIndex++)
     {
         TexturePool& pool = pools[poolIndex];
@@ -363,7 +363,7 @@ bool TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(const uint32_t buck
 
     MemoryBin::DestroyMemoryBucket(memoryBucket);
 
-    std::vector<BufferPool> pools = GetBufferPools();
+    std::vector<BufferPool>& pools = GetBufferPools();
     for(uint32_t poolIndex = 0; poolIndex < pools.size(); poolIndex++)
     {
         BufferPool& pool = pools[poolIndex];
