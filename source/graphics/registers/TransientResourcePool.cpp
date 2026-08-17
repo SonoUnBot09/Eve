@@ -413,15 +413,12 @@ void TransientResourcePool::UpdateTexturesPool(const uint32_t frameIndex)
     std::vector<TextureResource>& textures = transientTextures[frameIndex];
     uint32_t texturesCount = textures.size();
 
-    std::cout << "A   " << texturesCount << std::endl;
     for(uint32_t i = 0; i < texturesCount; i++)
     {
         TextureResource& resource = textures[i];
         ResourceRegistry::FreeTransientTextureSlot(resource.Id);
-        std::cout<< resource.TexturePoolIndex << std::endl;
         
         TexturePool& pool = GetTexturePool(resource.TexturePoolIndex);
-        std::cout<< "DD" << std::endl;
 
         if(resource.PooledResource) { continue; }
 
@@ -438,7 +435,7 @@ void TransientResourcePool::UpdateTexturesPool(const uint32_t frameIndex)
     }
 
     textures.clear();
-    std::cout << "BBB" << std::endl;
+
     std::vector<TexturePool>& pools = GetTexturePools();
     uint32_t poolsCount = pools.size();
 
@@ -487,7 +484,6 @@ void TransientResourcePool::UpdateTexturesPool(const uint32_t frameIndex)
         }
 
     }
-    std::cout << "CCC" << std::endl;
 }
 
 void TransientResourcePool::UpdateBuffersPool(const uint32_t frameIndex)

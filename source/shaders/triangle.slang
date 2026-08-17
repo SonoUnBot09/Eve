@@ -3,8 +3,32 @@ module triangle;
 struct V2F
 {
     float4 position : SV_Position;
-    //float2 uv : TEXCOORD0;
+    float3 color : TEXCOORD0;
 };
+
+struct PushConstant
+{
+    float time;
+}
+
+[push_constant]
+PushConstant pushConstant;
+
+float3 CalculateColor(uint32_t vertexIndex, float time)
+{
+    const float PI = 3.14159265359;
+    const float TWO_THIRD_PI = (2.0 * PI) / 3.0; // 120 gradi
+
+    // Angolo base basato sul vertice, scalato nel tempo
+    float angle = vertexIndex * TWO_THIRD_PI - time;
+
+    // Sfasamento di 120° tra Rosso, Verde e Blu
+    float r = max(0.0, cos(angle));
+    float g = max(0.0, cos(angle - TWO_THIRD_PI));
+    float b = max(0.0, cos(angle - 2.0 * TWO_THIRD_PI));
+
+    return float3(r, g, b);
+}
 
 [shader("vertex")]
 V2F vertex(uint32_t vertexID : SV_VertexID)
@@ -14,6 +38,13 @@ V2F vertex(uint32_t vertexID : SV_VertexID)
         { -0.5, -0.5, 0 },
         { 0, 0.5, 0 },
         { 0.5, -0.5, 0 }
+    };
+
+    const float3 colors[] =
+    {
+        { 1, 0, 0 },
+        { 0, 1, 0 },
+        { 0, 0, 1 }
     };
 
     const float2 uvs[] =
@@ -32,7 +63,7 @@ V2F vertex(uint32_t vertexID : SV_VertexID)
     V2F output;
     uint32_t vertexIndex = indicies[vertexID];
     output.position = float4(vertices[vertexIndex], 1.0);
-    //output.uv = uvs[vertexIndex];
+    output.color = CalculateColor(vertexIndex, pushConstant.time * 0.01);
     return output;
 }
 
@@ -40,5 +71,5 @@ V2F vertex(uint32_t vertexID : SV_VertexID)
 [shader("fragment")]
 float4 fragment(V2F input) : SV_Target
 {
-    return float4(1.0, 0.4, 0.25, 1.0);
+    return float4(input.color, 1.0);
 }

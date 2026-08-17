@@ -26,7 +26,7 @@ void GraphicsPass::Draw(uint32_t vertexShaderInvocations, ShaderHandle shader, c
 
     std::array<std::byte, maxPushCostantSize> pushConstantData;
 
-    memcpy(pushConstantData.data() + sizeBytes, (std::byte*)pushConstant, sizeBytes);
+    memcpy(pushConstantData.data() + offsetBytes, (std::byte*)pushConstant, sizeBytes);
     
     drawCalls.emplace_back(vertexShaderInvocations, 1, shader, pushConstantData, offset, size);
 }

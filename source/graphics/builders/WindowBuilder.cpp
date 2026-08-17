@@ -8,7 +8,6 @@ using namespace Eve::Graphics;
 
 bool WindowBuilder::Build(Window& window)
 {
-
     if(!InitializeSDLSubsystems())
     {
         printError("Unable to initialize SDL subsystems");

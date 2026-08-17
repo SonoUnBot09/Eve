@@ -648,7 +648,6 @@ namespace
 
 bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
 {
-    std::cout << "Compile" << std::endl;
     bool success = CompileGraph(frameIndex);
 
     VkCommandBufferBeginInfo beginInfo
@@ -659,7 +658,6 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
 
     vkBeginCommandBuffer(cmdBuffer, &beginInfo);
 
-    //std::cout << "Map" << std::endl;
     ResourceMapper::MapResources(cmdBuffer, frameIndex);
 
     VkDescriptorSet descriptorSet = ResourceMapper::GetDescriptorSet(frameIndex);
@@ -675,12 +673,10 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
         nullptr
     );
 
-    //std::cout << "Commands" << std::endl;
     RecordCommands(cmdBuffer, frameIndex, swapchainImageIndex);
 
     vkEndCommandBuffer(cmdBuffer);
 
-    //std::cout << "Clear" << std::endl;
     Clear();
 
     return true;
@@ -690,10 +686,9 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 {
     MeshRegistry::UploadMeshes();
 
-    std::cout << "Update" << std::endl;
     TransientResourcePool::UpdateTexturesPool(frameIndex);
     TransientResourcePool::UpdateBuffersPool(frameIndex);
-    std::cout << "End Update" << std::endl;
+
     uint32_t transientTexturesCount = transientRequestedTextures.size();
     uint32_t transientBuffersCount = transientRequestedBuffers.size();
     uint32_t passesCount = passes.size();
@@ -707,7 +702,6 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         buffersBucketPasses[bucketIndex].resize(passesCount);
     }
 
-    std::cout << "First Spot" << std::endl;
     // Calculate first and last passes
     // Calculate resources usage
     // Calculate resource memory info
@@ -993,7 +987,6 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         }
     }
 
-    std::cout << "Second Spot" << std::endl;
 
     VmaVirtualBlockCreateInfo virtualBlockCI
     {
@@ -1149,7 +1142,6 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
     vmaDestroyVirtualBlock(block);
 
-    std::cout << "Third Spot" << std::endl;
     // Create/Reuse textures and buffers
     // Insert the barriers info in the right passes so the barriers can be created later
     for(uint32_t textureId = 0; textureId < transientTexturesCount; textureId++)
@@ -1312,7 +1304,6 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
             passes[passIndex].transientBuffersBarriers.emplace_back(srcBarrierInfo, dstBarrierInfo);
         }
     }
-    std::cout << "Last Spot" << std::endl;
 
     return true;
 }
@@ -1988,6 +1979,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
     std::vector<DrawCall>& drawCalls = pass.drawCalls;
 
     std::array<std::byte, 128> currentPushConstantData {};
+    bool isFirstDrawCall = true;
     
     // No draw calls
     if(drawCalls.empty()) { return; }
@@ -2205,7 +2197,9 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             std::byte* currentData = currentPushConstantData.data() + pushConstantOffset;
             const std::byte* newData = drawCall.PushCostant.data() + pushConstantOffset;
 
-            if(std::memcmp(currentData, newData, pushConstantSize) != 0)
+            bool dataChanged = std::memcmp(currentData, newData, pushConstantSize) != 0;
+
+            if(dataChanged || isFirstDrawCall)
             {
                 vkCmdPushConstants(
                     cmdBuffer, 
@@ -2221,6 +2215,8 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
                     newData,
                     pushConstantSize
                 );
+
+                isFirstDrawCall = false;
             }
 
             // --- Draw ---

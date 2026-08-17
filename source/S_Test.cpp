@@ -2,7 +2,6 @@
 #include "Eve/graphics/PassModule.hpp"
 #include "Eve/graphics/ShaderHandle.hpp"
 #include "Eve/graphics/Texture.hpp"
-#include "graphics/helpers/VulkanMapping.hpp"
 #include <Eve/components/Camera.hpp>
 #include <Eve/Entities/SystemDispatcher.hpp>
 #include <Eve/Debug.hpp>
@@ -14,6 +13,7 @@ using namespace Eve::Entities;
 using namespace Eve::Graphics;
 
 static ShaderHandle shaderHandle;
+static uint64_t elapsedFrames = 0;
 
 void Start()
 {
@@ -62,11 +62,18 @@ void Update(const float deltaTime)
 
     pass.UseColorTarget(handle, loadStoreOp);
 
-    pass.Draw(3, shaderHandle, nullptr, Words32(0), Words32(0));
+    float time = static_cast<float>(elapsedFrames);
+
+    std::cout << time << std::endl;
+
+    pass.Draw(3, shaderHandle, &time, Words32(0), Words32(1));
 
     RenderGraph::AddPass(pass);
 
     RenderGraph::SetPresentTexture(handle);
+    std::cout << elapsedFrames << std::endl;
+
+    elapsedFrames++;
 }
 
 static SystemRegistrar start(Start, SystemStage::Start);
