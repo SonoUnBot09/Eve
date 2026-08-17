@@ -53,7 +53,7 @@ namespace Eve::Graphics
             inline static BufferInfo& GetBufferInfo(uint32_t id) { return buffersInfo[id]; }
 
             // --- Helpers ---
-            static void ResizeBufferIfNeeded(BufferHandle& buffer, uint64_t requiredSize, bool indexBuffer);
+            static void ResizeBufferIfNeeded(BufferHandle& buffer, uint64_t requiredSize);
             
         private:
 

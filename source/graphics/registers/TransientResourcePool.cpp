@@ -22,7 +22,7 @@ namespace
         imageCI.extent.depth = textureInfo.Depth;
         imageCI.mipLevels = 1;
         imageCI.arrayLayers = textureInfo.ArrayLayers;
-        imageCI.samples = GetVkImageSamplesCount(textureInfo.Sample);
+        imageCI.samples = VK_SAMPLE_COUNT_1_BIT,
         imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageCI.usage = GetVkImageUsage(textureInfo.Usage);
         imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;

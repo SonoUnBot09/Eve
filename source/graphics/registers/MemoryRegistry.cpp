@@ -29,8 +29,7 @@ TextureHandle MemoryRegistry::CreateTexture1D(TextureInfo1D textureInfo)
         .ArrayLayers = textureInfo.ArrayLayers,
         .MipLevels = textureInfo.MipLevels,
         .Format = textureInfo.Format,
-        .Usage = textureInfo.Usage,
-        .Sample = textureInfo.Sample
+        .Usage = textureInfo.Usage
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
@@ -60,8 +59,7 @@ TextureHandle MemoryRegistry::CreateTexture2D(TextureInfo2D textureInfo)
         .ArrayLayers = textureInfo.ArrayLayers,
         .MipLevels = textureInfo.MipLevels,
         .Format = textureInfo.Format,
-        .Usage = textureInfo.Usage,
-        .Sample = textureInfo.Sample
+        .Usage = textureInfo.Usage
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
@@ -91,8 +89,7 @@ TextureHandle MemoryRegistry::CreateTexture3D(TextureInfo3D textureInfo)
         .ArrayLayers = textureInfo.ArrayLayers,
         .MipLevels = textureInfo.MipLevels,
         .Format = textureInfo.Format,
-        .Usage = textureInfo.Usage,
-        .Sample = textureInfo.Sample,
+        .Usage = textureInfo.Usage
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
@@ -123,8 +120,7 @@ TextureHandle MemoryRegistry::CreateTextureCube(TextureInfo2D textureInfo)
         .ArrayLayers = textureInfo.ArrayLayers,
         .MipLevels = textureInfo.MipLevels,
         .Format = textureInfo.Format,
-        .Usage = textureInfo.Usage,
-        .Sample = textureInfo.Sample
+        .Usage = textureInfo.Usage
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
@@ -270,7 +266,7 @@ void MemoryRegistry::DestroySampler(uint32_t id)
     ResourceRegistry::FreeSamplerSlot(id);
 }
 
-void MemoryRegistry::ResizeBufferIfNeeded(BufferHandle &buffer, uint64_t requiredSize, bool indexBuffer)
+void MemoryRegistry::ResizeBufferIfNeeded(BufferHandle &buffer, uint64_t requiredSize)
 {
     uint64_t currentSize = buffers[buffer.Id].AllocationInfo.size;
 
@@ -279,11 +275,6 @@ void MemoryRegistry::ResizeBufferIfNeeded(BufferHandle &buffer, uint64_t require
         MemoryRegistry::DestroyBuffer(buffer);
 
         BufferUsage bufferUsage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST;
-
-        if(indexBuffer)
-        {
-            bufferUsage |= BufferUsage::BUFFER_USAGE_INDEX;
-        }
 
         BufferInfo bufferInfo
         {

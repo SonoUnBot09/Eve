@@ -189,7 +189,6 @@ namespace Eve::Graphics
 
         Format Format;
         TextureUsage Usage;
-        TextureSample Sample = TextureSample::SAMPLE_1;
     };
 
     struct TextureInfo2D
@@ -200,7 +199,6 @@ namespace Eve::Graphics
 
         Format Format;
         TextureUsage Usage;
-        TextureSample Sample = TextureSample::SAMPLE_1;
     };
 
     struct TextureInfo3D
@@ -211,7 +209,6 @@ namespace Eve::Graphics
 
         Format Format;
         TextureUsage Usage;
-        TextureSample Sample = TextureSample::SAMPLE_1;
     };
 
     struct TransientTextureInfo1D
@@ -221,7 +218,6 @@ namespace Eve::Graphics
         uint32_t MipLevels = 1;
 
         Format Format;
-        TextureSample Sample = TextureSample::SAMPLE_1;
     };
 
     struct TransientTextureInfo2D
@@ -231,7 +227,6 @@ namespace Eve::Graphics
         uint32_t MipLevels = 1;
 
         Format Format;
-        TextureSample Sample = TextureSample::SAMPLE_1;
     };
 
     struct TransientTextureInfo3D
@@ -241,7 +236,6 @@ namespace Eve::Graphics
         uint32_t MipLevels = 1;
 
         Format Format;
-        TextureSample Sample = TextureSample::SAMPLE_1;
     };
 
     struct TextureInfo
@@ -253,7 +247,6 @@ namespace Eve::Graphics
 
         Format Format;
         TextureUsage Usage = static_cast<TextureUsage>(0);
-        TextureSample Sample;
 
         bool operator==(const TextureInfo& other) const 
         {
@@ -265,8 +258,7 @@ namespace Eve::Graphics
                 ArrayLayers == other.ArrayLayers &&
                 MipLevels == other.MipLevels &&
                 Format == other.Format &&
-                Usage == other.Usage &&
-                Sample == other.Sample;
+                Usage == other.Usage;
         }
     };
 

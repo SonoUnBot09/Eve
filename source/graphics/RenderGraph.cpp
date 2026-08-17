@@ -426,7 +426,7 @@ namespace
             .extent {.width = textureInfo.Width, .height = textureInfo.Height, .depth = textureInfo.Depth},
             .mipLevels = textureInfo.MipLevels,
             .arrayLayers = textureInfo.ArrayLayers,
-            .samples = GetVkImageSamplesCount(textureInfo.Sample),
+            .samples = VK_SAMPLE_COUNT_1_BIT,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
             .usage = GetVkImageUsage(textureInfo.Usage),
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
@@ -2587,8 +2587,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureIn
         .ArrayLayers = textureInfo.ArrayLayers,
         .MipLevels = textureInfo.MipLevels,
         .Format = textureInfo.Format,
-        .Usage = static_cast<TextureUsage>(0),
-        .Sample = textureInfo.Sample
+        .Usage = static_cast<TextureUsage>(0)
     };
 
     transientRequestedTextures.push_back(data);
@@ -2618,8 +2617,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture2D(TransientTextureIn
         .ArrayLayers = textureInfo.ArrayLayers,
         .MipLevels = textureInfo.MipLevels,
         .Format = textureInfo.Format,
-        .Usage = static_cast<TextureUsage>(0),
-        .Sample = textureInfo.Sample
+        .Usage = static_cast<TextureUsage>(0)
     };
 
     transientRequestedTextures.push_back(data);
@@ -2649,8 +2647,7 @@ TransientTextureHandle RenderGraph::RequestTransientTexture3D(TransientTextureIn
         .ArrayLayers = textureInfo.ArrayLayers,
         .MipLevels = textureInfo.MipLevels,
         .Format = textureInfo.Format,
-        .Usage = static_cast<TextureUsage>(0),
-        .Sample = textureInfo.Sample
+        .Usage = static_cast<TextureUsage>(0)
     };
 
     transientRequestedTextures.push_back(data);
@@ -2680,8 +2677,7 @@ TransientTextureHandle RenderGraph::RequestTransientTextureCube(TransientTexture
         .ArrayLayers = textureInfo.ArrayLayers,
         .MipLevels = textureInfo.MipLevels,
         .Format = textureInfo.Format,
-        .Usage = static_cast<TextureUsage>(0),
-        .Sample = textureInfo.Sample
+        .Usage = static_cast<TextureUsage>(0)
     };
 
     transientRequestedTextures.push_back(data);

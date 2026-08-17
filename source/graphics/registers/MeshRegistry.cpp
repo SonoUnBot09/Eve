@@ -112,7 +112,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
     {
         if(bufferInfo.Vertex)
         {
-            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.VertexBuffer, cpuMesh.Vertices.size() * sizeof(Vec3), false);
+            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.VertexBuffer, cpuMesh.Vertices.size() * sizeof(Vec3));
         }
         else 
         {
@@ -138,7 +138,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
     {
         if(bufferInfo.Index)
         {
-            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.IndexBuffer, cpuMesh.Indicies.size() * sizeof(uint32_t), true);
+            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.IndexBuffer, cpuMesh.Indicies.size() * sizeof(uint32_t));
         }
         else 
         {
@@ -165,7 +165,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
     {
         if(bufferInfo.Normal)
         {
-            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.NormalBuffer, cpuMesh.Normals.size() * sizeof(Vec3), false);
+            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.NormalBuffer, cpuMesh.Normals.size() * sizeof(Vec3));
         }
         else 
         {
@@ -191,7 +191,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
     {
         if(bufferInfo.Color)
         {
-            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.ColorBuffer, cpuMesh.Colors.size() * sizeof(Vec3), false);
+            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.ColorBuffer, cpuMesh.Colors.size() * sizeof(Vec3));
         }
         else 
         {
@@ -217,7 +217,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
     {
         if(bufferInfo.UV)
         {
-            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.UVBuffer, cpuMesh.UVs.size() * sizeof(Vec2), false);
+            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.UVBuffer, cpuMesh.UVs.size() * sizeof(Vec2));
         }
         else 
         {
@@ -244,7 +244,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
     {
         if(bufferInfo.Tangent)
         {
-            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.TangentBuffer, cpuMesh.Tangents.size() * sizeof(Vec4), false);
+            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.TangentBuffer, cpuMesh.Tangents.size() * sizeof(Vec4));
         }
         else 
         {
