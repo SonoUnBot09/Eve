@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Eve/graphics/Texture.hpp"
+#include "eve/graphics/Texture.hpp"
 #include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
-#include <Eve/graphics/PassModule.hpp>
+#include <eve/graphics/PassModule.hpp>
 
 namespace Eve::Graphics
 {

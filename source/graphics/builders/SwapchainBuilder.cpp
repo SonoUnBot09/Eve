@@ -1,13 +1,13 @@
 #include <graphics/GraphicsCore.hpp>
 #include "SwapchainBuilder.hpp"
-#include "Eve/graphics/Geometry.hpp"
-#include "Eve/graphics/Sampler.hpp"
+#include "eve/graphics/Geometry.hpp"
+#include "eve/graphics/Sampler.hpp"
 #include "graphics/registers/MemoryRegistry.hpp"
 #include <graphics/MemoryBin.hpp>
 #include <graphics/registers/ShaderRegistry.hpp>
 
 #include <EveSettings.hpp>
-#include <Eve/Debug.hpp>
+#include <eve/Debug.hpp>
 
 using namespace Debug;
 using namespace Eve::Graphics;

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Eve/graphics/Buffer.hpp>
-#include <Eve/utils/Vec.hpp>
+#include <eve/graphics/Buffer.hpp>
+#include <eve/utils/Vec.hpp>
 
 using namespace Eve::Utils;
 

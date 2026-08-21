@@ -364,9 +364,9 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         VkDescriptorImageInfo imageInfo
         {
+            .sampler = VK_NULL_HANDLE,
             .imageView = resource.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-            .sampler = VK_NULL_HANDLE
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
         };
 
         imagesSampled1DInfo.push_back(imageInfo);
@@ -399,9 +399,9 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         VkDescriptorImageInfo imageInfo
         {
+            .sampler = VK_NULL_HANDLE,
             .imageView = resource.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-            .sampler = VK_NULL_HANDLE
+            .imageLayout = VK_IMAGE_LAYOUT_GENERAL
         };
 
         imagesStorage1DInfo.push_back(imageInfo);
@@ -436,9 +436,9 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         VkDescriptorImageInfo imageInfo
         {
+            .sampler = VK_NULL_HANDLE,
             .imageView = resource.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-            .sampler = VK_NULL_HANDLE
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
         };
 
         imagesSampled2DInfo.push_back(imageInfo);
@@ -471,9 +471,9 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         VkDescriptorImageInfo imageInfo
         {
+            .sampler = VK_NULL_HANDLE,
             .imageView = resource.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-            .sampler = VK_NULL_HANDLE
+            .imageLayout = VK_IMAGE_LAYOUT_GENERAL
         };
 
         imagesStorage2DInfo.push_back(imageInfo);
@@ -508,9 +508,9 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         VkDescriptorImageInfo imageInfo
         {
+            .sampler = VK_NULL_HANDLE,
             .imageView = resource.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-            .sampler = VK_NULL_HANDLE
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
         };
 
         imagesSampled3DInfo.push_back(imageInfo);
@@ -543,9 +543,9 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         VkDescriptorImageInfo imageInfo
         {
+            .sampler = VK_NULL_HANDLE,
             .imageView = resource.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-            .sampler = VK_NULL_HANDLE
+            .imageLayout = VK_IMAGE_LAYOUT_GENERAL
         };
 
         imagesStorage3DInfo.push_back(imageInfo);
@@ -580,9 +580,9 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         VkDescriptorImageInfo imageInfo
         {
+            .sampler = VK_NULL_HANDLE,
             .imageView = resource.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-            .sampler = VK_NULL_HANDLE
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
         };
 
         imagesSampledCubeInfo.push_back(imageInfo);
@@ -615,9 +615,9 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         VkDescriptorImageInfo imageInfo
         {
+            .sampler = VK_NULL_HANDLE,
             .imageView = resource.ImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-            .sampler = VK_NULL_HANDLE
+            .imageLayout = VK_IMAGE_LAYOUT_GENERAL
         };
 
         imagesStorageCubeInfo.push_back(imageInfo);

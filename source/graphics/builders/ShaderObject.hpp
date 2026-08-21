@@ -5,8 +5,8 @@
 #include <vector>
 #include <string>
 
-#include <Eve/graphics/Texture.hpp>
-#include <Eve/graphics/Geometry.hpp>
+#include <eve/graphics/Texture.hpp>
+#include <eve/graphics/Geometry.hpp>
 
 namespace Eve::Graphics
 {

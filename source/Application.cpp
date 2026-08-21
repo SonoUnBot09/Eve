@@ -1,6 +1,6 @@
 #include <graphics/GraphicsCore.hpp>
 #include <Application.hpp>
-#include <Eve/entities/SystemDispatcher.hpp>
+#include <eve/entities/SystemDispatcher.hpp>
 
 using namespace Eve::Graphics;
 using namespace Eve::Entities;

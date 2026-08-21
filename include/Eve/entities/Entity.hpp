@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <Eve/Entities/Type.hpp>
-#include <Eve/Entities/Table.hpp>
+#include <eve/entities/Type.hpp>
+#include <eve/entities/Table.hpp>
 
 namespace Eve::Entities
 {
@@ -10,17 +10,17 @@ namespace Eve::Entities
     {
         Entity() = default;
         Entity(uint32_t id, uint32_t generationId) 
-            : Id(id), GenerataionId(generationId) {}
+            : Id(id), GeneratationId(generationId) {}
         public:
             uint32_t Id;
-            uint32_t GenerataionId;
+            uint32_t GeneratationId;
     };
 
     struct EntityRecord
     {
         EntityRecord() = default;
-        EntityRecord(Table* table, uint32_t batchIndex, uint32_t rowIndex, Type archtype) :
-        Table(table), BatchIndex(batchIndex), RowIndex(rowIndex), Archtype(archtype) {};
+        EntityRecord(Table& table, uint32_t batchIndex, uint32_t rowIndex, Type archtype) :
+        Table(&table), BatchIndex(batchIndex), RowIndex(rowIndex), Archtype(archtype) {};
 
         Table* Table;
         uint32_t BatchIndex;

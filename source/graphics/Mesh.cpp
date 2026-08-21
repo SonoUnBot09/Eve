@@ -1,4 +1,4 @@
-#include <Eve/graphics/Mesh.hpp>
+#include <eve/graphics/Mesh.hpp>
 #include <graphics/registers/MeshRegistry.hpp>
 
 using namespace Eve::Graphics;

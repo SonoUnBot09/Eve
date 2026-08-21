@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Eve/graphics/Texture.hpp>
-#include <Eve/graphics/Buffer.hpp>
+#include <eve/graphics/Texture.hpp>
+#include <eve/graphics/Buffer.hpp>
 #include <graphics/Resources.hpp>
 
 namespace Eve::Graphics

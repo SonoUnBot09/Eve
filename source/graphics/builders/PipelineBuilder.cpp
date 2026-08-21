@@ -3,8 +3,8 @@
 #include <graphics/ResourceMapper.hpp>
 #include "PipelineBuilder.hpp"
 
-#include <Eve/Utils.hpp>
-#include <Eve/Debug.hpp>
+#include <eve/Utils.hpp>
+#include <eve/Debug.hpp>
 
 using namespace Eve::Graphics;
 using namespace Debug;

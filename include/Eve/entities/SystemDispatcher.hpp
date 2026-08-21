@@ -1,15 +1,15 @@
 #pragma once
 
 #include <vector>
-#include <Eve/Entities/SystemStage.hpp>
+#include <eve/entities/SystemStage.hpp>
 
 class Application;
 
 namespace Eve::Entities
 {
-    using AwakeStage = void(*)();
-    using StartStage = void(*)();
-    using UpdateStage = void(*)(float);
+    using AwakeStage = void(*)(uint32_t);
+    using StartStage = void(*)(uint32_t);
+    using UpdateStage = void(*)(float, uint32_t);
 
     class SystemDispatcher
     {
@@ -40,6 +40,8 @@ namespace Eve::Entities
             static void ExecuteStartStage();
             static void ExecuteUpdateStage(const float deltaTime);
 
+            inline static uint32_t systemId;
+
         friend class SystemRegistrar;
         friend class ::Application;
     };
@@ -48,7 +50,7 @@ namespace Eve::Entities
     {
         public:
 
-            SystemRegistrar(void(* function)(), SystemStage stage)
+            SystemRegistrar(void(* function)(uint32_t), SystemStage stage)
             {
                 switch (stage)
                 {
@@ -63,7 +65,7 @@ namespace Eve::Entities
                 }
             }
 
-            SystemRegistrar(void(* function)(float), SystemStage stage)
+            SystemRegistrar(void(* function)(float, uint32_t), SystemStage stage)
             {
                 switch (stage)
                 {

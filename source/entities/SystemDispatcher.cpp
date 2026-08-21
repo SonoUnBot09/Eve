@@ -1,4 +1,4 @@
-#include <Eve/Entities/SystemDispatcher.hpp>
+#include <eve/entities/SystemDispatcher.hpp>
 
 using namespace Eve::Entities;
 
@@ -8,7 +8,9 @@ void SystemDispatcher::ExecuteStartStage()
 
     for(StartStage &func : systemsFunc)
     {
-        func();
+        func(systemId);
+
+        systemId++;
     }
 }
 
@@ -18,6 +20,8 @@ void SystemDispatcher::ExecuteUpdateStage(const float deltaTime)
 
     for(UpdateStage &func : systemsFunc)
     {
-        func(deltaTime);
+        func(deltaTime, systemId);
+
+        systemId++;
     }
 }

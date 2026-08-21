@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Eve/graphics/Buffer.hpp"
-#include "Eve/graphics/Sampler.hpp"
-#include "Eve/graphics/Texture.hpp"
+#include "eve/graphics/Buffer.hpp"
+#include "eve/graphics/Sampler.hpp"
+#include "eve/graphics/Texture.hpp"
 #include <graphics/GraphicsCore.hpp>
 #include <graphics/helpers/AllocationHelper.hpp>
 

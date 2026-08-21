@@ -4,64 +4,50 @@
 #include <cstdint>
 #include <memory>
 
-#include <Eve/Entities/MemoryInfo.hpp>
-#include <Eve/Entities/Type.hpp>
-
-class MemoryLayout;
+#include <eve/entities/MemoryInfo.hpp>
+#include <eve/entities/Type.hpp>
+#include <entities/MemoryLayout.hpp>
+#include <entities/Batch.hpp>
+#include <eve/entities/SlotInfo.hpp>
 
 namespace Eve::Entities
 {
+    class EntityManagerA;
+
     class Table
     {
         public:
 
-            Table(Type archtype, uint32_t batchSizeInByte);
-            ~Table();
+            Table(Type archtype, uint32_t batchSizeByte);
 
-            inline std::byte& GetComponentsBatch(const uint32_t index) { return *batches[index]; }
-            const MemoryInfo GetMemoryInfo(const Type componentType);
-
-            template<typename T>
-            inline T& GetComponentArray(std::byte& batch, const MemoryInfo memoryInfo)
-            { return *reinterpret_cast<T*>(&batch + memoryInfo.offset); }
-
-            inline uint32_t GetBatchesCount() { return batches.size(); }
-            inline uint32_t GetComponentsCountPerBatch(const uint32_t batchIndex) { return componentsCountPerBatch[batchIndex]; }
-            inline int32_t GetLastBatchIndex() { return batches.size() - 1; }
+            void CreateBatch();
+            void DestroyLastBatch();
 
 
-            template<typename T>
-            inline T& GetComponent(std::byte& batch, const uint32_t rowIndex, const MemoryInfo memoryInfo)
-            { return *reinterpret_cast<T*>(&batch + memoryInfo.offset + memoryInfo.stride * rowIndex); }
-            template<typename T>
-            inline T& GetComponent(T& firstComponent, const uint32_t rowIndex, const MemoryInfo memoryInfo)
-            { return *(&firstComponent + rowIndex); }
+            void FreeSlot(SlotInfo slotInfo);
+            SlotInfo GetNewSlot(uint32_t entityId);
+
+            void* GetComponentPtr(SlotInfo slotInfo, Type componentType);
+            void WriteComponents(SlotInfo slotInfo, std::vector<Type>& componentTypes, std::vector<void*>& sources);
+
+            void CompactBatches();
 
         private:
 
+            SlotInfo FindValidEntity(int32_t batchIndex, int32_t rowIndex);
+            void WriteComponents(SlotInfo srcSlot, SlotInfo dstSlot);
+
             Type archtype;
-            uint32_t batchSize;
+            uint32_t batchSizeBytes;
 
-            uint32_t maxSingleComponentPerBatch;
-            std::unique_ptr<MemoryLayout> memoryLayout;
+            uint32_t maxEntitiesPerBatch;
+            MemoryLayout memoryLayout;
 
-            std::vector<uint32_t*> entitiesIndices;
-            std::vector<std::vector<bool>> holesBit;
-            std::vector<std::byte*> batches;
-            std::vector<uint32_t> componentsCountPerBatch;
+            std::vector<Batch> batches;
+            uint32_t entitiesCount;
 
-            std::tuple<uint32_t, uint32_t> GetNewEntitySlot();
-
-            inline uint32_t GetMaxComponentsCountPerBatch() { return maxSingleComponentPerBatch; }
-
-            inline void SetComponentsCountPerBatch(const uint32_t batchIndex, const uint32_t value) {componentsCountPerBatch[batchIndex] = value; }
-
-            inline void SetEntityIndex(const uint32_t batchIndex, const uint32_t rowIndex, const uint32_t value) { entitiesIndices[batchIndex][rowIndex] = value; }
-            inline void SetEntityHolesBitIndex(const uint32_t batchIndex, const uint32_t rowIndex, const bool isHole) { holesBit[batchIndex][rowIndex] = isHole; }
-
-            void AllocateBatches(const uint32_t count);
-            void DeallocateAllBatches();
-            void DeallocateBatch(const uint32_t index);
+            std::vector<SlotInfo> freeSlots;
+           
 
             friend class EntityManager;
     };

@@ -1,7 +1,7 @@
 #include "MeshRegistry.hpp"
-#include "Eve/graphics/Buffer.hpp"
-#include "Eve/graphics/PassModule.hpp"
-#include "Eve/utils/Vec.hpp"
+#include "eve/graphics/Buffer.hpp"
+#include "eve/graphics/PassModule.hpp"
+#include "eve/utils/Vec.hpp"
 #include "MemoryRegistry.hpp"
 #include <graphics/RenderGraph.hpp>
 

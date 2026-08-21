@@ -1,16 +1,19 @@
-#include <Eve/Entities/EntityCommandPool.hpp>
+#include <eve/entities/EntityCommandPool.hpp>
+#include <eve/entities/EntityManager.hpp>
 
 using namespace Eve::Entities;
 
-void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo)
+Entity EntityCommandPool::ScheduleCreationCommand(EntityCommandInfo* commandInfo)
 {
+    Entity entity = EntityManager::RequestNewEntity();
+
     if(commandInfo != nullptr)
     {
         const Type archtype = commandInfo->GetCreateComponentsArchtype();
 
         creationCommands.emplace_back(
             entity.Id,
-            entity.GenerataionId,
+            entity.GeneratationId,
             archtype,
             creationComponentsOffset
         );
@@ -36,7 +39,7 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
 
         if(availableSpace < requiredSpace)
         {
-            creationComponentsData.resize(creationComponentsData.size() + requiredSpace + 8192);
+            creationComponentsData.resize(creationComponentsData.size() + requiredSpace + defaultCreationComponentsSize);
         }
 
         for (uint32_t i = 0; i < componentsCount; i++)
@@ -73,7 +76,7 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
     {
         creationCommands.emplace_back(
             entity.Id,
-            entity.GenerataionId,
+            entity.GeneratationId,
             0,
             0
         );
@@ -81,13 +84,15 @@ void EntityCommandPool::ScheduleCreationCommand(const Entity entity, EntityComma
 
     componentsSize.clear();
     componentsOffset.clear();
+
+    return entity;
 }
 
 void EntityCommandPool::ScheduleDestructionCommand(const Entity entity)
 {
     destructionCommands.emplace_back(
         entity.Id,
-        entity.GenerataionId
+        entity.GeneratationId
     );
 }
 
@@ -98,7 +103,7 @@ void EntityCommandPool::ScheduleTransitionCommand(const Entity entity, EntityCom
 
     transitionCommands.emplace_back(
         entity.Id,
-        entity.GenerataionId,
+        entity.GeneratationId,
         createComponentsArchtype,
         destroyComponentsArchtype,
         transitionComponentsOffset
@@ -124,7 +129,7 @@ void EntityCommandPool::ScheduleTransitionCommand(const Entity entity, EntityCom
     const size_t availableSpace = transitionComponentsData.size() - transitionComponentsOffset;
     if(availableSpace < requiredSpace)
     {
-        transitionComponentsData.resize(transitionComponentsData.size() + requiredSpace + 8192);
+        transitionComponentsData.resize(transitionComponentsData.size() + requiredSpace + defaultTransitionComponentsSize);
     }
 
     for (uint32_t i = 0; i < componentsCount; i++)

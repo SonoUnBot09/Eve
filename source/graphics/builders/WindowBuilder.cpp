@@ -1,7 +1,7 @@
 #include "WindowBuilder.hpp"
 
 #include <SDL3/SDL.h>
-#include <Eve/Debug.hpp>
+#include <eve/Debug.hpp>
 
 using namespace Debug;
 using namespace Eve::Graphics;

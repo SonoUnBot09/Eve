@@ -5,7 +5,7 @@
 #include <graphics/builders/ContextBuilder.hpp>
 #include <graphics/builders/SwapchainBuilder.hpp>
 #include <graphics/builders/FrameDataBuilder.hpp>
-#include <Eve/utils/Vec.hpp>
+#include <eve/utils/Vec.hpp>
 
 using namespace Eve::Utils;
 

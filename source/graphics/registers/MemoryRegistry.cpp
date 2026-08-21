@@ -1,7 +1,7 @@
 #include "MemoryRegistry.hpp"
-#include "Eve/graphics/Buffer.hpp"
-#include "Eve/graphics/PassModule.hpp"
-#include "Eve/graphics/Texture.hpp"
+#include "eve/graphics/Buffer.hpp"
+#include "eve/graphics/PassModule.hpp"
+#include "eve/graphics/Texture.hpp"
 #include "ResourceRegistry.hpp"
 #include <graphics/ResourceMapper.hpp>
 #include <graphics/GraphicsCore.hpp>

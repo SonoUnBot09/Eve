@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <Eve/graphics/Geometry.hpp>
+#include <eve/graphics/Geometry.hpp>
 #include <vector>
-#include <Eve/graphics/Texture.hpp>
+#include <eve/graphics/Texture.hpp>
 #include <string>
 
 namespace Eve::Graphics

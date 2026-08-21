@@ -7,7 +7,7 @@
 #include <array>
 #include <optional>
 
-#include <Eve/Entities/Type.hpp>
+#include <eve/entities/Type.hpp>
 
 namespace Eve::Entities
 {
@@ -77,6 +77,12 @@ namespace Eve::Entities
             inline static Type GetComponentBit(uint32_t componentTicket)
             {
                 return bitAndSize[componentTicket].first;
+            }
+
+            template<typename ... Components>
+            inline static Type GetComponentMask()
+            {
+                return (GetComponentBit<Components>() | ...);
             }
 
             inline static size_t GetComponentSize(uint32_t componentTicket)

@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include <Eve/graphics/Texture.hpp>
-#include <Eve/graphics/ShaderHandle.hpp>
-#include <Eve/graphics/Sampler.hpp>
+#include <eve/graphics/Texture.hpp>
+#include <eve/graphics/ShaderHandle.hpp>
+#include <eve/graphics/Sampler.hpp>
 
 namespace Eve::Graphics
 {

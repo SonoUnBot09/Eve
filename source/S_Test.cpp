@@ -1,12 +1,13 @@
 #include <graphics/RenderGraph.hpp>
-#include "Eve/graphics/PassModule.hpp"
-#include "Eve/graphics/ShaderHandle.hpp"
-#include "Eve/graphics/Texture.hpp"
-#include <Eve/components/Camera.hpp>
-#include <Eve/Entities/SystemDispatcher.hpp>
-#include <Eve/Debug.hpp>
-#include <Eve/Entities/EntityManager.hpp>
-#include <Eve/components/Transform.hpp>
+#include "eve/graphics/PassModule.hpp"
+#include "eve/graphics/ShaderHandle.hpp"
+#include "eve/graphics/Texture.hpp"
+#include "eve/utils/Vec.hpp"
+#include <eve/components/Camera.hpp>
+#include <eve/entities/SystemDispatcher.hpp>
+#include <eve/Debug.hpp>
+#include <eve/entities/EntityManager.hpp>
+#include <eve/components/Transform.hpp>
 #include <graphics/registers/ShaderRegistry.hpp>
 
 using namespace Eve::Entities;
@@ -15,7 +16,7 @@ using namespace Eve::Graphics;
 static ShaderHandle shaderHandle;
 static uint64_t elapsedFrames = 0;
 
-void Start()
+void Start(uint32_t systemId)
 {
     ShaderInfo shaderInfo
     {
@@ -35,7 +36,7 @@ void Start()
     shaderHandle = ShaderRegistry::CreateGraphicsShader(shaderInfo);
 }
 
-void Update(const float deltaTime)
+void Update(float deltaTime, uint32_t systemId)
 {
     Vec2Int windowSize = GraphicsCore::GetWindowSize();
 
@@ -45,8 +46,7 @@ void Update(const float deltaTime)
         .Height = static_cast<uint32_t>(windowSize.y),
         .ArrayLayers = 1,
         .MipLevels = 1,
-        .Format = Format::FORMAT_R8G8B8A8_SRGB,
-        .Sample = TextureSample::SAMPLE_1
+        .Format = Format::FORMAT_R8G8B8A8_SRGB
     };
 
     TransientTextureHandle handle = RenderGraph::RequestTransientTexture2D(textureInfo);
@@ -63,15 +63,21 @@ void Update(const float deltaTime)
     pass.UseColorTarget(handle, loadStoreOp);
 
     float time = static_cast<float>(elapsedFrames);
+    struct PushConstant
+    {
+        Vec2 resolution;
+        float time;
+    } pushConstant;
 
-    std::cout << time << std::endl;
-
-    pass.Draw(3, shaderHandle, &time, Words32(0), Words32(1));
+    pushConstant.time = time;
+    pushConstant.resolution.x = (float)windowSize.x;
+    pushConstant.resolution.y = (float)windowSize.y;
+    
+    pass.Draw(6, shaderHandle, &pushConstant, Words32(0), Words32(3));
 
     RenderGraph::AddPass(pass);
 
     RenderGraph::SetPresentTexture(handle);
-    std::cout << elapsedFrames << std::endl;
 
     elapsedFrames++;
 }

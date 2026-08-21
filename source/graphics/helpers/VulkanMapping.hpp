@@ -2,11 +2,11 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include <Eve/graphics/Buffer.hpp>
-#include <Eve/graphics/Texture.hpp>
-#include <Eve/graphics/Sampler.hpp>
-#include <Eve/graphics/ShaderStages.hpp>
-#include <Eve/graphics/Geometry.hpp>
+#include <eve/graphics/Buffer.hpp>
+#include <eve/graphics/Texture.hpp>
+#include <eve/graphics/Sampler.hpp>
+#include <eve/graphics/ShaderStages.hpp>
+#include <eve/graphics/Geometry.hpp>
 
 namespace Eve::Graphics
 {

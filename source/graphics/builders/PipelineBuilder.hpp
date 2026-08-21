@@ -9,7 +9,7 @@
 #include <graphics/builders/SlangCompiler.hpp>
 
 #include "ShaderObject.hpp"
-#include <Eve/graphics/ShaderHandle.hpp>
+#include <eve/graphics/ShaderHandle.hpp>
 
 namespace Eve::Graphics
 {

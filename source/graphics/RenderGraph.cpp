@@ -1,6 +1,5 @@
 #include "RenderGraph.hpp"
 #include <graphics/registers/ShaderRegistry.hpp>
-#include "SDL3/SDL_timer.h"
 #include "builders/ContextBuilder.hpp"
 #include "builders/PipelineBuilder.hpp"
 #include "builders/ShaderObject.hpp"
@@ -1344,9 +1343,9 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
                 .dstAccessMask = barrierInfo.DstInfo.AccessMask,
                 .oldLayout = barrierInfo.SrcInfo.Layout,
                 .newLayout = barrierInfo.DstInfo.Layout,
-                .image = image,
                 .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                 .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = image,
                 .subresourceRange
                 {
                     .aspectMask = aspectMask,
@@ -1376,11 +1375,11 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
                 .srcAccessMask = barrierInfo.SrcInfo.AccessMask,
                 .dstStageMask = barrierInfo.DstInfo.StageMask,
                 .dstAccessMask = barrierInfo.DstInfo.AccessMask,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                 .buffer = buffer,
                 .offset = 0,
-                .size = VK_WHOLE_SIZE,
-                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED
+                .size = VK_WHOLE_SIZE
             };
 
             bufferMemoryBarriers.push_back(barrier);
@@ -1409,9 +1408,9 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
                 .dstAccessMask = barrierInfo.DstInfo.AccessMask,
                 .oldLayout = barrierInfo.SrcInfo.Layout,
                 .newLayout = barrierInfo.DstInfo.Layout,
-                .image = image,
                 .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                 .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = image,
                 .subresourceRange
                 {
                     .aspectMask = aspectMask,
@@ -1441,11 +1440,11 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
                 .srcAccessMask = barrierInfo.SrcInfo.AccessMask,
                 .dstStageMask = barrierInfo.DstInfo.StageMask,
                 .dstAccessMask = barrierInfo.DstInfo.AccessMask,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                 .buffer = buffer,
                 .offset = 0,
-                .size = VK_WHOLE_SIZE,
-                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED
+                .size = VK_WHOLE_SIZE
             };
 
             bufferMemoryBarriers.push_back(barrier);
@@ -2103,7 +2102,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
             .loadOp = loadOp,
             .storeOp = storeOp,
-            .clearValue {.depthStencil{.depth{loadStoreOp.clearDepth}}}
+            .clearValue {.depthStencil{.depth = loadStoreOp.clearDepth}}
         };
 
         depthAttachmentInfo = attachment;
@@ -2138,7 +2137,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             .imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
             .loadOp = loadOp,
             .storeOp = storeOp,
-            .clearValue {.depthStencil{.stencil{loadStoreOp.clearStencil}}}
+            .clearValue {.depthStencil{.stencil = loadStoreOp.clearStencil}}
         };
 
         stencilAttachmentInfo = attachment;
@@ -2322,8 +2321,8 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue {.color{.float32{
             0, 
-            0.5f, 
-            0.3f, 
+            0, 
+            0, 
             1.0}}}
     };
 

@@ -3,9 +3,9 @@
 #include <cmath>
 #include <array>
 
-#include <Eve/Entities/Type.hpp>
-#include <Eve/Entities/ComponentsRegistry.hpp>
-#include <Eve/Entities/MemoryInfo.hpp>
+#include <eve/entities/Type.hpp>
+#include <eve/entities/ComponentsRegistry.hpp>
+#include <eve/entities/MemoryInfo.hpp>
 
 using namespace Eve::Entities;
 
@@ -15,49 +15,45 @@ struct MemoryLayout
 
         MemoryLayout(Type archtype, uint32_t batchSize)
         {
-
-            const std::vector<Type> components = GetActiveComponentsType(archtype);
-
+            const std::vector<Type> componentTypes = GetActiveComponentsType(archtype);
+            
+            activeComponentsTypes = componentTypes;
 
             uint32_t totalComponentsSize = 0;
-            const std::vector<size_t> componentsStride = CalculateComponentsSize(components, &totalComponentsSize);
+            const std::vector<size_t> componentSizes = CalculateComponentSizes(componentTypes, totalComponentsSize);
             
-            uint32_t maxSingleComponentCount = (uint32_t)std::floor((float)batchSize / (float)totalComponentsSize);
+            uint32_t maxEntitiesCount = (uint32_t)std::floor((float)batchSize / (float)totalComponentsSize);
 
+            // Calculate components strides
             uint32_t offset = 0;
-            for (uint32_t i = 0; i < components.size(); i++)
+            for (uint32_t i = 0; i < componentTypes.size(); i++)
             {
-                
-                Type componentType = components[i];
-                uint32_t componentSize = componentsStride[i];
+                Type componentType = componentTypes[i];
+                uint32_t componentSize = componentSizes[i];
 
-                uint32_t componentOffset = offset;
-
-                MemoryInfo memoryInfo(componentSize, componentOffset);
+                MemoryInfo memoryInfo(componentSize, offset);
             
-                //componentsLayout[componentType] = memoryInfo;
                 uint32_t index = std::countr_zero(componentType.to_ullong());
-                componentsLayout[index] = memoryInfo;
-                //componentsLayout.emplace(componentType, memoryInfo);
-                //componentsLayout.e
+                componentMemoryInfos[index] = memoryInfo;
 
-                offset = componentOffset + componentSize * maxSingleComponentCount;
-
+                offset =+ componentSize * maxEntitiesCount;
             }
 
-            this->maxSingleComponentCount = maxSingleComponentCount;
+            this->maxEntitiesCount = maxEntitiesCount;
         }
 
         MemoryInfo GetMemoryInfo(const Type componentType);
-        const uint32_t GetMaxSingleComponentsCountPerBatch();
+        inline const std::vector<Type> GetActiveComponentsTypes() { return activeComponentsTypes; }
+        const uint32_t GetMaxEntityCountPerBatch();
 
     private:
 
-        uint32_t maxSingleComponentCount;
+        uint32_t maxEntitiesCount;
 
-        std::array<MemoryInfo, 64> componentsLayout;
+        std::array<MemoryInfo, 64> componentMemoryInfos;
+        std::vector<Type> activeComponentsTypes;
 
         const std::vector<Type> GetActiveComponentsType(Type archtype);
-        const std::vector<size_t> CalculateComponentsSize(const std::vector<Type>& components, uint32_t* totalComponentsSize);
+        const std::vector<size_t> CalculateComponentSizes(const std::vector<Type>& components, uint32_t& totalComponentsSize);
 
 };

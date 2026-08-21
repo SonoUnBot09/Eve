@@ -1,4 +1,4 @@
-#include <Eve/graphics/PassModule.hpp>
+#include <eve/graphics/PassModule.hpp>
 #include <graphics/registers/MemoryRegistry.hpp>
 #include "Resources.hpp"
 #include "registers/MemoryRegistry.hpp"

@@ -4,12 +4,12 @@
 #include <array>
 #include <algorithm>
 
-#include <Eve/Entities/EntityCommands.hpp>
-#include <Eve/Entities/EntityCommandInfo.hpp>
-#include <Eve/Entities/ComponentsRegistry.hpp>
-#include <Eve/Entities/Entity.hpp>
+#include <eve/entities/EntityCommands.hpp>
+#include <eve/entities/EntityCommandInfo.hpp>
+#include <eve/entities/ComponentsRegistry.hpp>
+#include <eve/entities/Entity.hpp>
 
-#include <Eve/Debug.hpp>
+#include <eve/Debug.hpp>
 
 namespace Eve::Entities
 {
@@ -18,7 +18,18 @@ namespace Eve::Entities
 
         public:
 
-            EntityCommandPool() = default;
+            EntityCommandPool()
+            {
+                creationCommands.reserve(defaultCreationCommandBufferSize);
+                destructionCommands.reserve(defaultDestructionCommandBufferSize);
+                transitionCommands.reserve(defaultTransitionCommandBufferSize);
+
+                creationComponentsData.resize(defaultCreationComponentsSize);
+                transitionComponentsData.resize(defaultTransitionComponentsSize);
+                
+                componentsSize.reserve(64);
+                componentsOffset.reserve(64);
+            }
             EntityCommandPool(
                 uint32_t creationCommandBufferInitialSize, 
                 uint32_t destructionCommandBufferInitialSize, 
@@ -38,19 +49,19 @@ namespace Eve::Entities
                 componentsOffset.reserve(64);
             };
 
-            void ScheduleCreationCommand(const Entity entity, EntityCommandInfo* commandInfo);
+            Entity ScheduleCreationCommand(EntityCommandInfo* commandInfo);
             void ScheduleDestructionCommand(const Entity entity);
             void ScheduleTransitionCommand(const Entity entity, EntityCommandInfo& commandInfo);
 
             void Clear();
-
-        private:
 
             inline std::vector<EntityCreationCommand>& GetCreationCommands() { return creationCommands; }
             inline std::vector<EntityDestructionCommand>& GetDestructionCommands() { return destructionCommands; }
             inline std::vector<EntityTransitionCommand>& GetTransitionCommands() { return transitionCommands; }
             inline std::vector<std::byte>& GetCreationComponentsData() { return creationComponentsData; }
             inline std::vector<std::byte>& GetTransitionComponentsData() { return transitionComponentsData;}
+
+        private:
 
             std::vector<EntityCreationCommand> creationCommands;
             std::vector<EntityDestructionCommand> destructionCommands;
@@ -69,6 +80,11 @@ namespace Eve::Entities
             uint64_t activeBits = 0;
             std::array<uint32_t, 64> componentsIndices = {0};
 
-            friend class EntityManager;
+            static constexpr uint32_t defaultCreationCommandBufferSize = 1000;
+            static constexpr uint32_t defaultDestructionCommandBufferSize = 1000; 
+            static constexpr uint32_t defaultTransitionCommandBufferSize = 1000;
+
+            static constexpr uint32_t defaultCreationComponentsSize = 1024 * 64;     // 64 KB
+            static constexpr uint32_t defaultTransitionComponentsSize = 1024 * 64;   // 64 KB
     };
 }

@@ -4,7 +4,7 @@
 #include "ContextBuilder.hpp"
 #include <graphics/GraphicsCore.hpp>
 #include <EveSettings.hpp>
-#include <Eve/Debug.hpp>
+#include <eve/Debug.hpp>
 #include "SlangCompiler.hpp"
 
 using namespace Debug;

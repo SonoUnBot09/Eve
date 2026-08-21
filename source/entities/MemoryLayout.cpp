@@ -1,14 +1,14 @@
-#include <Entities/MemoryLayout.hpp>
+#include <entities/MemoryLayout.hpp>
 
 MemoryInfo MemoryLayout::GetMemoryInfo(const Type componentType)
 {
     uint32_t index = std::countr_zero(componentType.to_ullong());
-    return componentsLayout[index];
+    return componentMemoryInfos[index];
 }
 
-const uint32_t MemoryLayout::GetMaxSingleComponentsCountPerBatch()
+const uint32_t MemoryLayout::GetMaxEntityCountPerBatch()
 {
-    return maxSingleComponentCount;
+    return maxEntitiesCount;
 }
 
 const std::vector<Type> MemoryLayout::GetActiveComponentsType(Type archtype)
@@ -27,18 +27,18 @@ const std::vector<Type> MemoryLayout::GetActiveComponentsType(Type archtype)
     return componets;
 }
 
-const std::vector<size_t> MemoryLayout::CalculateComponentsSize(const std::vector<Type>& components, uint32_t* totalComponentsSize)
+const std::vector<size_t> MemoryLayout::CalculateComponentSizes(const std::vector<Type>& components, uint32_t& totalComponentsSize)
 {
-    std::vector<size_t> componentsStride;
+    std::vector<size_t> componentSizes;
     for (uint32_t i = 0; i < components.size(); i++)
     {
         Type componentType = components[i];
 
         size_t size = ComponentsRegistry::GetComponentSize(componentType);
 
-        componentsStride.push_back(size);
-        *totalComponentsSize += size;
+        componentSizes.push_back(size);
+        totalComponentsSize += size;
     }
 
-    return componentsStride;
+    return componentSizes;
 }

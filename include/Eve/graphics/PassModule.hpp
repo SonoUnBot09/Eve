@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Eve/utils/Vec.hpp"
+#include "eve/utils/Vec.hpp"
 #include <array>
 #include <vector>
 #include <utility>
-#include <Eve/graphics/Texture.hpp>
-#include <Eve/graphics/Buffer.hpp>
-#include <Eve/graphics/Mesh.hpp>
-#include <Eve/graphics/ShaderHandle.hpp>
+#include <eve/graphics/Texture.hpp>
+#include <eve/graphics/Buffer.hpp>
+#include <eve/graphics/Mesh.hpp>
+#include <eve/graphics/ShaderHandle.hpp>
 
 namespace Eve::Graphics
 {

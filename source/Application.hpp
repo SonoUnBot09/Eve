@@ -2,8 +2,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
-#include <Eve/Debug.hpp>
-#include <Eve/Utils.hpp>
+#include <eve/Debug.hpp>
+#include <eve/Utils.hpp>
 
 using namespace Debug;
 using namespace Utils;
