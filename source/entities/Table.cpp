@@ -87,8 +87,6 @@ SlotInfo Table::GetNewSlot(uint32_t entityId)
 
 void* Table::GetComponentPtr(SlotInfo slotInfo, Type componentType)
 {
-    size_t size = ComponentsRegistry::GetComponentSize(componentType);
-
     MemoryInfo memoryInfo = memoryLayout.GetMemoryInfo(componentType);
 
     std::byte* dstBatch = batches[slotInfo.BatchIndex].BatchData.data();

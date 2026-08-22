@@ -19,6 +19,17 @@ namespace Eve::Entities
             uint32_t GetEntitiesCount();
 
             // TODO : Get Components Feature
+            template<typename T>
+            T& GetComponent(uint32_t index, Type componentType)
+            {
+                uint32_t batchIndex = std::floor((float)index / (float)maxEntitiesPerBatch);
+                uint32_t localIndex = (batchIndex * maxEntitiesPerBatch) - index;
+
+                return *reinterpret_cast<T*>
+                (
+                    GetComponentPtr({batchIndex, localIndex}, componentType)
+                );
+            }
 
         private:
 

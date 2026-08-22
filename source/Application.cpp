@@ -23,7 +23,19 @@ void Application::Start()
 {
     //print("Going to execute start stages");
     SystemDispatcher::ExecuteAwakeStage();
+    std::cout << "Before Start" << std::endl;
+
+    EntityManager::ExecuteAllCommandPools();
+    std::cout << "Before Start" << std::endl;
+
+
     SystemDispatcher::ExecuteStartStage();
+    std::cout << "Before Start" << std::endl;
+
+
+    EntityManager::ExecuteAllCommandPools();
+     std::cout << "Before Start" << std::endl;
+
     //print("Start stage executed");
 }
 
@@ -95,6 +107,8 @@ void Application::Run()
 
         SystemDispatcher::ExecuteUpdateStage(deltaTime);
 
+        EntityManager::ExecuteAllCommandPools();
+        
         GraphicsCore::Render(elapsedFrames);
         
         elapsedFrames++;

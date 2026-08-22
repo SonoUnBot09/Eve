@@ -18,9 +18,7 @@ static ShaderHandle shaderHandle;
 static uint64_t elapsedFrames = 0;
 
 void Start(uint32_t systemId)
-{
-    ComponentsRegistry::RegisterComponent<Transform>();
-    
+{    
     ShaderInfo shaderInfo
     {
         .ShaderModule = "triangle",
@@ -37,10 +35,32 @@ void Start(uint32_t systemId)
     };
 
     shaderHandle = ShaderRegistry::CreateGraphicsShader(shaderInfo);
+
+    ComponentsRegistry::RegisterComponent<Transform>();
+
+    Transform transform
+    {
+        .Position {0,1,0},
+        .Rotation {0,0,0},
+        .Scale {1,1,1}
+    };
+
+    EntityCommandInfo command{};
+    command.AddComponent<Transform>(transform);
+
+    EntityManager::ScheduleCreationCommand(&command, systemId);
 }
 
 void Update(float deltaTime, uint32_t systemId)
 {
+    std::cout << "Before Update" << std::endl;
+    Type componentType = ComponentsRegistry::GetComponentBit<Transform>();
+    Table& table = EntityManager::GetTable(componentType);
+
+    Transform& transform = table.GetComponent<Transform>(0, componentType);
+
+    std::cout << transform.Position.y << std::endl;
+
     Vec2Int windowSize = GraphicsCore::GetWindowSize();
 
     TransientTextureInfo2D textureInfo
