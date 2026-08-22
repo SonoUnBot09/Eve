@@ -40,7 +40,7 @@ void Start(uint32_t systemId)
 
     Transform transform
     {
-        .Position {0,1,0},
+        .Position {10,1,0},
         .Rotation {0,0,0},
         .Scale {1,1,1}
     };
@@ -59,7 +59,7 @@ void Update(float deltaTime, uint32_t systemId)
 
     Transform& transform = table.GetComponent<Transform>(0, componentType);
 
-    std::cout << transform.Position.y << std::endl;
+    std::cout << transform.Position.x << std::endl;
 
     Vec2Int windowSize = GraphicsCore::GetWindowSize();
 

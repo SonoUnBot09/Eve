@@ -6,6 +6,7 @@ namespace Eve::Entities
 {
     struct SlotInfo
     {
+        SlotInfo() = default;
         SlotInfo(uint32_t batchIndex, uint32_t rowIndex) :
         BatchIndex(batchIndex), RowIndex(rowIndex) {};
 

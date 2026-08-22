@@ -1,3 +1,4 @@
+#include "eve/entities/details/SlotInfo.hpp"
 #include <eve/entities/ComponentsRegistry.hpp>
 #include <eve/entities/Table.hpp>
 #include <eve/entities/EntityManager.hpp>
@@ -39,45 +40,39 @@ SlotInfo Table::GetNewSlot(uint32_t entityId)
 {
     entitiesCount++;
 
+    SlotInfo slotInfo;
+
+    if(batches.empty())
+    {
+        CreateBatch();
+    }
+
     if(freeSlots.empty())
     {
         uint32_t lastBatchIndex = batches.size() - 1;
 
-        Batch& lastBatch = batches[lastBatchIndex];
-
-        // Is the last batch full?
-        if(lastBatch.PeakBatchSize == maxEntitiesPerBatch)
+        Batch& batch = batches[lastBatchIndex];
+        if(batch.PeakBatchSize == maxEntitiesPerBatch)
         {
             CreateBatch();
-
-            Batch& batch = batches.back();
-
-            SlotInfo slotInfo {lastBatchIndex + 1, batch.PeakBatchSize};
-
-            batch.PeakBatchSize++;
-            batch.ActiveEntities[0] = true;
-            batch.EntitiesID[0] = entityId;
-            batch.ActiveEntitiesCount++;
-
-            return slotInfo;
+            slotInfo.BatchIndex = lastBatchIndex + 1;
+            slotInfo.RowIndex = 0;
         }
-
-        uint32_t rowIndex = lastBatch.PeakBatchSize;
-        SlotInfo slotInfo {lastBatchIndex, rowIndex};
-
-        lastBatch.PeakBatchSize++;
-        lastBatch.ActiveEntities[rowIndex] = true;
-        lastBatch.EntitiesID[rowIndex] = entityId;
-        lastBatch.ActiveEntitiesCount++;
-
-        return slotInfo;
+        else 
+        {
+            slotInfo.BatchIndex = lastBatchIndex;
+            slotInfo.RowIndex = batch.PeakBatchSize;
+        }
     }
-
-    SlotInfo& slotInfo = freeSlots.back();
-    freeSlots.pop_back();
+    else 
+    {
+        slotInfo = freeSlots.back();
+        freeSlots.pop_back();
+    }   
 
     Batch& batch = batches[slotInfo.BatchIndex];
 
+    batch.PeakBatchSize++;
     batch.ActiveEntities[slotInfo.RowIndex] = true;
     batch.EntitiesID[slotInfo.RowIndex] = entityId;
     batch.ActiveEntitiesCount++;

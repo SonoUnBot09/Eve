@@ -22,19 +22,16 @@ bool Application::Initialize()
 void Application::Start()
 {
     //print("Going to execute start stages");
-    SystemDispatcher::ExecuteAwakeStage();
-    std::cout << "Before Start" << std::endl;
+    //SystemDispatcher::ExecuteAwakeStage();
 
-    EntityManager::ExecuteAllCommandPools();
-    std::cout << "Before Start" << std::endl;
+    //EntityManager::ExecuteAllCommandPools();
 
 
     SystemDispatcher::ExecuteStartStage();
-    std::cout << "Before Start" << std::endl;
 
 
     EntityManager::ExecuteAllCommandPools();
-     std::cout << "Before Start" << std::endl;
+    std::cout << "Before Start" << std::endl;
 
     //print("Start stage executed");
 }
