@@ -1,4 +1,5 @@
 #include <graphics/RenderGraph.hpp>
+#include "eve/entities/ComponentsRegistry.hpp"
 #include "eve/graphics/PassModule.hpp"
 #include "eve/graphics/ShaderHandle.hpp"
 #include "eve/graphics/Texture.hpp"
@@ -18,6 +19,8 @@ static uint64_t elapsedFrames = 0;
 
 void Start(uint32_t systemId)
 {
+    ComponentsRegistry::RegisterComponent<Transform>();
+    
     ShaderInfo shaderInfo
     {
         .ShaderModule = "triangle",

@@ -8,9 +8,13 @@
 
 #include <eve/entities/QueryInfo.hpp>
 
+namespace Eve
+{
+    class Application;
+}
+
 namespace Eve::Entities
 {
-    //class Application;
 
     class EntityManager
     {
@@ -65,6 +69,6 @@ namespace Eve::Entities
 
             friend class Table;
             friend class EntityCommandPool;
-            friend class Application;
+            friend class Eve::Application;
     };
 }

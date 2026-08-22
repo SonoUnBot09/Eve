@@ -5,6 +5,7 @@
 
 using namespace Eve::Graphics;
 using namespace Eve::Entities;
+using namespace Eve;
 
 bool Application::Initialize()
 {

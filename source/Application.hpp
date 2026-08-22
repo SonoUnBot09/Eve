@@ -8,18 +8,21 @@
 using namespace Debug;
 using namespace Utils;
 
-class Application
+namespace Eve
 {
-    public:
+    class Application
+    {
+        public:
 
-        static bool Initialize();
-        static void Start();
-        static void Run();
-        static void Shutdown();
+            static bool Initialize();
+            static void Start();
+            static void Run();
+            static void Shutdown();
 
-    private:
+        private:
 
-        inline static bool isAppRunning = true;
-        inline static uint64_t elapsedFrames = Eve::Settings::MAX_FRAMES_IN_FLIGHT;
+            inline static bool isAppRunning = true;
+            inline static uint64_t elapsedFrames = Eve::Settings::MAX_FRAMES_IN_FLIGHT;
 
-};
+    };
+}

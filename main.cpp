@@ -1,13 +1,10 @@
 #include <Application.hpp>
 
-using namespace std;
-
 int main(int argc, char* argv[])
 {
-
     std::cout <<"Hello World!" << std::endl;
     
-    Application app;
+    Eve::Application app;
     if(app.Initialize())
     {
         app.Start();
