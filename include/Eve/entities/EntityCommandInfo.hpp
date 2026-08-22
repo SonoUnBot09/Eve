@@ -1,5 +1,6 @@
 #pragma once
 
+#include <eve/entities/ComponentsRegistry.hpp>
 #include <cstdint>
 #include <vector>
 
@@ -9,32 +10,32 @@ namespace Eve::Entities
 {
     struct EntityCommandInfo
     {
-
-        EntityCommandInfo()
-        {
-            creationComponents.resize(2048);
-            creationComponentsType.reserve(64);
-        }
-        EntityCommandInfo(
-            uint32_t creationComponentsInitialSize, 
-            uint32_t creationComponentsTypeInitialSize
-        )
-        {
-            creationComponents.resize(creationComponentsInitialSize);
-            creationComponentsType.reserve(creationComponentsTypeInitialSize);
-        }
-
         public:
 
-            template<typename T>
-            inline void AddComponent(const T& component, const Type componentType)
+            EntityCommandInfo()
             {
+                creationComponents.resize(256);
+                creationComponentsType.reserve(64);
+            }
+            EntityCommandInfo(
+                uint32_t creationComponentsInitialSize
+            )
+            {
+                creationComponents.resize(creationComponentsInitialSize);
+                creationComponentsType.reserve(64);
+            }
+
+            template<typename T>
+            inline void AddComponent(const T& component)
+            {
+                Type componentType = ComponentsRegistry::GetComponentBit<T>();
+                
                 uint32_t size = sizeof(component);
                 uint32_t availableSpace = creationComponents.size() - creationComponentsOffset;
                 if(availableSpace < size)
                 {
                     uint32_t baseSpace = creationComponents.size();
-                    creationComponents.resize(baseSpace + 512);
+                    creationComponents.resize(baseSpace + 64);
                 }
 
                 std::byte* dst = creationComponents.data() + creationComponentsOffset;
@@ -47,10 +48,7 @@ namespace Eve::Entities
             }
             inline void RemoveComponent(const Type componentType) { destroyComponentsArchtype = (destroyComponentsArchtype | componentType); }
 
-            inline const Type GetCreateComponentsArchtype() { return createComponentsArchtype; }
-            inline const Type GetDestroyComponentsArchtype() { return destroyComponentsArchtype; }
-            inline const size_t GetComponentsArraySize() { return creationComponentsOffset; }
-            inline void Clean() 
+            inline void Clear() 
             { 
                 creationComponentsOffset = 0;
 
@@ -62,6 +60,10 @@ namespace Eve::Entities
             }
 
         private:
+
+            inline const Type GetCreateComponentsArchtype() { return createComponentsArchtype; }
+            inline const Type GetDestroyComponentsArchtype() { return destroyComponentsArchtype; }
+            inline const size_t GetComponentsArraySize() { return creationComponentsOffset; }
 
             inline const std::vector<std::byte>& GetCreationComponents() { return creationComponents; }
             inline const std::vector<Type>& GetCreationComponentsType() { return creationComponentsType; }

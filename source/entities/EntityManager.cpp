@@ -1,7 +1,4 @@
-#include "eve/entities/ComponentsRegistry.hpp"
-#include "eve/entities/Entity.hpp"
-#include "eve/entities/EntityCommandPool.hpp"
-#include "eve/entities/EntityCommands.hpp"
+#include <eve/entities/Entity.hpp>
 #include <eve/entities/EntityManager.hpp>
 
 using namespace Eve::Entities;
@@ -335,4 +332,23 @@ void EntityManager::UpdateQuery(QueryInfo queryInfo, std::vector<Table*>& result
             }
         }
     }
+}
+
+Entity EntityManager::ScheduleCreationCommand(EntityCommandInfo* commandInfo, uint32_t systemId)
+{
+    EntityCommandPool& commandPool = GetAvailableCommandPool(systemId);
+
+    return commandPool.ScheduleCreationCommand(commandInfo);
+}
+void EntityManager::ScheduleDestructionCommand(const Entity entity, uint32_t systemId)
+{
+    EntityCommandPool& commandPool = GetAvailableCommandPool(systemId);
+
+    commandPool.ScheduleDestructionCommand(entity);
+}
+void EntityManager::ScheduleTransitionCommand(const Entity entity, EntityCommandInfo& commandInfo, uint32_t systemId)
+{
+    EntityCommandPool& commandPool = GetAvailableCommandPool(systemId);
+
+    commandPool.ScheduleTransitionCommand(entity, commandInfo);
 }

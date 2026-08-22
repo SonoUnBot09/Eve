@@ -5,7 +5,7 @@
 
 #include <eve/entities/Type.hpp>
 #include <eve/entities/ComponentsRegistry.hpp>
-#include <eve/entities/MemoryInfo.hpp>
+#include <eve/entities/details/MemoryInfo.hpp>
 
 using namespace Eve::Entities;
 

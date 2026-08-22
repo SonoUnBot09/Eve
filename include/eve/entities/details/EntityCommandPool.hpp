@@ -2,9 +2,8 @@
 
 #include <vector>
 #include <array>
-#include <algorithm>
 
-#include <eve/entities/EntityCommands.hpp>
+#include <eve/entities/details/EntityCommands.hpp>
 #include <eve/entities/EntityCommandInfo.hpp>
 #include <eve/entities/ComponentsRegistry.hpp>
 #include <eve/entities/Entity.hpp>

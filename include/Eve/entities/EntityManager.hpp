@@ -1,11 +1,10 @@
 #pragma once
 
-#include <functional>
 #include <unordered_map>
 
 #include <eve/entities/Type.hpp>
 #include <eve/entities/Entity.hpp>
-#include <eve/entities/EntityCommandPool.hpp>
+#include <eve/entities/details/EntityCommandPool.hpp>
 
 #include <eve/entities/QueryInfo.hpp>
 
@@ -22,24 +21,27 @@ namespace Eve::Entities
                 entityRecords.reserve(preAllocEntitySize);
             }
 
-            static Entity RequestNewEntity();
+            static void CreateTable(Type archtype, uint32_t batchSizeBytes);
 
-            static void UpdateEntityRecord(uint32_t entityId, uint32_t batchIndex, uint32_t rowIndex);
-            
             static const std::vector<Table*>& GetTablesFromQuery(QueryInfo queryInfo);
+            static Table& GetTable(Type archtyte);
+
+            static Entity ScheduleCreationCommand(EntityCommandInfo* commandInfo, uint32_t systemId);
+            static void ScheduleDestructionCommand(const Entity entity, uint32_t systemId);
+            static void ScheduleTransitionCommand(const Entity entity, EntityCommandInfo& commandInfo, uint32_t systemId);
 
         private:
 
-            static constexpr uint32_t defaultBatchSizeBytes = 16384;
+            static constexpr uint32_t defaultBatchSizeBytes = 16384; // 16 KB
 
             static EntityCommandPool& GetAvailableCommandPool(uint32_t systemID);
             static void ClearAllCommandPools();
             static void ExecuteAllCommandPools();
 
+            static Entity RequestNewEntity();
             static void DestroyEntity(Entity entity);
 
-            static void CreateTable(Type archtype, uint32_t batchSizeBytes);
-            static Table& GetTable(Type archtyte);
+            static void UpdateEntityRecord(uint32_t entityId, uint32_t batchIndex, uint32_t rowIndex);
 
             static void UpdateQuery(QueryInfo queryInfo, std::vector<Table*>& result);
 
@@ -59,8 +61,12 @@ namespace Eve::Entities
             #pragma region Internal
             inline static std::vector<Type> newComponentsType;
             inline static std::vector<Type> oldComponentsType;
+            
             inline static std::vector<void*> sources;
             inline static std::vector<Type> componentTypesToCopy;
             #pragma endregion
+
+            friend class Table;
+            friend class EntityCommandPool;
     };
 }

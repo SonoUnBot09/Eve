@@ -1,15 +1,12 @@
-#include "eve/entities/ComponentsRegistry.hpp"
-#include "eve/entities/SlotInfo.hpp"
-#include "entities/Batch.hpp"
+#include <eve/entities/ComponentsRegistry.hpp>
 #include <eve/entities/Table.hpp>
-#include <entities/MemoryLayout.hpp>
 #include <eve/entities/EntityManager.hpp>
 
 Table::Table(Type archtype, uint32_t batchSizeBytes) :
 archtype(archtype), 
 batchSizeBytes(batchSizeBytes),
 memoryLayout(MemoryLayout(archtype, batchSizeBytes)),
-entitiesCount(0)
+batchesCount(0), entitiesCount(0)
 {
     maxEntitiesPerBatch = memoryLayout.GetMaxEntityCountPerBatch();
 }
@@ -17,15 +14,19 @@ entitiesCount(0)
 void Table::CreateBatch()
 {
     batches.emplace_back(batchSizeBytes, maxEntitiesPerBatch);
+    batchesCount++;
 }
 
 void Table::DestroyLastBatch()
 {
     batches.pop_back();
+    batchesCount--;
 }
 
 void Table::FreeSlot(SlotInfo slotInfo)
 {
+    entitiesCount--;
+
     freeSlots.push_back(slotInfo);
 
     Batch& batch = batches[slotInfo.BatchIndex];
@@ -36,6 +37,8 @@ void Table::FreeSlot(SlotInfo slotInfo)
 
 SlotInfo Table::GetNewSlot(uint32_t entityId)
 {
+    entitiesCount++;
+
     if(freeSlots.empty())
     {
         uint32_t lastBatchIndex = batches.size() - 1;
@@ -226,4 +229,9 @@ SlotInfo Table::FindValidEntity(int32_t batchIndex, int32_t rowIndex)
     }
 
     return {UINT32_MAX,UINT32_MAX};
+}
+
+uint32_t Table::GetEntitiesCount()
+{
+    return entitiesCount;
 }

@@ -1,4 +1,4 @@
-#include <entities/MemoryLayout.hpp>
+#include <eve/entities/details/MemoryLayout.hpp>
 
 MemoryInfo MemoryLayout::GetMemoryInfo(const Type componentType)
 {

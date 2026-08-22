@@ -1,4 +1,4 @@
-#include <eve/entities/EntityCommandPool.hpp>
+#include <eve/entities/details/EntityCommandPool.hpp>
 #include <eve/entities/EntityManager.hpp>
 
 using namespace Eve::Entities;
