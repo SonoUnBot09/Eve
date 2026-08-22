@@ -10,16 +10,11 @@
 
 namespace Eve::Entities
 {
+    //class Application;
+
     class EntityManager
     {
         public:
-
-            EntityManager(uint32_t preAllocEntitySize)
-            {
-                activeEntities.reserve(preAllocEntitySize);
-                entities.reserve(preAllocEntitySize);
-                entityRecords.reserve(preAllocEntitySize);
-            }
 
             static void CreateTable(Type archtype, uint32_t batchSizeBytes);
 
@@ -31,6 +26,8 @@ namespace Eve::Entities
             static void ScheduleTransitionCommand(const Entity entity, EntityCommandInfo& commandInfo, uint32_t systemId);
 
         private:
+
+            static void Initialize(uint32_t preAllocEntitySize);
 
             static constexpr uint32_t defaultBatchSizeBytes = 16384; // 16 KB
 
@@ -68,5 +65,6 @@ namespace Eve::Entities
 
             friend class Table;
             friend class EntityCommandPool;
+            friend class Application;
     };
 }

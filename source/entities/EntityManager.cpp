@@ -3,6 +3,13 @@
 
 using namespace Eve::Entities;
 
+void EntityManager::Initialize(uint32_t preAllocEntitySize)
+{
+    activeEntities.reserve(preAllocEntitySize);
+    entities.reserve(preAllocEntitySize);
+    entityRecords.reserve(preAllocEntitySize);
+}
+
 Entity EntityManager::RequestNewEntity()
 {
     Entity entity;

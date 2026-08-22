@@ -1,6 +1,7 @@
 #include <graphics/GraphicsCore.hpp>
 #include <Application.hpp>
-#include <eve/entities/SystemDispatcher.hpp>
+#include <eve/entities/EntityManager.hpp>
+#include <entities/systems/SystemDispatcher.hpp>
 
 using namespace Eve::Graphics;
 using namespace Eve::Entities;
@@ -12,7 +13,7 @@ bool Application::Initialize()
         return false;
     }
 
-    //EntityManager::Initialize();
+    EntityManager::Initialize(1000);
     
     return true;
 }
@@ -20,6 +21,7 @@ bool Application::Initialize()
 void Application::Start()
 {
     //print("Going to execute start stages");
+    SystemDispatcher::ExecuteAwakeStage();
     SystemDispatcher::ExecuteStartStage();
     //print("Start stage executed");
 }

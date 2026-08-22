@@ -4,7 +4,7 @@
 #include "eve/graphics/Texture.hpp"
 #include "eve/utils/Vec.hpp"
 #include <eve/components/Camera.hpp>
-#include <eve/entities/SystemDispatcher.hpp>
+#include <eve/entities/SystemRegistrar.hpp>
 #include <eve/Debug.hpp>
 #include <eve/entities/EntityManager.hpp>
 #include <eve/components/Transform.hpp>
