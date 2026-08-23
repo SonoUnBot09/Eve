@@ -27,8 +27,6 @@ namespace Eve::Entities
                 uint32_t batchIndex = std::floor((float)index / (float)maxEntitiesPerBatch);
                 uint32_t localIndex = index - (batchIndex * maxEntitiesPerBatch);
 
-                std::cout << "GetComponent: " << batchIndex << "  " << localIndex << std::endl;
-
                 return *reinterpret_cast<T*>
                 (
                     GetComponentPtr({batchIndex, localIndex}, componentType)
@@ -43,7 +41,7 @@ namespace Eve::Entities
             void FreeSlot(SlotInfo slotInfo);
             SlotInfo GetNewSlot(uint32_t entityId);
 
-            SlotInfo FindValidEntity(int32_t batchIndex, int32_t rowIndex);
+            SlotInfo FindFreeSlot(uint32_t batchIndex, uint32_t rowIndex);
             void WriteComponents(SlotInfo srcSlot, SlotInfo dstSlot);
 
             void* GetComponentPtr(SlotInfo slotInfo, Type componentType);

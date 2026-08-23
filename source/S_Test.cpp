@@ -81,13 +81,12 @@ void Start(uint32_t systemId)
 
 void Update(float deltaTime, uint32_t systemId)
 {
-    std::cout << "Before Update" << std::endl;
     Type componentType = ComponentsRegistry::GetComponentBit<Transform>();
     Table& table = EntityManager::GetTable(componentType);
 
     Transform& transform = table.GetComponent<Transform>(0, componentType);
 
-    std::cout << transform.Position.x << std::endl;
+    std::cout << "POSITION X: " << transform.Position.x << std::endl;
 
     Vec2Int windowSize = GraphicsCore::GetWindowSize();
 

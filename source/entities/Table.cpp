@@ -9,6 +9,7 @@ batchSizeBytes(batchSizeBytes),
 memoryLayout(MemoryLayout(archtype, batchSizeBytes)),
 batchesCount(0), entitiesCount(0)
 {
+    // TODO: Check if the batch size is enough
     maxEntitiesPerBatch = memoryLayout.GetMaxEntityCountPerBatch();
 }
 
@@ -140,85 +141,82 @@ void Table::WriteComponents(SlotInfo srcSlot, SlotInfo dstSlot)
 
 void Table::CompactBatches()
 {
-    uint32_t batchesCount = batches.size();
-
-    int32_t batchIndexOffset = static_cast<int32_t>(batchesCount) - 1;
-    int32_t rowIndexOffset = static_cast<int32_t>(batches.back().PeakBatchSize) - 1;
-
-    for(int32_t holeIndex = static_cast<int32_t>(freeSlots.size()) - 1; holeIndex >= 0; holeIndex--)
+    uint32_t batchIndexOffset = 0;
+    uint32_t rowIndexOffset = 0;
+    std::cout << "Batches Count:  " << batchesCount << std::endl;
+    bool isAlreadyCompacted = false;
+    for (int32_t batchIndex = static_cast<int32_t>(batchesCount) - 1; batchIndex >= 0; batchIndex--)
     {
-        SlotInfo dstSlotInfo = freeSlots[holeIndex];
+        Batch& batch = batches[batchIndex];
 
-        SlotInfo srcSlotInfo = FindValidEntity(batchIndexOffset, rowIndexOffset);
-
-        if(srcSlotInfo.BatchIndex == UINT32_MAX && srcSlotInfo.RowIndex == UINT32_MAX)
+        for(int32_t rowIndex = static_cast<int32_t>(batch.PeakBatchSize) - 1; rowIndex >= 0; rowIndex--)
         {
-            // No components found, all batches are empty
-            break;
-        }
+            if(!batch.ActiveEntities[rowIndex]) { continue; }
 
-        batchIndexOffset = srcSlotInfo.BatchIndex;
-        rowIndexOffset = srcSlotInfo.RowIndex;
+            SlotInfo srcSlotInfo {static_cast<uint32_t>(batchIndex), static_cast<uint32_t>(rowIndex)};
+            SlotInfo dstSlotInfo = FindFreeSlot(batchIndexOffset, rowIndexOffset);
 
-        freeSlots.pop_back();
-        
-        // Check if it is moving the srcSlot to the right
-        if((dstSlotInfo.BatchIndex > srcSlotInfo.BatchIndex) ||
-         dstSlotInfo.BatchIndex == srcSlotInfo.BatchIndex && dstSlotInfo.RowIndex >= srcSlotInfo.RowIndex)
-        {
-            continue;
-        }
-
-        WriteComponents(srcSlotInfo, dstSlotInfo);
-
-        Batch& srcBatch = batches[srcSlotInfo.BatchIndex];
-        Batch& dstBatch = batches[dstSlotInfo.BatchIndex];
-
-        srcBatch.ActiveEntitiesCount--;
-        srcBatch.ActiveEntities[srcSlotInfo.RowIndex] = false;
-
-        dstBatch.ActiveEntitiesCount++;
-        dstBatch.ActiveEntities[dstSlotInfo.RowIndex] = true;
-
-        uint32_t entityID = srcBatch.EntitiesID[srcSlotInfo.RowIndex];
-        dstBatch.EntitiesID[dstSlotInfo.RowIndex] = entityID;
-
-        EntityManager::UpdateEntityRecord(entityID, dstSlotInfo.BatchIndex, dstSlotInfo.RowIndex);
-    }
-
-    if(!batches.empty())
-    {
-        Batch& lastBatch = batches.back();
-        
-        for(uint32_t i = 0; i < lastBatch.ActiveEntities.size(); i++)
-        {
-            if(!lastBatch.ActiveEntities[i])
+            if((dstSlotInfo.BatchIndex == UINT32_MAX && dstSlotInfo.RowIndex == UINT32_MAX) ||
+                dstSlotInfo.BatchIndex > srcSlotInfo.BatchIndex ||
+                (dstSlotInfo.BatchIndex == srcSlotInfo.BatchIndex && dstSlotInfo.RowIndex > srcSlotInfo.RowIndex))
             {
-                lastBatch.PeakBatchSize = i + 1;
+                // No hole found
+                isAlreadyCompacted = true;
                 break;
             }
+
+            batchIndexOffset = dstSlotInfo.BatchIndex;
+            rowIndexOffset = dstSlotInfo.RowIndex + 1;
+
+            WriteComponents(srcSlotInfo, dstSlotInfo);
+
+            Batch& srcBatch = batches[srcSlotInfo.BatchIndex];
+            Batch& dstBatch = batches[dstSlotInfo.BatchIndex];
+
+            srcBatch.ActiveEntitiesCount--;
+            srcBatch.ActiveEntities[srcSlotInfo.RowIndex] = false;
+
+            dstBatch.ActiveEntitiesCount++;
+            dstBatch.ActiveEntities[dstSlotInfo.RowIndex] = true;
+
+            uint32_t entityID = srcBatch.EntitiesID[srcSlotInfo.RowIndex];
+            dstBatch.EntitiesID[dstSlotInfo.RowIndex] = entityID;
+
+            EntityManager::UpdateEntityRecord(entityID, dstSlotInfo.BatchIndex, dstSlotInfo.RowIndex);
+        }
+
+        if(isAlreadyCompacted)
+        {
+            break;
         }
     }
-}
 
-SlotInfo Table::FindValidEntity(int32_t batchIndex, int32_t rowIndex)
-{
-    for(; batchIndex >= 0; batchIndex--)
+    for(int32_t batchIndex = static_cast<int32_t>(batchesCount) - 1; batchIndex >= 0; batchIndex--)
     {
         Batch& batch = batches[batchIndex];
 
         if(batch.ActiveEntitiesCount == 0) { DestroyLastBatch(); continue; }
 
-        for(; rowIndex >= 0; rowIndex--)
+        batch.PeakBatchSize = batch.ActiveEntitiesCount;
+    }
+}
+
+SlotInfo Table::FindFreeSlot(uint32_t batchIndex, uint32_t rowIndex)
+{
+    for(; batchIndex < batchesCount; batchIndex++)
+    {
+        Batch& batch = batches[batchIndex];
+
+        for(; rowIndex < batch.PeakBatchSize; rowIndex++)
         {
             bool isValidEntity = batch.ActiveEntities[rowIndex];
 
-            if(!isValidEntity) { continue; }
+            if(isValidEntity) { continue; }
 
             return SlotInfo{static_cast<uint32_t>(batchIndex), static_cast<uint32_t>(rowIndex)};
         }
 
-        rowIndex = static_cast<int32_t>(maxEntitiesPerBatch) - 1;
+        rowIndex = 0;
     }
 
     return {UINT32_MAX,UINT32_MAX};

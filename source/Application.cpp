@@ -27,10 +27,8 @@ void Application::Start()
     EntityManager::ExecuteAllCommandPools();
 
     SystemDispatcher::ExecuteStartStage();
-    print("Start Stages executed");
 
     EntityManager::ExecuteAllCommandPools();
-    std::cout << "Before Start" << std::endl;
 
     //print("Start stage executed");
 }

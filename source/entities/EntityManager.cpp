@@ -222,13 +222,12 @@ void EntityManager::ExecuteAllCommandPools()
             Table& table = GetTable(command.Archtype);
 
             SlotInfo slotInfo = table.GetNewSlot(command.Id);
-            std::cout << "SlotInfo: " << i << "  " << slotInfo.BatchIndex << "    " << slotInfo.RowIndex << std::endl;
 
             size_t offset = 0;
             for(uint32_t j = 0; j < newComponentsType.size(); j++)
             {
                 Type componentType = newComponentsType[j];
-                std::cout << componentType << std::endl;
+                
                 size_t size = ComponentsRegistry::GetComponentSize(componentType);
 
                 void* ptr = creationComponentsData.data() + command.ComponentOffset + offset;
@@ -254,7 +253,7 @@ void EntityManager::ExecuteAllCommandPools()
 
     }
 
-    for(auto table : tables)
+    for(auto& table : tables)
     {
         table.second.CompactBatches();
     }
