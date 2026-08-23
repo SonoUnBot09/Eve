@@ -4,11 +4,10 @@
 #include <cstdint>
 
 #include <eve/entities/Type.hpp>
+#include <eve/entities/Entity.hpp>
 #include <eve/entities/details/MemoryLayout.hpp>
 #include <eve/entities/details/Batch.hpp>
 #include <eve/entities/details/SlotInfo.hpp>
-
-#include <iostream>
 
 namespace Eve::Entities
 {
@@ -19,19 +18,29 @@ namespace Eve::Entities
             Table(Type archtype, uint32_t batchSizeByte);
 
             uint32_t GetEntitiesCount();
+            SlotInfo GetSlotInfo(uint32_t index);
 
-            // TODO : Get Components Feature
             template<typename T>
             T& GetComponent(uint32_t index, Type componentType)
             {
-                uint32_t batchIndex = std::floor((float)index / (float)maxEntitiesPerBatch);
-                uint32_t localIndex = index - (batchIndex * maxEntitiesPerBatch);
+                SlotInfo slotInfo = GetSlotInfo(index);
 
                 return *reinterpret_cast<T*>
                 (
-                    GetComponentPtr({batchIndex, localIndex}, componentType)
+                    GetComponentPtr(slotInfo, componentType)
                 );
             }
+            template<typename T>
+            T& GetComponent(SlotInfo slotInfo, Type componentType)
+            {
+                return *reinterpret_cast<T*>
+                (
+                    GetComponentPtr(slotInfo, componentType)
+                );
+            }
+
+            Entity GetEntity(uint32_t index);
+            Entity GetEntity(SlotInfo slotInfo);
 
         private:
 

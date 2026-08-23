@@ -2,10 +2,11 @@
 
 #include <cstdint>
 #include <eve/entities/Type.hpp>
-#include <eve/entities/Table.hpp>
 
 namespace Eve::Entities
 {
+    class Table;
+    
     struct Entity
     {
         Entity() = default;

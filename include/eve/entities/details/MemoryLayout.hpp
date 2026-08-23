@@ -13,6 +13,7 @@ struct MemoryLayout
 {
     public:
 
+        MemoryLayout() = default;
         MemoryLayout(Type archtype, uint32_t batchSize)
         {
             const std::vector<Type> componentTypes = GetActiveComponentsType(archtype);

@@ -1,5 +1,6 @@
 #include <graphics/RenderGraph.hpp>
 #include "eve/entities/ComponentsRegistry.hpp"
+#include "eve/entities/QueryResult.hpp"
 #include "eve/graphics/PassModule.hpp"
 #include "eve/graphics/ShaderHandle.hpp"
 #include "eve/graphics/Texture.hpp"
@@ -20,6 +21,7 @@ static uint64_t elapsedFrames = 0;
 void Awake(uint32_t systemId)
 {
     ComponentsRegistry::RegisterComponent<Transform>();
+    ComponentsRegistry::RegisterComponent<Camera>();
 
     Transform transform
     {
@@ -42,24 +44,20 @@ void Awake(uint32_t systemId)
 void Start(uint32_t systemId)
 {    
     Type componentType = ComponentsRegistry::GetComponentBit<Transform>();
-    Table& table = EntityManager::GetTable(componentType);
+    QueryResult& queryResult = EntityManager::GetTables({componentType, true});
+    Table& table = queryResult.GetTable(0);
 
-    for (uint32_t i = 0; i < 457; i++)
+    for (uint32_t i = 0; i < 456; i++)
     {
         Transform& transform = table.GetComponent<Transform>(i, componentType);
         EntityManager::ScheduleDestructionCommand({i, 0}, systemId);
     }
 
-    Transform transform
-    {
-        .Position {5,1,0},
-        .Rotation {0,0,0},
-        .Scale {1,1,1}
-    };
+    Camera camera({0,0,1}, {0,1,0},1, 10);
 
-    EntityCommandInfo command{};
-    command.AddComponent<Transform>(transform);
-    EntityManager::ScheduleCreationCommand(&command, systemId);
+    EntityCommandInfo commandInfo {};
+    commandInfo.AddComponent<Camera>(camera);
+    EntityManager::ScheduleTransitionCommand({456,0}, commandInfo, systemId);
 
     ShaderInfo shaderInfo
     {
@@ -81,12 +79,23 @@ void Start(uint32_t systemId)
 
 void Update(float deltaTime, uint32_t systemId)
 {
-    Type componentType = ComponentsRegistry::GetComponentBit<Transform>();
-    Table& table = EntityManager::GetTable(componentType);
+    Type transformType = ComponentsRegistry::GetComponentBit<Transform>();
+    Type cameraType = ComponentsRegistry::GetComponentBit<Camera>();
+    Type archtype = ComponentsRegistry::GetComponentMask<Transform, Camera>();
 
-    Transform& transform = table.GetComponent<Transform>(0, componentType);
+    QueryResult& result = EntityManager::GetTables({archtype, true});
+    Table& table = result.GetTable(0);
 
+    SlotInfo slotInfo = table.GetSlotInfo(0);
+
+    Transform& transform = table.GetComponent<Transform>(slotInfo, transformType);
+    Camera& camera = table.GetComponent<Camera>(slotInfo, cameraType);
+    Entity entity = table.GetEntity(slotInfo);
+
+    /*
     std::cout << "POSITION X: " << transform.Position.x << std::endl;
+    std::cout << "CAMERA " << camera.sensitivity << std::endl;
+    std::cout << "ENTITY ID:  " << entity.Id << " GENERATION:  " << entity.GeneratationId << std::endl;*/
 
     Vec2Int windowSize = GraphicsCore::GetWindowSize();
 

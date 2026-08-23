@@ -1,3 +1,4 @@
+#include "eve/entities/QueryResult.hpp"
 #include <eve/entities/Entity.hpp>
 #include <eve/entities/EntityManager.hpp>
 
@@ -8,6 +9,11 @@ void EntityManager::Initialize(uint32_t preAllocEntitySize)
     activeEntities.reserve(preAllocEntitySize);
     entities.reserve(preAllocEntitySize);
     entityRecords.reserve(preAllocEntitySize);
+}
+
+Entity EntityManager::GetEntity(uint32_t id)
+{
+    return entities[id];
 }
 
 Entity EntityManager::RequestNewEntity()
@@ -292,15 +298,15 @@ void EntityManager::ClearAllCommandPools()
     }
 }
 
-const std::vector<Table*>& EntityManager::GetTablesFromQuery(QueryInfo queryInfo)
+QueryResult& EntityManager::GetTables(QueryInfo queryInfo)
 {
     auto it = tableQueries.find(queryInfo);
 
     if(it == tableQueries.end())
     {
-        tableQueries[queryInfo] = std::vector<Table*>();
+        tableQueries[queryInfo] = QueryResult();
 
-        std::vector<Table*>& results =  tableQueries[queryInfo];
+        QueryResult& results =  tableQueries[queryInfo];
 
         UpdateQuery(queryInfo, results);
 
@@ -310,9 +316,9 @@ const std::vector<Table*>& EntityManager::GetTablesFromQuery(QueryInfo queryInfo
     return it->second;
 }
 
-void EntityManager::UpdateQuery(QueryInfo queryInfo, std::vector<Table*>& result)
+void EntityManager::UpdateQuery(QueryInfo queryInfo, QueryResult& result)
 {
-    result.clear();
+    result.tables.clear();
 
     for (auto& [archtype, table] : tables)
     {
@@ -328,13 +334,13 @@ void EntityManager::UpdateQuery(QueryInfo queryInfo, std::vector<Table*>& result
 
             if(!isTableValid) { continue; }
 
-            result.push_back(&table);
+            result.tables.push_back(&table);
         }
         else 
         {
             if(queryInfo.ComponentsRequired == archtype)
             {
-                result.push_back(&table);
+                result.tables.push_back(&table);
             }
         }
     }

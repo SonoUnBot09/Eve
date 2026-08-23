@@ -1,15 +1,31 @@
-#include "eve/entities/details/SlotInfo.hpp"
 #include <eve/entities/ComponentsRegistry.hpp>
 #include <eve/entities/Table.hpp>
 #include <eve/entities/EntityManager.hpp>
 
 Table::Table(Type archtype, uint32_t batchSizeBytes) :
 archtype(archtype), 
-batchSizeBytes(batchSizeBytes),
-memoryLayout(MemoryLayout(archtype, batchSizeBytes)),
 batchesCount(0), entitiesCount(0)
 {
-    // TODO: Check if the batch size is enough
+    size_t sizePerEntity = 0;
+    for (uint32_t i = 0; i < 64; i++)
+    {
+        if(!archtype.test(i)) { continue; }
+
+        Type componentType = 0;
+        componentType.set(i);
+
+        sizePerEntity += ComponentsRegistry::GetComponentSize(componentType);
+    }
+
+    uint32_t entitiesPerBatch = std::floor((float)batchSizeBytes / (float)sizePerEntity);
+    if(entitiesPerBatch == 0)
+    {
+        batchSizeBytes = sizePerEntity;
+    }
+
+    this->batchSizeBytes = batchSizeBytes;
+    memoryLayout = MemoryLayout(archtype, batchSizeBytes);
+
     maxEntitiesPerBatch = memoryLayout.GetMaxEntityCountPerBatch();
 }
 
@@ -143,7 +159,7 @@ void Table::CompactBatches()
 {
     uint32_t batchIndexOffset = 0;
     uint32_t rowIndexOffset = 0;
-    std::cout << "Batches Count:  " << batchesCount << std::endl;
+    
     bool isAlreadyCompacted = false;
     for (int32_t batchIndex = static_cast<int32_t>(batchesCount) - 1; batchIndex >= 0; batchIndex--)
     {
@@ -225,4 +241,24 @@ SlotInfo Table::FindFreeSlot(uint32_t batchIndex, uint32_t rowIndex)
 uint32_t Table::GetEntitiesCount()
 {
     return entitiesCount;
+}
+
+SlotInfo Table::GetSlotInfo(uint32_t index)
+{
+    uint32_t batchIndex = std::floor((float)index / (float)maxEntitiesPerBatch);
+    uint32_t localIndex = index - (batchIndex * maxEntitiesPerBatch);
+
+    return {batchIndex, localIndex};
+}
+
+Entity Table::GetEntity(uint32_t index)
+{
+    SlotInfo slotInfo = GetSlotInfo(index);
+
+    return EntityManager::GetEntity(batches[slotInfo.BatchIndex].EntitiesID[slotInfo.RowIndex]);
+}
+
+Entity Table::GetEntity(SlotInfo slotInfo)
+{
+    return EntityManager::GetEntity(batches[slotInfo.BatchIndex].EntitiesID[slotInfo.RowIndex]);
 }

@@ -1,9 +1,11 @@
 #pragma once
 
+#include "QueryResult.hpp"
 #include <unordered_map>
 
 #include <eve/entities/Type.hpp>
 #include <eve/entities/Entity.hpp>
+#include <eve/entities/Table.hpp>
 #include <eve/entities/details/EntityCommandPool.hpp>
 
 #include <eve/entities/QueryInfo.hpp>
@@ -22,8 +24,7 @@ namespace Eve::Entities
 
             static void CreateTable(Type archtype, uint32_t batchSizeBytes);
 
-            static const std::vector<Table*>& GetTablesFromQuery(QueryInfo queryInfo);
-            static Table& GetTable(Type archtyte);
+            static QueryResult& GetTables(QueryInfo queryInfo);
 
             static Entity ScheduleCreationCommand(EntityCommandInfo* commandInfo, uint32_t systemId);
             static void ScheduleDestructionCommand(const Entity entity, uint32_t systemId);
@@ -39,18 +40,21 @@ namespace Eve::Entities
             static void ClearAllCommandPools();
             static void ExecuteAllCommandPools();
 
+            static Entity GetEntity(uint32_t id);
             static Entity RequestNewEntity();
             static void DestroyEntity(Entity entity);
 
             static void UpdateEntityRecord(uint32_t entityId, uint32_t batchIndex, uint32_t rowIndex);
 
-            static void UpdateQuery(QueryInfo queryInfo, std::vector<Table*>& result);
+            static void UpdateQuery(QueryInfo queryInfo, QueryResult& result);
+
+            static Table& GetTable(Type archtyte);
 
             inline static std::unordered_map<Type, Table> tables;
 
             inline static std::vector<EntityCommandPool> commandPools;
 
-            inline static std::unordered_map<QueryInfo, std::vector<Table*>> tableQueries;
+            inline static std::unordered_map<QueryInfo, QueryResult> tableQueries;
             inline static bool updateQueries = false;
 
             inline static std::vector<bool> activeEntities;
