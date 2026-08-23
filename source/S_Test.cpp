@@ -49,6 +49,12 @@ void Start(uint32_t systemId)
     command.AddComponent<Transform>(transform);
 
     EntityManager::ScheduleCreationCommand(&command, systemId);
+
+    command.Clear();
+    transform.Position.x = 9;
+    command.AddComponent<Transform>(transform);
+
+    EntityManager::ScheduleCreationCommand(&command, systemId);
 }
 
 void Update(float deltaTime, uint32_t systemId)
@@ -57,7 +63,7 @@ void Update(float deltaTime, uint32_t systemId)
     Type componentType = ComponentsRegistry::GetComponentBit<Transform>();
     Table& table = EntityManager::GetTable(componentType);
 
-    Transform& transform = table.GetComponent<Transform>(0, componentType);
+    Transform& transform = table.GetComponent<Transform>(1, componentType);
 
     std::cout << transform.Position.x << std::endl;
 

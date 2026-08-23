@@ -154,9 +154,9 @@ void EntityManager::ExecuteAllCommandPools()
             Table& table = GetTable(newArchtype);
             SlotInfo slotInfo = table.GetNewSlot(entity.Id);
 
-            for(uint32_t i = 0; i < oldComponentsType.size(); i++)
+            for(uint32_t j = 0; j < oldComponentsType.size(); j++)
             {
-                Type componentType = oldComponentsType[i];
+                Type componentType = oldComponentsType[j];
                 void* ptr = oldTable.GetComponentPtr({entityRecord.BatchIndex, entityRecord.RowIndex}, componentType);
 
                 componentTypesToCopy.push_back(componentType);
@@ -164,9 +164,9 @@ void EntityManager::ExecuteAllCommandPools()
             }
 
             size_t offset = 0;
-            for(uint32_t i = 0; i < newComponentsType.size(); i++)
+            for(uint32_t j = 0; j < newComponentsType.size(); j++)
             {
-                Type componentType = newComponentsType[i];
+                Type componentType = newComponentsType[j];
 
                 size_t size = ComponentsRegistry::GetComponentSize(componentType);
 
@@ -198,7 +198,7 @@ void EntityManager::ExecuteAllCommandPools()
     {
         std::vector<EntityCreationCommand>& entityCreationCommands = entityCommandPool.GetCreationCommands();
         std::vector<std::byte>& creationComponentsData = entityCommandPool.GetCreationComponentsData();
-        std::cout << "A" << std::endl;
+
         for (uint32_t i = 0; i < entityCreationCommands.size(); i++)
         {
             EntityCreationCommand& command = entityCreationCommands[i];
@@ -218,18 +218,17 @@ void EntityManager::ExecuteAllCommandPools()
 
                 previousArchtype = command.Archtype;
             }
-            std::cout << "A" << std::endl;
+
             Table& table = GetTable(command.Archtype);
-            std::cout << "A" << std::endl;
 
             SlotInfo slotInfo = table.GetNewSlot(command.Id);
-            std::cout << "A" << std::endl;
+            std::cout << "SlotInfo: " << i << "  " << slotInfo.BatchIndex << "    " << slotInfo.RowIndex << std::endl;
 
             size_t offset = 0;
             for(uint32_t j = 0; j < newComponentsType.size(); j++)
             {
-                Type componentType = newComponentsType[i];
-
+                Type componentType = newComponentsType[j];
+                std::cout << componentType << std::endl;
                 size_t size = ComponentsRegistry::GetComponentSize(componentType);
 
                 void* ptr = creationComponentsData.data() + command.ComponentOffset + offset;
@@ -241,7 +240,7 @@ void EntityManager::ExecuteAllCommandPools()
             }
 
             table.WriteComponents(slotInfo, componentTypesToCopy, sources);
-            std::cout << "A" << std::endl;
+
             EntityRecord record = entityRecords[command.Id];
 
             record.Table = &table;
@@ -251,18 +250,15 @@ void EntityManager::ExecuteAllCommandPools()
 
             componentTypesToCopy.clear();
             sources.clear();
-            std::cout << "A" << std::endl;
-
         }
-        std::cout << "A" << std::endl;
 
     }
-    std::cout << "A" << std::endl;
+
     for(auto table : tables)
     {
         table.second.CompactBatches();
     }
-    std::cout << "A" << std::endl;
+
     if(updateQueries)
     {
         for(auto& query : tableQueries)
@@ -272,9 +268,8 @@ void EntityManager::ExecuteAllCommandPools()
 
         updateQueries = false;
     }
-    std::cout << "A" << std::endl;
+
     ClearAllCommandPools();
-    std::cout << "A" << std::endl;
 }
 
 EntityCommandPool& EntityManager::GetAvailableCommandPool(uint32_t systemID)

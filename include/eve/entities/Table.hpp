@@ -8,6 +8,8 @@
 #include <eve/entities/details/Batch.hpp>
 #include <eve/entities/details/SlotInfo.hpp>
 
+#include <iostream>
+
 namespace Eve::Entities
 {
     class Table
@@ -23,7 +25,9 @@ namespace Eve::Entities
             T& GetComponent(uint32_t index, Type componentType)
             {
                 uint32_t batchIndex = std::floor((float)index / (float)maxEntitiesPerBatch);
-                uint32_t localIndex = (batchIndex * maxEntitiesPerBatch) - index;
+                uint32_t localIndex = index - (batchIndex * maxEntitiesPerBatch);
+
+                std::cout << "GetComponent: " << batchIndex << "  " << localIndex << std::endl;
 
                 return *reinterpret_cast<T*>
                 (
