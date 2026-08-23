@@ -17,8 +17,50 @@ using namespace Eve::Graphics;
 static ShaderHandle shaderHandle;
 static uint64_t elapsedFrames = 0;
 
+void Awake(uint32_t systemId)
+{
+    ComponentsRegistry::RegisterComponent<Transform>();
+
+    Transform transform
+    {
+        .Position {10,1,0},
+        .Rotation {0,0,0},
+        .Scale {1,1,1}
+    };
+
+    EntityCommandInfo command{};
+    for (uint32_t i = 0; i < 457; i++)
+    {
+        transform.Position.x = i;
+        command.AddComponent<Transform>(transform);
+        EntityManager::ScheduleCreationCommand(&command, systemId);
+
+        command.Clear();
+    }
+}
+
 void Start(uint32_t systemId)
 {    
+    Type componentType = ComponentsRegistry::GetComponentBit<Transform>();
+    Table& table = EntityManager::GetTable(componentType);
+
+    for (uint32_t i = 0; i < 457; i++)
+    {
+        Transform& transform = table.GetComponent<Transform>(i, componentType);
+        EntityManager::ScheduleDestructionCommand({i, 0}, systemId);
+    }
+
+    Transform transform
+    {
+        .Position {5,1,0},
+        .Rotation {0,0,0},
+        .Scale {1,1,1}
+    };
+
+    EntityCommandInfo command{};
+    command.AddComponent<Transform>(transform);
+    EntityManager::ScheduleCreationCommand(&command, systemId);
+
     ShaderInfo shaderInfo
     {
         .ShaderModule = "triangle",
@@ -35,26 +77,6 @@ void Start(uint32_t systemId)
     };
 
     shaderHandle = ShaderRegistry::CreateGraphicsShader(shaderInfo);
-
-    ComponentsRegistry::RegisterComponent<Transform>();
-
-    Transform transform
-    {
-        .Position {10,1,0},
-        .Rotation {0,0,0},
-        .Scale {1,1,1}
-    };
-
-    EntityCommandInfo command{};
-    command.AddComponent<Transform>(transform);
-
-    EntityManager::ScheduleCreationCommand(&command, systemId);
-
-    command.Clear();
-    transform.Position.x = 9;
-    command.AddComponent<Transform>(transform);
-
-    EntityManager::ScheduleCreationCommand(&command, systemId);
 }
 
 void Update(float deltaTime, uint32_t systemId)
@@ -63,7 +85,7 @@ void Update(float deltaTime, uint32_t systemId)
     Type componentType = ComponentsRegistry::GetComponentBit<Transform>();
     Table& table = EntityManager::GetTable(componentType);
 
-    Transform& transform = table.GetComponent<Transform>(1, componentType);
+    Transform& transform = table.GetComponent<Transform>(0, componentType);
 
     std::cout << transform.Position.x << std::endl;
 
@@ -111,5 +133,6 @@ void Update(float deltaTime, uint32_t systemId)
     elapsedFrames++;
 }
 
+static SystemRegistrar awake(Awake, SystemStage::Awake);
 static SystemRegistrar start(Start, SystemStage::Start);
 static SystemRegistrar update(Update, SystemStage::Update);

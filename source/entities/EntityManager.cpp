@@ -46,7 +46,7 @@ void EntityManager::DestroyEntity(Entity entity)
     activeEntities[entity.Id] = false;
 
     EntityRecord& record = entityRecords[entity.Id];
-
+    
     Table& table = GetTable(record.Archtype);
 
     SlotInfo slotInfo {record.BatchIndex, record.RowIndex};
@@ -241,7 +241,7 @@ void EntityManager::ExecuteAllCommandPools()
 
             table.WriteComponents(slotInfo, componentTypesToCopy, sources);
 
-            EntityRecord record = entityRecords[command.Id];
+            EntityRecord& record = entityRecords[command.Id];
 
             record.Table = &table;
             record.BatchIndex = slotInfo.BatchIndex;
