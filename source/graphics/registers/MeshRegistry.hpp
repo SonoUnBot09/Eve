@@ -1,7 +1,7 @@
 #pragma once
 
 #include <eve/graphics/Mesh.hpp>
-#include <eve/graphics/PassModule.hpp>
+#include <eve/graphics/Pass.hpp>
 
 namespace Eve::Graphics
 {

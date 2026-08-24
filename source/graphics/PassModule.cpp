@@ -1,4 +1,4 @@
-#include <eve/graphics/PassModule.hpp>
+#include <eve/graphics/Pass.hpp>
 #include <graphics/registers/MemoryRegistry.hpp>
 #include "Resources.hpp"
 #include "registers/MemoryRegistry.hpp"
@@ -97,7 +97,7 @@ void TransferPass::UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, 
     BufferInfo stagingBufferInfo
     {
         .Size = Size,
-        .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+        .Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
     };
 
     BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);
@@ -118,7 +118,7 @@ void TransferPass::UploadBuffer(void* SrcData, BufferHandle DstBuffer, uint64_t 
     BufferInfo stagingBufferInfo
     {
         .Size = Size,
-        .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+        .Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
     };
 
     BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);
@@ -140,7 +140,7 @@ void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TransientTexture
     BufferInfo stagingBufferInfo
     {
         .Size = Size,
-        .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+        .Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
     };
 
     BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);
@@ -161,7 +161,7 @@ void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TextureHandle Ds
     BufferInfo stagingBufferInfo
     {
         .Size = Size,
-        .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+        .Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
     };
 
     BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);

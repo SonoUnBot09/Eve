@@ -1,6 +1,5 @@
 #include <graphics/GraphicsCore.hpp>
 #include "SwapchainBuilder.hpp"
-#include "eve/graphics/Geometry.hpp"
 #include "eve/graphics/Sampler.hpp"
 #include "graphics/registers/MemoryRegistry.hpp"
 #include <graphics/MemoryBin.hpp>
@@ -152,7 +151,6 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
         .DepthWrite = false,
         .StencilTest = false,
         .CompareOp = DepthTest::DEPTH_COMPARE_LESS,
-        .samplesCount = TextureSample::SAMPLE_1,
         .ColorFormat = format
     };
 

@@ -1,9 +1,8 @@
 #pragma once
 
-#include "eve/graphics/Texture.hpp"
 #include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
-#include <eve/graphics/PassModule.hpp>
+#include <eve/graphics/Pass.hpp>
 
 namespace Eve::Graphics
 {
@@ -22,6 +21,30 @@ namespace Eve::Graphics
         uint32_t Countdown;
         uint64_t MemoryOffset;
         bool PooledResource;
+    };
+
+    struct TextureInfo
+    {
+        TextureType TextureType;
+        uint32_t Width, Height, Depth;
+        uint32_t ArrayLayers;
+        uint32_t MipLevels;
+
+        Format Format;
+        VkImageUsageFlags Usage;
+
+        bool operator==(const TextureInfo& other) const 
+        {
+            return 
+                TextureType == other.TextureType &&
+                Width == other.Width &&
+                Height == other.Height &&
+                Depth == other.Depth &&
+                ArrayLayers == other.ArrayLayers &&
+                MipLevels == other.MipLevels &&
+                Format == other.Format &&
+                Usage == other.Usage;
+        }
     };
 
     struct SamplerObject
@@ -43,6 +66,20 @@ namespace Eve::Graphics
         uint64_t MemoryOffset;
         bool PooledResource;
     };
+
+    struct BufferInfo
+    {
+        uint64_t Size;
+        VkBufferUsageFlags Usage = 0;
+
+        bool operator==(const BufferInfo& other) const
+        {
+            return 
+                Size == other.Size &&
+                Usage == other.Usage;
+        }
+    };
+
 
     struct TextureState
     {

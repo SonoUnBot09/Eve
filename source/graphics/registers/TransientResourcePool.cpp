@@ -24,7 +24,7 @@ namespace
         imageCI.arrayLayers = textureInfo.ArrayLayers;
         imageCI.samples = VK_SAMPLE_COUNT_1_BIT,
         imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageCI.usage = GetVkImageUsage(textureInfo.Usage);
+        imageCI.usage = textureInfo.Usage;
         imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageCI.queueFamilyIndexCount = 0;
         imageCI.pQueueFamilyIndices = nullptr;
@@ -35,7 +35,7 @@ namespace
     {
         bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferCI.size = bufferInfo.Size;
-        bufferCI.usage = GetVkBufferUsage(bufferInfo.Usage);
+        bufferCI.usage = bufferInfo.Usage;
         bufferCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         bufferCI.queueFamilyIndexCount = 0;
         bufferCI.pQueueFamilyIndices = nullptr;

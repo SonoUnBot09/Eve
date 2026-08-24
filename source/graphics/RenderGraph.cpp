@@ -1,4 +1,5 @@
 #include "RenderGraph.hpp"
+#include <cstdint>
 #include <graphics/registers/ShaderRegistry.hpp>
 #include "builders/ContextBuilder.hpp"
 #include "builders/PipelineBuilder.hpp"
@@ -19,95 +20,93 @@ using namespace Eve::Graphics;
 
 namespace 
 {
-    TextureUsage GetTextureUsage(Usage usage)
+    VkImageUsageFlags GetTextureUsage(Usage usage)
     {
         switch (usage)
         {
             case (Usage::VERTEX_READ_TEXTURE_SAMPLED) :
-                return TextureUsage::USAGE_SAMPLED;
+                return VK_IMAGE_USAGE_SAMPLED_BIT;
 
             case (Usage::FRAGMENT_READ_TEXTURE_SAMPLED) :
-                return TextureUsage::USAGE_SAMPLED;
+                return VK_IMAGE_USAGE_SAMPLED_BIT;
             
             case (Usage::VERTEX_FRAGMENT_READ_TEXTURE_SAMPLED) :
-                return TextureUsage::USAGE_SAMPLED;
+                return VK_IMAGE_USAGE_SAMPLED_BIT;
             
             case (Usage::VERTEX_READ_TEXTURE_STORAGE) :
-                return TextureUsage::USAGE_STORAGE;
+                return VK_IMAGE_USAGE_STORAGE_BIT;
 
             case (Usage::FRAGMENT_READ_TEXTURE_STORAGE) :
-                return TextureUsage::USAGE_STORAGE;
+                return VK_IMAGE_USAGE_STORAGE_BIT;
 
             case (Usage::VERTEX_FRAGMENT_READ_TEXTURE_STORAGE) :
-                return TextureUsage::USAGE_STORAGE;
+                return VK_IMAGE_USAGE_STORAGE_BIT;
 
             case (Usage::COMPUTE_READ_TEXTURE_STORAGE) :
-                return TextureUsage::USAGE_STORAGE;
+                return VK_IMAGE_USAGE_STORAGE_BIT;
 
             case (Usage::COMPUTE_WRITE_TEXTURE_STORAGE) :
-                return TextureUsage::USAGE_STORAGE;
+                return VK_IMAGE_USAGE_STORAGE_BIT;
 
             case (Usage::COLOR_ATTACHMENT) :
-                return TextureUsage::USAGE_COLOR_ATTACHMENT; 
+                return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; 
 
             case (Usage::DEPTH_STENCIL) :
-                return TextureUsage::USAGE_DEPTH_STENCIL_ATTACHMENT; 
+                return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT; 
 
             case (Usage::DEPTH) :
-                return TextureUsage::USAGE_DEPTH_STENCIL_ATTACHMENT; 
+                return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT; 
 
             case (Usage::STENCIL) :
-                return TextureUsage::USAGE_DEPTH_STENCIL_ATTACHMENT;
+                return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
             case (Usage::COPY_SOURCE) :
-                return TextureUsage::USAGE_TRANSFER_SRC;
+                return VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
             case (Usage::COPY_DESTINATION) :
-                return TextureUsage::USAGE_TRANSFER_DST;
+                return VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-            default : return static_cast<TextureUsage>(0);
+            default : return 0;
         }
     }
-    BufferUsage GetBufferUsage(Usage usage)
+    VkBufferUsageFlags GetBufferUsage(Usage usage)
     {
         switch (usage)
         {
-            case (Usage::BUFFER_INDEX_READ_ONLY) : 
-                return BufferUsage::BUFFER_USAGE_INDEX;
             case(Usage::VERTEX_READ_BUFFER_STORAGE) :
-                return BufferUsage::BUFFER_USAGE_STORAGE;
+                return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             
             case(Usage::VERTEX_READ_BUFFER_UNIFORM) :
-                return BufferUsage::BUFFER_USAGE_UNIFORM;
+                return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             
             case(Usage::FRAGMENT_READ_BUFFER_STORAGE) :
-                return BufferUsage::BUFFER_USAGE_STORAGE;
+                return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
             case(Usage::FRAGMENT_READ_BUFFER_UNIFORM) :
-                return BufferUsage::BUFFER_USAGE_UNIFORM;
+                return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             
             case(Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE) :
-                return BufferUsage::BUFFER_USAGE_STORAGE;
+                return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             
             case(Usage::VERTEX_FRAGMENT_READ_BUFFER_UNIFORM) :
-                return BufferUsage::BUFFER_USAGE_UNIFORM;
+                return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
             case(Usage::COMPUTE_READ_BUFFER_STORAGE) :
-                return BufferUsage::BUFFER_USAGE_STORAGE;
+                return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
             case(Usage::COMPUTE_READ_BUFFER_UNIFORM) :
-                return BufferUsage::BUFFER_USAGE_UNIFORM;
+                return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
             case(Usage::COMPUTE_WRITE_BUFFER_STORAGE) :
-                return BufferUsage::BUFFER_USAGE_STORAGE;
+                return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
             case(Usage::COPY_SOURCE) :
-                return BufferUsage::BUFFER_USAGE_TRANSFER_SRC;
+                return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
             case(Usage::COPY_DESTINATION) :
-                return BufferUsage::BUFFER_USAGE_TRANSFER_SRC;
+                return VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-            default: return static_cast<BufferUsage>(0);
+            default: return 0;
         }
     }
 
@@ -141,14 +140,14 @@ namespace
         }
     }
 
-    bool NeedTextureDescriptor(TextureUsage usage)
+    bool NeedTextureDescriptor(VkImageUsageFlags usage)
     {
-        if((usage & TextureUsage::USAGE_SAMPLED) == TextureUsage::USAGE_SAMPLED)
+        if((usage & VK_IMAGE_USAGE_SAMPLED_BIT) == VK_IMAGE_USAGE_SAMPLED_BIT)
         {
             return true;
         }
 
-        if((usage & TextureUsage::USAGE_STORAGE) == TextureUsage::USAGE_STORAGE)
+        if((usage & VK_IMAGE_USAGE_STORAGE_BIT) == VK_IMAGE_USAGE_STORAGE_BIT)
         {
             return true;
         }
@@ -156,14 +155,14 @@ namespace
         return false;
     }
 
-    bool NeedBufferDescriptor(BufferUsage usage)
+    bool NeedBufferDescriptor(VkBufferUsageFlags usage)
     {
-        if((usage & BufferUsage::BUFFER_USAGE_UNIFORM) == BufferUsage::BUFFER_USAGE_UNIFORM)
+        if((usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
         {
             return true;
         }
 
-        if((usage & BufferUsage::BUFFER_USAGE_STORAGE) == BufferUsage::BUFFER_USAGE_STORAGE)
+        if((usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
         {
             return true;
         }
@@ -427,7 +426,7 @@ namespace
             .arrayLayers = textureInfo.ArrayLayers,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .usage = GetVkImageUsage(textureInfo.Usage),
+            .usage = textureInfo.Usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
@@ -489,7 +488,7 @@ namespace
         {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .size = bufferInfo.Size,
-            .usage = GetVkBufferUsage(bufferInfo.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            .usage = bufferInfo.Usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
         };
 
@@ -722,7 +721,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         uint32_t resourceId = transientRequestedTextureHandles[textureId].Id;
 
         Usage oldUsage = static_cast<Usage>(0);
-        TextureUsage usage = static_cast<TextureUsage>(0);
+        VkImageUsageFlags usage = 0;
         for(uint32_t passIndex = 0; passIndex < passesCount; passIndex++)
         {
             // For each pass
@@ -776,7 +775,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         bool isPresentTexture = false;
         if(resourceId == presentTexture.Id)
         {
-            usage |= TextureUsage::USAGE_SAMPLED;
+            usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
             isPresentTexture = true;
         }
 
@@ -816,7 +815,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         uint32_t resourceId = transientRequestedBufferHandles[bufferId].Id;
 
         Usage oldUsage = static_cast<Usage>(0);
-        BufferUsage usage = static_cast<BufferUsage>(0);
+        VkBufferUsageFlags usage = 0;
         for(uint32_t passIndex = 0; passIndex < passesCount; passIndex++)
         {
             // For each pass
@@ -2583,10 +2582,10 @@ TransientTextureHandle RenderGraph::RequestTransientTexture1D(TransientTextureIn
         .Width = textureInfo.Width, 
         .Height = 1,
         .Depth = 1,
-        .ArrayLayers = textureInfo.ArrayLayers,
-        .MipLevels = textureInfo.MipLevels,
+        .ArrayLayers = 1,
+        .MipLevels = 1,
         .Format = textureInfo.Format,
-        .Usage = static_cast<TextureUsage>(0)
+        .Usage = 0
     };
 
     transientRequestedTextures.push_back(data);
@@ -2613,10 +2612,10 @@ TransientTextureHandle RenderGraph::RequestTransientTexture2D(TransientTextureIn
         .Width = textureInfo.Width, 
         .Height = textureInfo.Height,
         .Depth = 1,
-        .ArrayLayers = textureInfo.ArrayLayers,
-        .MipLevels = textureInfo.MipLevels,
+        .ArrayLayers = 1,
+        .MipLevels = 1,
         .Format = textureInfo.Format,
-        .Usage = static_cast<TextureUsage>(0)
+        .Usage = 0
     };
 
     transientRequestedTextures.push_back(data);
@@ -2643,10 +2642,10 @@ TransientTextureHandle RenderGraph::RequestTransientTexture3D(TransientTextureIn
         .Width = textureInfo.Width, 
         .Height = textureInfo.Height,
         .Depth = textureInfo.Depth,
-        .ArrayLayers = textureInfo.ArrayLayers,
-        .MipLevels = textureInfo.MipLevels,
+        .ArrayLayers = 1,
+        .MipLevels = 1,
         .Format = textureInfo.Format,
-        .Usage = static_cast<TextureUsage>(0)
+        .Usage = 0
     };
 
     transientRequestedTextures.push_back(data);
@@ -2673,10 +2672,10 @@ TransientTextureHandle RenderGraph::RequestTransientTextureCube(TransientTexture
         .Width = textureInfo.Width, 
         .Height = textureInfo.Height,
         .Depth = 1,
-        .ArrayLayers = textureInfo.ArrayLayers,
-        .MipLevels = textureInfo.MipLevels,
+        .ArrayLayers = 6,
+        .MipLevels = 1,
         .Format = textureInfo.Format,
-        .Usage = static_cast<TextureUsage>(0)
+        .Usage = 0
     };
 
     transientRequestedTextures.push_back(data);
@@ -2694,14 +2693,14 @@ TransientTextureHandle RenderGraph::RequestTransientTextureCube(TransientTexture
     return handle;
 }
 
-TransientBufferHandle RenderGraph::RequestTransientBuffer(TransientBufferInfo bufferInfo)
+TransientBufferHandle RenderGraph::RequestTransientBuffer(uint64_t size)
 {
     TransientBufferHandle handle = ResourceRegistry::RequestTransientBufferSlot();
 
     BufferInfo data
     {
-        .Size = bufferInfo.Size,
-        .Usage = static_cast<BufferUsage>(0)
+        .Size = size,
+        .Usage = 0
     };
 
     transientRequestedBuffers.push_back(data);

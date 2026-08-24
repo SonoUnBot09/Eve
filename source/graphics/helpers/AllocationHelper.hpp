@@ -21,7 +21,7 @@ namespace Eve::Graphics::Helpers
         {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .size = bufferInfo.Size,
-            .usage = GetVkBufferUsage(bufferInfo.Usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            .usage = bufferInfo.Usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
         };
 
@@ -40,7 +40,7 @@ namespace Eve::Graphics::Helpers
         {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .size = bufferInfo.Size,
-            .usage = GetVkBufferUsage(bufferInfo.Usage),
+            .usage = bufferInfo.Usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
         };
 
@@ -72,7 +72,7 @@ namespace Eve::Graphics::Helpers
 
     }
 
-    static inline void AllocateTexture1D(TextureInfo1D textureInfo, TextureObject& texture)
+    static inline void AllocateTexture1D(TextureInfo1D textureInfo, TextureObject& texture, VkImageUsageFlags usage)
     {
         VkFormat format = GetVkImageFormat(textureInfo.Format);
         VkImageCreateInfo imageCI
@@ -81,11 +81,11 @@ namespace Eve::Graphics::Helpers
             .imageType =VK_IMAGE_TYPE_1D,
             .format = format,
             .extent {.width = textureInfo.Width, .height = 1, .depth = 1},
-            .mipLevels = textureInfo.MipLevels,
-            .arrayLayers = textureInfo.ArrayLayers,
+            .mipLevels = 1,
+            .arrayLayers = 1,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .usage = GetVkImageUsage(textureInfo.Usage),
+            .usage = usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
@@ -108,16 +108,16 @@ namespace Eve::Graphics::Helpers
             {
                 .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
                 .baseMipLevel = 0,
-                .levelCount = textureInfo.MipLevels,
+                .levelCount = 1,
                 .baseArrayLayer = 0,
-                .layerCount = textureInfo.ArrayLayers
+                .layerCount = 1
             }
         };
 
         vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
     }
 
-    static inline void AllocateTexture2D(TextureInfo2D textureInfo, TextureObject& texture)
+    static inline void AllocateTexture2D(TextureInfo2D textureInfo, TextureObject& texture, VkImageUsageFlags usage)
     {
         VkFormat format = GetVkImageFormat(textureInfo.Format);
         VkImageCreateInfo imageCI
@@ -126,11 +126,11 @@ namespace Eve::Graphics::Helpers
             .imageType = VK_IMAGE_TYPE_2D,
             .format = format,
             .extent {.width = textureInfo.Width, .height = textureInfo.Width, .depth = 1},
-            .mipLevels = textureInfo.MipLevels,
-            .arrayLayers = textureInfo.ArrayLayers,
+            .mipLevels = 1,
+            .arrayLayers = 1,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .usage = GetVkImageUsage(textureInfo.Usage),
+            .usage = usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
@@ -153,16 +153,16 @@ namespace Eve::Graphics::Helpers
             {
                 .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
                 .baseMipLevel = 0,
-                .levelCount = textureInfo.MipLevels,
+                .levelCount = 1,
                 .baseArrayLayer = 0,
-                .layerCount = textureInfo.ArrayLayers
+                .layerCount = 1
             }
         };
 
         vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
     }
 
-    static inline void AllocateTexture3D(TextureInfo3D textureInfo, TextureObject& texture)
+    static inline void AllocateTexture3D(TextureInfo3D textureInfo, TextureObject& texture, VkImageUsageFlags usage)
     {
         VkFormat format = GetVkImageFormat(textureInfo.Format);
         VkImageCreateInfo imageCI
@@ -171,11 +171,11 @@ namespace Eve::Graphics::Helpers
             .imageType = VK_IMAGE_TYPE_3D,
             .format = format,
             .extent {.width = textureInfo.Width, .height = textureInfo.Width, .depth = textureInfo.Depth},
-            .mipLevels = textureInfo.MipLevels,
-            .arrayLayers = textureInfo.ArrayLayers,
+            .mipLevels = 1,
+            .arrayLayers = 1,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .usage = GetVkImageUsage(textureInfo.Usage),
+            .usage = usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
@@ -198,16 +198,16 @@ namespace Eve::Graphics::Helpers
             {
                 .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
                 .baseMipLevel = 0,
-                .levelCount = textureInfo.MipLevels,
+                .levelCount = 1,
                 .baseArrayLayer = 0,
-                .layerCount = textureInfo.ArrayLayers
+                .layerCount = 1
             }
         };
 
         vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
     }
 
-    static inline void AllocateTextureCube(TextureInfo2D textureInfo, TextureObject& texture)
+    static inline void AllocateTextureCube(TextureInfo2D textureInfo, TextureObject& texture, VkImageUsageFlags usage)
     {
         VkFormat format = GetVkImageFormat(textureInfo.Format);
         VkImageCreateInfo imageCI
@@ -217,11 +217,11 @@ namespace Eve::Graphics::Helpers
             .imageType = VK_IMAGE_TYPE_2D,
             .format = format,
             .extent {.width = textureInfo.Width, .height = textureInfo.Width, .depth = 1},
-            .mipLevels = textureInfo.MipLevels,
+            .mipLevels = 1,
             .arrayLayers = 6,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .usage = GetVkImageUsage(textureInfo.Usage),
+            .usage = usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
@@ -244,9 +244,9 @@ namespace Eve::Graphics::Helpers
             {
                 .aspectMask = GetVkImageAspectMaskBasedOnFormat(format),
                 .baseMipLevel = 0,
-                .levelCount = textureInfo.MipLevels,
+                .levelCount = 1,
                 .baseArrayLayer = 0,
-                .layerCount = textureInfo.ArrayLayers
+                .layerCount = 6
             }
         };
 

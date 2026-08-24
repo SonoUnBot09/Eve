@@ -1,6 +1,6 @@
 #include "MeshRegistry.hpp"
-#include "eve/graphics/Buffer.hpp"
-#include "eve/graphics/PassModule.hpp"
+#include <eve/graphics/Buffer.hpp>
+#include <eve/graphics/Pass.hpp>
 #include "eve/utils/Vec.hpp"
 #include "MemoryRegistry.hpp"
 #include <graphics/RenderGraph.hpp>
@@ -116,13 +116,9 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         }
         else 
         {
-            BufferInfo info
-            {
-                .Size = cpuMesh.Vertices.size() * sizeof(Vec3),
-                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
-            };
+            uint64_t size = cpuMesh.Vertices.size() * sizeof(Vec3);
 
-            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(info);
+            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(size);
 
             graphicsMesh.VertexBuffer = newBuffer;
 
@@ -142,14 +138,9 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         }
         else 
         {
-            BufferInfo info
-            {
-                .Size = cpuMesh.Indicies.size() * sizeof(uint32_t),
-                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | 
-                    BufferUsage::BUFFER_USAGE_TRANSFER_DST | BufferUsage::BUFFER_USAGE_INDEX
-            };
+            uint64_t size = cpuMesh.Indicies.size() * sizeof(uint32_t);
 
-            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(info);
+            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(size);
 
             graphicsMesh.IndexBuffer = newBuffer;
 
@@ -169,13 +160,9 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         }
         else 
         {
-            BufferInfo info
-            {
-                .Size = cpuMesh.Normals.size() * sizeof(Vec3),
-                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
-            };
+            uint64_t size = cpuMesh.Normals.size() * sizeof(Vec3);
 
-            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(info);
+            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(size);
 
             graphicsMesh.NormalBuffer = newBuffer;
 
@@ -195,13 +182,9 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         }
         else 
         {
-            BufferInfo info
-            {
-                .Size = cpuMesh.Colors.size() * sizeof(Vec3),
-                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
-            };
+            uint64_t size = cpuMesh.Colors.size() * sizeof(Vec3);
 
-            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(info);
+            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(size);
 
             graphicsMesh.ColorBuffer = newBuffer;
 
@@ -221,13 +204,9 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         }
         else 
         {
-            BufferInfo info
-            {
-                .Size = cpuMesh.UVs.size() * sizeof(Vec2),
-                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
-            };
+            uint64_t size = cpuMesh.UVs.size() * sizeof(Vec2);
 
-            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(info);
+            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(size);
 
             graphicsMesh.UVBuffer = newBuffer;
 
@@ -248,13 +227,9 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         }
         else 
         {
-            BufferInfo info
-            {
-                .Size = cpuMesh.Tangents.size() * sizeof(Vec4),
-                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST
-            };
+            uint64_t size = cpuMesh.Tangents.size() * sizeof(Vec4);
 
-            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(info);
+            BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(size);
 
             graphicsMesh.TangentBuffer = newBuffer;
 

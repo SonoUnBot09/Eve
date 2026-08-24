@@ -3,7 +3,7 @@
 #include <vector>
 #include <cstdint>
 
-#include <eve/graphics/PassModule.hpp>
+#include <eve/graphics/Pass.hpp>
 #include <graphics/registers/MemoryRegistry.hpp>
 #include <EveSettings.hpp>
 
@@ -21,7 +21,7 @@ namespace Eve::Graphics
             static TransientTextureHandle RequestTransientTexture2D(TransientTextureInfo2D textureInfo);
             static TransientTextureHandle RequestTransientTexture3D(TransientTextureInfo3D textureInfo);
             static TransientTextureHandle RequestTransientTextureCube(TransientTextureInfo2D textureInfo);
-            static TransientBufferHandle RequestTransientBuffer(TransientBufferInfo bufferInfo);            
+            static TransientBufferHandle RequestTransientBuffer(uint64_t size);            
             static void AddPass(GraphicsPass& pass);
             static void AddPass(TransferPass& pass);
             static void AddPass(ComputePass& pass);

@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <eve/graphics/Geometry.hpp>
-#include <vector>
 #include <eve/graphics/Texture.hpp>
 #include <string>
 
@@ -26,9 +25,6 @@ namespace Eve::Graphics
         // Depth Stencil
         bool DepthTest = true, DepthWrite = true, StencilTest = false;;
         enum DepthTest CompareOp = DepthTest::DEPTH_COMPARE_LESS;
-
-        // Multi Sampling
-        TextureSample samplesCount = TextureSample::SAMPLE_1;
 
         // Color & Depth Formats
         Format ColorFormat, DepthFormat;

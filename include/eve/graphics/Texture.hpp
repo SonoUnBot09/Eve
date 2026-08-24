@@ -14,30 +14,6 @@ namespace Eve::Graphics
             TEXTURE_CUBE
         };
 
-        enum class TextureUsage : uint16_t
-        {
-            USAGE_SAMPLED                   = 1 << 0,
-            USAGE_STORAGE                   = 1 << 1,
-            USAGE_COLOR_ATTACHMENT          = 1 << 2,
-            USAGE_DEPTH_STENCIL_ATTACHMENT  = 1 << 3,
-            USAGE_TRANSFER_SRC              = 1 << 4,
-            USAGE_TRANSFER_DST              = 1 << 5
-        };
-
-        enum class TextureLayout : uint16_t
-        {
-            LAYOUT_UNDEFINED,
-            LAYOUT_GENERAL,
-            LAYOUT_COLOR_ATTACHMENT,
-            LAYOUT_DEPTH_STENCIL_ATTACHMENT ,
-            LAYOUT_DEPTH_ATTACHMENT,
-            LAYOUT_STENCIL_ATTACHMENT,
-            LAYOUT_SHADER_READ_ONLY,
-            LAYOUT_TRANSFER_SRC,
-            LAYOUT_TRANSFER_DST,
-            LAYOUT_PRESENT
-        };
-
         enum class Format : uint16_t
         {
             FORMAT_UNDEFINED = 0,
@@ -111,39 +87,12 @@ namespace Eve::Graphics
             FORMAT_D32_SFLOAT_S8_UINT
         };
 
-        enum class TextureSample : uint16_t
-        {
-            SAMPLE_1 = 0,
-            SAMPLE_2,
-            SAMPLE_4,
-            SAMPLE_8
-        };
-
         enum class TextureAspectMask : uint16_t
         {
             ASPECT_MASK_COLOR = 1 << 0,
             ASPECT_MASK_DEPTH = 1 << 1,
             ASPECT_MASK_STENCIL = 1 << 2
         };
-
-        inline TextureUsage operator|(TextureUsage a, TextureUsage b)
-        {
-            return static_cast<TextureUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
-        }
-        inline TextureUsage operator&(TextureUsage a, TextureUsage b)
-        {
-            return static_cast<TextureUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
-        }
-        inline TextureUsage& operator|=(TextureUsage& a, TextureUsage b)
-        {
-            a = a | b;
-            return a;
-        }
-        inline TextureUsage& operator&=(TextureUsage& a, TextureUsage b)
-        {
-            a = a & b;
-            return a;
-        }
 
         inline TextureAspectMask operator|(TextureAspectMask a, TextureAspectMask b)
         {
@@ -184,38 +133,27 @@ namespace Eve::Graphics
     struct TextureInfo1D
     {
         uint32_t Width;
-        uint32_t ArrayLayers = 1;
-        uint32_t MipLevels = 1;
-
         Format Format;
-        TextureUsage Usage;
+        bool randomReadWrite;
     };
 
     struct TextureInfo2D
     {
         uint32_t Width, Height;
-        uint32_t ArrayLayers = 1;
-        uint32_t MipLevels = 1;
-
         Format Format;
-        TextureUsage Usage;
+        bool randomReadWrite;
     };
 
     struct TextureInfo3D
     {
         uint32_t Height, Width, Depth;
-        uint32_t ArrayLayers = 1;
-        uint32_t MipLevels = 1;
-
         Format Format;
-        TextureUsage Usage;
+        bool randomReadWrite;
     };
 
     struct TransientTextureInfo1D
     {
         uint32_t Width;
-        uint32_t ArrayLayers = 1;
-        uint32_t MipLevels = 1;
 
         Format Format;
     };
@@ -223,8 +161,6 @@ namespace Eve::Graphics
     struct TransientTextureInfo2D
     {
         uint32_t Width, Height;
-        uint32_t ArrayLayers = 1;
-        uint32_t MipLevels = 1;
 
         Format Format;
     };
@@ -232,43 +168,7 @@ namespace Eve::Graphics
     struct TransientTextureInfo3D
     {
         uint32_t Height, Width, Depth;
-        uint32_t ArrayLayers = 1;
-        uint32_t MipLevels = 1;
 
         Format Format;
     };
-
-    struct TextureInfo
-    {
-        TextureType TextureType;
-        uint32_t Width, Height, Depth;
-        uint32_t ArrayLayers;
-        uint32_t MipLevels;
-
-        Format Format;
-        TextureUsage Usage = static_cast<TextureUsage>(0);
-
-        bool operator==(const TextureInfo& other) const 
-        {
-            return 
-                TextureType == other.TextureType &&
-                Width == other.Width &&
-                Height == other.Height &&
-                Depth == other.Depth &&
-                ArrayLayers == other.ArrayLayers &&
-                MipLevels == other.MipLevels &&
-                Format == other.Format &&
-                Usage == other.Usage;
-        }
-    };
-
-    /*
-    struct TransientTextureInfo2D
-    {
-        uint32_t Height, Width;
-        uint32_t ArrayLayers = 1;
-        uint32_t MipLevels = 1;
-
-        Format Format;
-    }*/
 }

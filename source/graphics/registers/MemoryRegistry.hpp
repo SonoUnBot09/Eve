@@ -1,8 +1,8 @@
 #pragma once
 
-#include "eve/graphics/Buffer.hpp"
-#include "eve/graphics/Sampler.hpp"
-#include "eve/graphics/Texture.hpp"
+#include <eve/graphics/Buffer.hpp>
+#include <eve/graphics/Sampler.hpp>
+#include <eve/graphics/Texture.hpp>
 #include <graphics/GraphicsCore.hpp>
 #include <graphics/helpers/AllocationHelper.hpp>
 
@@ -25,7 +25,7 @@ namespace Eve::Graphics
             static SamplerHandle CreateSampler(SamplerInfo samplerInfo);
 
             // --- Buffer Creation ---
-            static BufferHandle CreateGPUBuffer(BufferInfo bufferInfo);
+            static BufferHandle CreateGPUBuffer(uint64_t size);
             static BufferHandle CreateCPUBuffer(BufferInfo bufferInfo);
 
 

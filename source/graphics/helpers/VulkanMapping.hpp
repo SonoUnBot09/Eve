@@ -16,16 +16,6 @@ namespace Eve::Graphics
     inline static constexpr uint32_t imageAspectMaskConfigCount = 3;
     inline static constexpr uint32_t shaderStageConfigCount = 3;
 
-    // Buffers
-    static constexpr VkBufferUsageFlags bufferUsageLUT[]
-    {
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-    };
-
     static constexpr VkImageType imageTypeLUT[]
     {
         VK_IMAGE_TYPE_1D,
@@ -40,16 +30,6 @@ namespace Eve::Graphics
         VK_IMAGE_VIEW_TYPE_2D,
         VK_IMAGE_VIEW_TYPE_3D,
         VK_IMAGE_VIEW_TYPE_CUBE
-    };
-
-    static constexpr VkImageUsageFlags imageUsageLUT[]
-    {
-        VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_IMAGE_USAGE_STORAGE_BIT,
-        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_IMAGE_USAGE_TRANSFER_DST_BIT
     };
 
     static constexpr VkImageLayout imageLayoutLUT[]
@@ -212,14 +192,6 @@ namespace Eve::Graphics
         8
     };
 
-    static constexpr VkSampleCountFlagBits imageSampleCountLUT[]
-    {
-        VK_SAMPLE_COUNT_1_BIT,
-        VK_SAMPLE_COUNT_2_BIT,
-        VK_SAMPLE_COUNT_4_BIT,
-        VK_SAMPLE_COUNT_8_BIT
-    };
-
     static constexpr VkImageAspectFlags imageAspectMaskLUT[]
     {
         VK_IMAGE_ASPECT_COLOR_BIT,
@@ -281,22 +253,6 @@ namespace Eve::Graphics
         VK_COMPARE_OP_GREATER_OR_EQUAL
     };
 
-    // Buffers
-    static inline VkBufferUsageFlags GetVkBufferUsage(BufferUsage usage)
-    {
-        uint32_t bits = static_cast<uint32_t>(usage);
-
-        VkBufferUsageFlags bufferUsage = 0;
-        for(uint32_t i = 0; i < bufferUsageConfigCount; i++)
-        {
-            if(!(bits & (1u << i))) { continue; }
-
-            bufferUsage |= bufferUsageLUT[i];
-        }
-
-        return bufferUsage;
-    }
-
     // Images
     static inline VkImageType GetVkImageType(TextureType textureType)
     {
@@ -308,31 +264,9 @@ namespace Eve::Graphics
         return imageViewTypeLUT[static_cast<uint32_t>(textureType)];
     }
 
-    static inline VkImageUsageFlags GetVkImageUsage(TextureUsage usage)
-    {
-        uint32_t bits = static_cast<uint32_t>(usage);
-
-        VkImageUsageFlags imageUsageFlag = 0;
-        for(uint32_t i = 0; i < imageUsageConfigCount; i++)
-        {
-            if(!(bits & (1u << i))) { continue; }
-
-            imageUsageFlag |= imageUsageLUT[i];
-        }
-
-        return imageUsageFlag;
-    }
-    static inline VkImageLayout GetVkImageLayout(TextureLayout layout)
-    {
-        return imageLayoutLUT[static_cast<uint32_t>(layout)];
-    }
     static inline VkFormat GetVkImageFormat(Format format)
     {
         return imageFormatLUT[static_cast<uint32_t>(format)];
-    }
-    static inline VkSampleCountFlagBits GetVkImageSamplesCount(TextureSample sample)
-    {
-        return imageSampleCountLUT[static_cast<uint32_t>(sample)];
     }
     static inline VkImageAspectFlags GetVkImageAspectMask(TextureAspectMask usage)
     {

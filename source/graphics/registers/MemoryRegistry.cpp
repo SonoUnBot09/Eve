@@ -1,7 +1,8 @@
 #include "MemoryRegistry.hpp"
-#include "eve/graphics/Buffer.hpp"
-#include "eve/graphics/PassModule.hpp"
-#include "eve/graphics/Texture.hpp"
+#include <cstdint>
+#include <eve/graphics/Buffer.hpp>
+#include <eve/graphics/Pass.hpp>
+#include <eve/graphics/Texture.hpp>
 #include "ResourceRegistry.hpp"
 #include <graphics/ResourceMapper.hpp>
 #include <graphics/GraphicsCore.hpp>
@@ -17,8 +18,17 @@ using namespace Eve::Graphics;
 
 TextureHandle MemoryRegistry::CreateTexture1D(TextureInfo1D textureInfo)
 {
+    VkImageUsageFlags usage =   VK_IMAGE_USAGE_SAMPLED_BIT | 
+                                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    if(textureInfo.randomReadWrite)
+    {
+        usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }          
+
     TextureObject texture {};
-    Helpers::AllocateTexture1D(textureInfo, texture);
+    Helpers::AllocateTexture1D(textureInfo, texture, usage);
 
     TextureInfo info
     {
@@ -26,10 +36,10 @@ TextureHandle MemoryRegistry::CreateTexture1D(TextureInfo1D textureInfo)
         .Width = textureInfo.Width,
         .Height = 1,
         .Depth = 1,
-        .ArrayLayers = textureInfo.ArrayLayers,
-        .MipLevels = textureInfo.MipLevels,
+        .ArrayLayers = 1,
+        .MipLevels = 1,
         .Format = textureInfo.Format,
-        .Usage = textureInfo.Usage
+        .Usage = usage
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
@@ -47,8 +57,17 @@ TextureHandle MemoryRegistry::CreateTexture1D(TextureInfo1D textureInfo)
 
 TextureHandle MemoryRegistry::CreateTexture2D(TextureInfo2D textureInfo)
 {
+    VkImageUsageFlags usage =   VK_IMAGE_USAGE_SAMPLED_BIT | 
+                                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    if(textureInfo.randomReadWrite)
+    {
+        usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }     
+
     TextureObject texture {};
-    Helpers::AllocateTexture2D(textureInfo, texture);
+    Helpers::AllocateTexture2D(textureInfo, texture, usage);
 
     TextureInfo info
     {
@@ -56,10 +75,10 @@ TextureHandle MemoryRegistry::CreateTexture2D(TextureInfo2D textureInfo)
         .Width = textureInfo.Width,
         .Height = textureInfo.Height,
         .Depth = 1,
-        .ArrayLayers = textureInfo.ArrayLayers,
-        .MipLevels = textureInfo.MipLevels,
+        .ArrayLayers = 1,
+        .MipLevels = 1,
         .Format = textureInfo.Format,
-        .Usage = textureInfo.Usage
+        .Usage = usage
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
@@ -77,8 +96,17 @@ TextureHandle MemoryRegistry::CreateTexture2D(TextureInfo2D textureInfo)
 
 TextureHandle MemoryRegistry::CreateTexture3D(TextureInfo3D textureInfo)
 {
+    VkImageUsageFlags usage =   VK_IMAGE_USAGE_SAMPLED_BIT | 
+                                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    if(textureInfo.randomReadWrite)
+    {
+        usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }     
+
     TextureObject texture {};
-    Helpers::AllocateTexture3D(textureInfo, texture);
+    Helpers::AllocateTexture3D(textureInfo, texture, usage);
 
     TextureInfo info
     {
@@ -86,10 +114,10 @@ TextureHandle MemoryRegistry::CreateTexture3D(TextureInfo3D textureInfo)
         .Width = textureInfo.Width,
         .Height = textureInfo.Height,
         .Depth = textureInfo.Depth,
-        .ArrayLayers = textureInfo.ArrayLayers,
-        .MipLevels = textureInfo.MipLevels,
+        .ArrayLayers = 1,
+        .MipLevels = 1,
         .Format = textureInfo.Format,
-        .Usage = textureInfo.Usage
+        .Usage = usage
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
@@ -108,8 +136,17 @@ TextureHandle MemoryRegistry::CreateTexture3D(TextureInfo3D textureInfo)
 
 TextureHandle MemoryRegistry::CreateTextureCube(TextureInfo2D textureInfo)
 {
+    VkImageUsageFlags usage =   VK_IMAGE_USAGE_SAMPLED_BIT | 
+                                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    if(textureInfo.randomReadWrite)
+    {
+        usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }     
+
     TextureObject texture {};
-    Helpers::AllocateTextureCube(textureInfo, texture);
+    Helpers::AllocateTextureCube(textureInfo, texture, usage);
 
     TextureInfo info
     {
@@ -117,10 +154,10 @@ TextureHandle MemoryRegistry::CreateTextureCube(TextureInfo2D textureInfo)
         .Width = textureInfo.Width,
         .Height = textureInfo.Height,
         .Depth = 1,
-        .ArrayLayers = textureInfo.ArrayLayers,
-        .MipLevels = textureInfo.MipLevels,
+        .ArrayLayers = 1,
+        .MipLevels = 1,
         .Format = textureInfo.Format,
-        .Usage = textureInfo.Usage
+        .Usage = usage
     };
 
     TextureHandle handle = ResourceRegistry::RequestPersistentTextureSlot();
@@ -162,16 +199,16 @@ SamplerHandle MemoryRegistry::CreateSampler(SamplerInfo samplerInfo)
     return handle;
 }
 
-BufferHandle MemoryRegistry::CreateGPUBuffer(BufferInfo bufferInfo)
+BufferHandle MemoryRegistry::CreateGPUBuffer(uint64_t size)
 {
-    BufferObject buffer {};
-    Helpers::AllocateGPUBuffer(bufferInfo, buffer);
-
     BufferInfo info
     {
-        .Size = bufferInfo.Size,
-        .Usage = bufferInfo.Usage
+        .Size = size,
+        .Usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
     };
+
+    BufferObject buffer {};
+    Helpers::AllocateGPUBuffer(info, buffer);
 
     BufferHandle handle = ResourceRegistry::RequestPersistentBufferSlot();
     
@@ -274,15 +311,7 @@ void MemoryRegistry::ResizeBufferIfNeeded(BufferHandle &buffer, uint64_t require
     {
         MemoryRegistry::DestroyBuffer(buffer);
 
-        BufferUsage bufferUsage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_SRC | BufferUsage::BUFFER_USAGE_TRANSFER_DST;
-
-        BufferInfo bufferInfo
-        {
-            .Size = requiredSize,
-            .Usage = bufferUsage
-        };
-
-        BufferHandle newBufferHandle = MemoryRegistry::CreateGPUBuffer(bufferInfo);
+        BufferHandle newBufferHandle = MemoryRegistry::CreateGPUBuffer(requiredSize);
 
         buffer = newBufferHandle;
     }

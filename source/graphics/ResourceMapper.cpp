@@ -8,9 +8,9 @@ using namespace Eve::Graphics;
 
 namespace 
 {
-    bool IsSampled(TextureUsage usage)
+    bool IsSampled(VkImageUsageFlags usage)
     {
-        if((usage & TextureUsage::USAGE_SAMPLED) == TextureUsage::USAGE_SAMPLED)
+        if((usage & VK_IMAGE_USAGE_SAMPLED_BIT) == VK_IMAGE_USAGE_SAMPLED_BIT)
         {
             return true;
         }
@@ -18,9 +18,9 @@ namespace
         return false;
     }
 
-    bool IsStorage(TextureUsage usage)
+    bool IsStorage(VkImageUsageFlags usage)
     {
-        if((usage & TextureUsage::USAGE_STORAGE) == TextureUsage::USAGE_STORAGE)
+        if((usage & VK_IMAGE_USAGE_STORAGE_BIT) == VK_IMAGE_USAGE_STORAGE_BIT)
         {
             return true;
         }
@@ -250,13 +250,9 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
 
         for (uint32_t i = 0; i < Eve::Settings::MAX_FRAMES_IN_FLIGHT; i++)
         {
-            BufferInfo bufferInfo
-            {
-                .Size = maxBuffersCount * sizeof(uint64_t),
-                .Usage = BufferUsage::BUFFER_USAGE_STORAGE | BufferUsage::BUFFER_USAGE_TRANSFER_DST
-            };
+            uint64_t size = maxBuffersCount * sizeof(uint64_t);
 
-            BufferHandle handle = MemoryRegistry::CreateGPUBuffer(bufferInfo);
+            BufferHandle handle = MemoryRegistry::CreateGPUBuffer(size);
 
             BDABuffers[i] = handle;
 
@@ -293,7 +289,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             BufferInfo bufferInfo
             {
                 .Size = maxBuffersCount * sizeof(uint64_t),
-                .Usage = BufferUsage::BUFFER_USAGE_TRANSFER_SRC
+                .Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
             };
 
             BufferHandle handle = MemoryRegistry::CreateCPUBuffer(bufferInfo);

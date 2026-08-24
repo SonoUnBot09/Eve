@@ -1,7 +1,7 @@
-#include <graphics/RenderGraph.hpp>
+
 #include "eve/entities/ComponentsRegistry.hpp"
 #include "eve/entities/QueryResult.hpp"
-#include "eve/graphics/PassModule.hpp"
+#include "eve/graphics/Pass.hpp"
 #include "eve/graphics/ShaderHandle.hpp"
 #include "eve/graphics/Texture.hpp"
 #include "eve/utils/Vec.hpp"
@@ -10,7 +10,7 @@
 #include <eve/Debug.hpp>
 #include <eve/entities/EntityManager.hpp>
 #include <eve/components/Transform.hpp>
-#include <graphics/registers/ShaderRegistry.hpp>
+#include <eve/graphics/Graphics.hpp>
 
 using namespace Eve::Entities;
 using namespace Eve::Graphics;
@@ -70,11 +70,10 @@ void Start(uint32_t systemId)
         .DepthWrite = false,
         .StencilTest = false,
         .CompareOp = DepthTest::DEPTH_COMPARE_LESS,
-        .samplesCount = TextureSample::SAMPLE_1,
         .ColorFormat = Format::FORMAT_R8G8B8A8_SRGB
     };
 
-    shaderHandle = ShaderRegistry::CreateGraphicsShader(shaderInfo);
+    shaderHandle = Graphics::CreateGraphicsShader(shaderInfo);
 }
 
 void Update(float deltaTime, uint32_t systemId)
@@ -97,18 +96,16 @@ void Update(float deltaTime, uint32_t systemId)
     std::cout << "CAMERA " << camera.sensitivity << std::endl;
     std::cout << "ENTITY ID:  " << entity.Id << " GENERATION:  " << entity.GeneratationId << std::endl;*/
 
-    Vec2Int windowSize = GraphicsCore::GetWindowSize();
+    Vec2Int windowSize = Graphics::GetWindowSize();
 
     TransientTextureInfo2D textureInfo
     {
         .Width = static_cast<uint32_t>(windowSize.x),
         .Height = static_cast<uint32_t>(windowSize.y),
-        .ArrayLayers = 1,
-        .MipLevels = 1,
         .Format = Format::FORMAT_R8G8B8A8_SRGB
     };
 
-    TransientTextureHandle handle = RenderGraph::RequestTransientTexture2D(textureInfo);
+    TransientTextureHandle handle = Graphics::RequestTransientTexture2D(textureInfo);
 
     GraphicsPass pass {};
 
@@ -134,9 +131,9 @@ void Update(float deltaTime, uint32_t systemId)
     
     pass.Draw(6, shaderHandle, &pushConstant, Words32(0), Words32(3));
 
-    RenderGraph::AddPass(pass);
+    Graphics::AddPass(pass);
 
-    RenderGraph::SetPresentTexture(handle);
+    Graphics::SetPresentTexture(handle);
 
     elapsedFrames++;
 }
