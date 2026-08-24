@@ -31,6 +31,32 @@ void GraphicsPass::Draw(uint32_t vertexShaderInvocations, ShaderHandle shader, c
     drawCalls.emplace_back(vertexShaderInvocations, 1, shader, pushConstantData, offset, size);
 }
 
+void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, ShaderHandle shader, uint32_t instanceCount, const void* pushConstant, Words32 offset, Words32 size)
+{
+    static constexpr uint32_t maxPushCostantSize = 128;
+
+    uint32_t offsetBytes = offset.ToBytes();
+    uint32_t sizeBytes = size.ToBytes();
+
+    if(offsetBytes > maxPushCostantSize)
+    {
+        offsetBytes = maxPushCostantSize;
+    }
+
+    uint32_t availableSpace = maxPushCostantSize - offsetBytes;
+
+    if(sizeBytes > availableSpace)
+    {
+        sizeBytes = availableSpace;
+    }
+
+    std::array<std::byte, maxPushCostantSize> pushConstantData;
+
+    memcpy(pushConstantData.data() + offsetBytes, (std::byte*)pushConstant, sizeBytes);
+    
+    drawCalls.emplace_back(vertexShaderInvocations, instanceCount, shader, pushConstantData, offset, size);
+}
+
 void TransferPass::CopyBuffer(TransientBufferHandle SrcBuffer, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset, uint64_t DstOffset)
 {
     transientBufferCopies.emplace_back(SrcBuffer.Id, DstBuffer.Id, Size, SrcOffset, DstOffset);
