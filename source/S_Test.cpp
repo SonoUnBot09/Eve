@@ -1,6 +1,3 @@
-
-#include "eve/entities/ComponentsRegistry.hpp"
-#include "eve/entities/QueryResult.hpp"
 #include "eve/graphics/Buffer.hpp"
 #include "eve/graphics/Pass.hpp"
 #include "eve/graphics/ShaderHandle.hpp"
@@ -164,7 +161,7 @@ void Update(float deltaTime, uint32_t systemId)
 
     GraphicsPass pass {};
     
-    pass.UseBufferReadVertex(buffer);
+    pass.UseBufferReadOnlyVertex(buffer);
     
     LoadStoreOp loadStoreOp
     {

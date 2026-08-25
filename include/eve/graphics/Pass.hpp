@@ -13,6 +13,7 @@
 namespace Eve::Graphics
 {
     class RenderGraph;
+    class MeshRegistry;
 
     enum class LoadOperation
     {
@@ -246,6 +247,7 @@ namespace Eve::Graphics
             std::vector<TextureUpload> persistentTextureUploads;
 
             friend class RenderGraph;
+            friend class MeshRegistry;
 
     };
 
