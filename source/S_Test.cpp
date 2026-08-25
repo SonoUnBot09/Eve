@@ -1,6 +1,7 @@
 
 #include "eve/entities/ComponentsRegistry.hpp"
 #include "eve/entities/QueryResult.hpp"
+#include "eve/graphics/Buffer.hpp"
 #include "eve/graphics/Pass.hpp"
 #include "eve/graphics/ShaderHandle.hpp"
 #include "eve/graphics/Texture.hpp"
@@ -16,49 +17,64 @@ using namespace Eve::Entities;
 using namespace Eve::Graphics;
 
 static ShaderHandle shaderHandle;
+static BufferHandle buffer;
 static uint64_t elapsedFrames = 0;
+static uint32_t elementsCount = 10 * 20;
 
-void Awake(uint32_t systemId)
-{
-    ComponentsRegistry::RegisterComponent<Transform>();
-    ComponentsRegistry::RegisterComponent<Camera>();
+Vec2 positions[] = {
+    {-0.95f,-0.9f}, {-0.85f,-0.9f}, {-0.75f,-0.9f}, {-0.65f,-0.9f}, {-0.55f,-0.9f},
+    {-0.45f,-0.9f}, {-0.35f,-0.9f}, {-0.25f,-0.9f}, {-0.15f,-0.9f}, {-0.05f,-0.9f},
+    { 0.05f,-0.9f}, { 0.15f,-0.9f}, { 0.25f,-0.9f}, { 0.35f,-0.9f}, { 0.45f,-0.9f},
+    { 0.55f,-0.9f}, { 0.65f,-0.9f}, { 0.75f,-0.9f}, { 0.85f,-0.9f}, { 0.95f,-0.9f},
 
-    Transform transform
-    {
-        .Position {10,1,0},
-        .Rotation {0,0,0},
-        .Scale {1,1,1}
-    };
+    {-0.95f,-0.7f}, {-0.85f,-0.7f}, {-0.75f,-0.7f}, {-0.65f,-0.7f}, {-0.55f,-0.7f},
+    {-0.45f,-0.7f}, {-0.35f,-0.7f}, {-0.25f,-0.7f}, {-0.15f,-0.7f}, {-0.05f,-0.7f},
+    { 0.05f,-0.7f}, { 0.15f,-0.7f}, { 0.25f,-0.7f}, { 0.35f,-0.7f}, { 0.45f,-0.7f},
+    { 0.55f,-0.7f}, { 0.65f,-0.7f}, { 0.75f,-0.7f}, { 0.85f,-0.7f}, { 0.95f,-0.7f},
 
-    EntityCommandInfo command{};
-    for (uint32_t i = 0; i < 457; i++)
-    {
-        transform.Position.x = i;
-        command.AddComponent<Transform>(transform);
-        EntityManager::ScheduleCreationCommand(&command, systemId);
+    {-0.95f,-0.5f}, {-0.85f,-0.5f}, {-0.75f,-0.5f}, {-0.65f,-0.5f}, {-0.55f,-0.5f},
+    {-0.45f,-0.5f}, {-0.35f,-0.5f}, {-0.25f,-0.5f}, {-0.15f,-0.5f}, {-0.05f,-0.5f},
+    { 0.05f,-0.5f}, { 0.15f,-0.5f}, { 0.25f,-0.5f}, { 0.35f,-0.5f}, { 0.45f,-0.5f},
+    { 0.55f,-0.5f}, { 0.65f,-0.5f}, { 0.75f,-0.5f}, { 0.85f,-0.5f}, { 0.95f,-0.5f},
 
-        command.Clear();
-    }
-}
+    {-0.95f,-0.3f}, {-0.85f,-0.3f}, {-0.75f,-0.3f}, {-0.65f,-0.3f}, {-0.55f,-0.3f},
+    {-0.45f,-0.3f}, {-0.35f,-0.3f}, {-0.25f,-0.3f}, {-0.15f,-0.3f}, {-0.05f,-0.3f},
+    { 0.05f,-0.3f}, { 0.15f,-0.3f}, { 0.25f,-0.3f}, { 0.35f,-0.3f}, { 0.45f,-0.3f},
+    { 0.55f,-0.3f}, { 0.65f,-0.3f}, { 0.75f,-0.3f}, { 0.85f,-0.3f}, { 0.95f,-0.3f},
+
+    {-0.95f,-0.1f}, {-0.85f,-0.1f}, {-0.75f,-0.1f}, {-0.65f,-0.1f}, {-0.55f,-0.1f},
+    {-0.45f,-0.1f}, {-0.35f,-0.1f}, {-0.25f,-0.1f}, {-0.15f,-0.1f}, {-0.05f,-0.1f},
+    { 0.05f,-0.1f}, { 0.15f,-0.1f}, { 0.25f,-0.1f}, { 0.35f,-0.1f}, { 0.45f,-0.1f},
+    { 0.55f,-0.1f}, { 0.65f,-0.1f}, { 0.75f,-0.1f}, { 0.85f,-0.1f}, { 0.95f,-0.1f},
+
+    {-0.95f, 0.1f}, {-0.85f, 0.1f}, {-0.75f, 0.1f}, {-0.65f, 0.1f}, {-0.55f, 0.1f},
+    {-0.45f, 0.1f}, {-0.35f, 0.1f}, {-0.25f, 0.1f}, {-0.15f, 0.1f}, {-0.05f, 0.1f},
+    { 0.05f, 0.1f}, { 0.15f, 0.1f}, { 0.25f, 0.1f}, { 0.35f, 0.1f}, { 0.45f, 0.1f},
+    { 0.55f, 0.1f}, { 0.65f, 0.1f}, { 0.75f, 0.1f}, { 0.85f, 0.1f}, { 0.95f, 0.1f},
+
+    {-0.95f, 0.3f}, {-0.85f, 0.3f}, {-0.75f, 0.3f}, {-0.65f, 0.3f}, {-0.55f, 0.3f},
+    {-0.45f, 0.3f}, {-0.35f, 0.3f}, {-0.25f, 0.3f}, {-0.15f, 0.3f}, {-0.05f, 0.3f},
+    { 0.05f, 0.3f}, { 0.15f, 0.3f}, { 0.25f, 0.3f}, { 0.35f, 0.3f}, { 0.45f, 0.3f},
+    { 0.55f, 0.3f}, { 0.65f, 0.3f}, { 0.75f, 0.3f}, { 0.85f, 0.3f}, { 0.95f, 0.3f},
+
+    {-0.95f, 0.5f}, {-0.85f, 0.5f}, {-0.75f, 0.5f}, {-0.65f, 0.5f}, {-0.55f, 0.5f},
+    {-0.45f, 0.5f}, {-0.35f, 0.5f}, {-0.25f, 0.5f}, {-0.15f, 0.5f}, {-0.05f, 0.5f},
+    { 0.05f, 0.5f}, { 0.15f, 0.5f}, { 0.25f, 0.5f}, { 0.35f, 0.5f}, { 0.45f, 0.5f},
+    { 0.55f, 0.5f}, { 0.65f, 0.5f}, { 0.75f, 0.5f}, { 0.85f, 0.5f}, { 0.95f, 0.5f},
+
+    {-0.95f, 0.7f}, {-0.85f, 0.7f}, {-0.75f, 0.7f}, {-0.65f, 0.7f}, {-0.55f, 0.7f},
+    {-0.45f, 0.7f}, {-0.35f, 0.7f}, {-0.25f, 0.7f}, {-0.15f, 0.7f}, {-0.05f, 0.7f},
+    { 0.05f, 0.7f}, { 0.15f, 0.7f}, { 0.25f, 0.7f}, { 0.35f, 0.7f}, { 0.45f, 0.7f},
+    { 0.55f, 0.7f}, { 0.65f, 0.7f}, { 0.75f, 0.7f}, { 0.85f, 0.7f}, { 0.95f, 0.7f},
+
+    {-0.95f, 0.9f}, {-0.85f, 0.9f}, {-0.75f, 0.9f}, {-0.65f, 0.9f}, {-0.55f, 0.9f},
+    {-0.45f, 0.9f}, {-0.35f, 0.9f}, {-0.25f, 0.9f}, {-0.15f, 0.9f}, {-0.05f, 0.9f},
+    { 0.05f, 0.9f}, { 0.15f, 0.9f}, { 0.25f, 0.9f}, { 0.35f, 0.9f}, { 0.45f, 0.9f},
+    { 0.55f, 0.9f}, { 0.65f, 0.9f}, { 0.75f, 0.9f}, { 0.85f, 0.9f}, { 0.95f, 0.9f}
+};
 
 void Start(uint32_t systemId)
 {    
-    Type componentType = ComponentsRegistry::GetComponentBit<Transform>();
-    QueryResult& queryResult = EntityManager::GetTables({componentType, true});
-    Table& table = queryResult.GetTable(0);
-
-    for (uint32_t i = 0; i < 456; i++)
-    {
-        Transform& transform = table.GetComponent<Transform>(i, componentType);
-        EntityManager::ScheduleDestructionCommand({i, 0}, systemId);
-    }
-
-    Camera camera({0,0,1}, {0,1,0},1, 10);
-
-    EntityCommandInfo commandInfo {};
-    commandInfo.AddComponent<Camera>(camera);
-    EntityManager::ScheduleTransitionCommand({456,0}, commandInfo, systemId);
-
     ShaderInfo shaderInfo
     {
         .ShaderModule = "triangle",
@@ -74,28 +90,17 @@ void Start(uint32_t systemId)
     };
 
     shaderHandle = Graphics::CreateGraphicsShader(shaderInfo);
+
+    buffer = Graphics::CreateGPUBuffer(sizeof(Vec2) * elementsCount);
+
+    TransferPass pass {};
+    pass.UploadBuffer(&positions, buffer, sizeof(Vec2) * elementsCount, 0);
+
+    Graphics::AddPass(pass);
 }
 
 void Update(float deltaTime, uint32_t systemId)
 {
-    Type transformType = ComponentsRegistry::GetComponentBit<Transform>();
-    Type cameraType = ComponentsRegistry::GetComponentBit<Camera>();
-    Type archtype = ComponentsRegistry::GetComponentMask<Transform, Camera>();
-
-    QueryResult& result = EntityManager::GetTables({archtype, true});
-    Table& table = result.GetTable(0);
-
-    SlotInfo slotInfo = table.GetSlotInfo(0);
-
-    Transform& transform = table.GetComponent<Transform>(slotInfo, transformType);
-    Camera& camera = table.GetComponent<Camera>(slotInfo, cameraType);
-    Entity entity = table.GetEntity(slotInfo);
-
-    /*
-    std::cout << "POSITION X: " << transform.Position.x << std::endl;
-    std::cout << "CAMERA " << camera.sensitivity << std::endl;
-    std::cout << "ENTITY ID:  " << entity.Id << " GENERATION:  " << entity.GeneratationId << std::endl;*/
-
     Vec2Int windowSize = Graphics::GetWindowSize();
 
     TransientTextureInfo2D textureInfo
@@ -108,7 +113,9 @@ void Update(float deltaTime, uint32_t systemId)
     TransientTextureHandle handle = Graphics::RequestTransientTexture2D(textureInfo);
 
     GraphicsPass pass {};
-
+    std::cout << buffer.Id << std::endl;
+    pass.UseBufferReadVertex(buffer);
+    
     LoadStoreOp loadStoreOp
     {
         .loadOp = LoadOperation::CLEAR,
@@ -123,13 +130,15 @@ void Update(float deltaTime, uint32_t systemId)
     {
         Vec2 resolution;
         float time;
+        uint32_t bufferId;
     } pushConstant;
 
     pushConstant.time = time;
     pushConstant.resolution.x = (float)windowSize.x;
     pushConstant.resolution.y = (float)windowSize.y;
+    pushConstant.bufferId = buffer.Id;
     
-    pass.Draw(6, shaderHandle, &pushConstant, Words32(0), Words32(3));
+    pass.Draw(6, shaderHandle, &pushConstant, Words32(0), Words32(4));
 
     Graphics::AddPass(pass);
 
@@ -138,6 +147,5 @@ void Update(float deltaTime, uint32_t systemId)
     elapsedFrames++;
 }
 
-static SystemRegistrar awake(Awake, SystemStage::Awake);
 static SystemRegistrar start(Start, SystemStage::Start);
 static SystemRegistrar update(Update, SystemStage::Update);

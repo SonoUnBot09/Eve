@@ -240,7 +240,8 @@ bool ContextBuilder::CreateDevice(Context& context)
        !availableFeatures12.descriptorBindingVariableDescriptorCount || !availableFeatures12.runtimeDescriptorArray || 
        !availableFeatures12.shaderSampledImageArrayNonUniformIndexing || !availableFeatures12.descriptorBindingSampledImageUpdateAfterBind ||
        !availableFeatures12.descriptorBindingStorageImageUpdateAfterBind || !availableFeatures12.descriptorBindingUniformBufferUpdateAfterBind ||
-       !availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind || !availableFeatures11.shaderDrawParameters)
+       !availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind || !availableFeatures11.shaderDrawParameters || 
+       !availableFeatures.features.shaderInt64)
     {
         printError("Available device features do not respect application features requirement");
     }
@@ -278,6 +279,7 @@ bool ContextBuilder::CreateDevice(Context& context)
     features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     features.pNext = &features11;
     features.features.fillModeNonSolid = VK_TRUE;
+    features.features.shaderInt64 = VK_TRUE;
 
     #pragma endregion
 

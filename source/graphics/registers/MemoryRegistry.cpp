@@ -211,8 +211,6 @@ BufferHandle MemoryRegistry::CreateGPUBuffer(uint64_t size)
     Helpers::AllocateGPUBuffer(info, buffer);
 
     BufferHandle handle = ResourceRegistry::RequestPersistentBufferSlot();
-    
-    ResourceTracker::RegisterBufferState(handle);
 
     ResourceMapper::ScheduleBufferMapping(handle, buffer.Buffer);
 
@@ -237,8 +235,6 @@ BufferHandle MemoryRegistry::CreateCPUBuffer(BufferInfo bufferInfo)
     };
 
     BufferHandle handle = ResourceRegistry::RequestPersistentBufferSlot();
-    
-    ResourceTracker::RegisterBufferState(handle);
 
     buffers.resize(ResourceRegistry::bufferResourcesPeakIndex);
     buffersInfo.resize(ResourceRegistry::bufferResourcesPeakIndex);

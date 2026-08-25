@@ -670,6 +670,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     }
 
     // --- Buffers ---
+    uint32_t srcOffset = 0;
     for (uint32_t i = 0; i < buffersToMap.size(); i++)
     {
         BufferToMap& resource = buffersToMap[i];
@@ -695,12 +696,14 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
 
         VkBufferCopy region
         {
-            .srcOffset = i * sizeof(uint64_t),
+            .srcOffset = srcOffset * sizeof(uint64_t),
             .dstOffset = resource.Id * sizeof(uint64_t),
             .size = sizeof(uint64_t)
         };
 
         copyRegions.push_back(region);
+
+        srcOffset++;
     }
 
     if(!descriptorSetWrites.empty())

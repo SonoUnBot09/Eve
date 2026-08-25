@@ -121,6 +121,8 @@ namespace Eve::Graphics
             void UseTransientTexture(TransientTextureHandle texture, Usage accessType);
             void UseTransientBuffer(TransientBufferHandle buffer, Usage accessType);
 
+            void UseBufferReadVertex(BufferHandle buffer);
+
             void UseColorTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
             void UseDepthStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
             void UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);

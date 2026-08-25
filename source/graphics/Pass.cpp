@@ -202,6 +202,11 @@ void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TextureHandle Ds
 }
 
 #pragma region Common
+void GraphicsPass::UseBufferReadVertex(BufferHandle buffer)
+{
+    persistentBuffers.emplace_back(buffer, Usage::VERTEX_READ_BUFFER_STORAGE);
+}
+
 void GraphicsPass::UseTransientTexture(TransientTextureHandle texture, Usage accessType)
 {
     transientTextures.push_back(std::pair{texture, accessType});
