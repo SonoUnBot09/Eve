@@ -46,7 +46,7 @@ V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
 
     V2F output;
 
-    float2* positions = GetBuffer<float2>(6);
+    float2* positions = GetBuffer<float2>(pushConstant.bufferId);
 
     float2 basePos = positions[instanceID];
 
@@ -54,9 +54,8 @@ V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
 
     float3 vertexPos = vertices[vertexIndex];
     
-    /*
     vertexPos = float3(vertexPos.x * 0.1, vertexPos.y * 0.1, 0);
-    vertexPos.x += basePos.x;
+    /*vertexPos.x += basePos.x;
     vertexPos.y += basePos.y;*/
 
     float2 uv = uvs[vertexIndex];

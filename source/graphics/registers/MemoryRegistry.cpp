@@ -12,7 +12,6 @@
 #include <graphics/helpers/VulkanMapping.hpp>
 #include <graphics/RenderGraph.hpp>
 #include "ResourceRegistry.hpp"
-#include "ResourceTracker.hpp"
 
 using namespace Eve::Graphics;
 

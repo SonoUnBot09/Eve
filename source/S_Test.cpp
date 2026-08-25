@@ -21,7 +21,7 @@ static BufferHandle buffer;
 static uint64_t elapsedFrames = 0;
 static uint32_t elementsCount = 10 * 20;
 
-Vec2 positions[] = {
+static Vec2 positions[] = {
     {-0.95f,-0.9f}, {-0.85f,-0.9f}, {-0.75f,-0.9f}, {-0.65f,-0.9f}, {-0.55f,-0.9f},
     {-0.45f,-0.9f}, {-0.35f,-0.9f}, {-0.25f,-0.9f}, {-0.15f,-0.9f}, {-0.05f,-0.9f},
     { 0.05f,-0.9f}, { 0.15f,-0.9f}, { 0.25f,-0.9f}, { 0.35f,-0.9f}, { 0.45f,-0.9f},
@@ -94,7 +94,7 @@ void Start(uint32_t systemId)
     buffer = Graphics::CreateGPUBuffer(sizeof(Vec2) * elementsCount);
 
     TransferPass pass {};
-    pass.UploadBuffer(&positions, buffer, sizeof(Vec2) * elementsCount, 0);
+    pass.UploadBuffer(&positions[0], buffer, sizeof(Vec2) * elementsCount, 0);
 
     Graphics::AddPass(pass);
 }
@@ -113,7 +113,7 @@ void Update(float deltaTime, uint32_t systemId)
     TransientTextureHandle handle = Graphics::RequestTransientTexture2D(textureInfo);
 
     GraphicsPass pass {};
-    std::cout << buffer.Id << std::endl;
+    //std::cout << buffer.Id << std::endl;
     pass.UseBufferReadVertex(buffer);
     
     LoadStoreOp loadStoreOp

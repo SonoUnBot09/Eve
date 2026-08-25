@@ -151,9 +151,9 @@ void TransferPass::UploadBuffer(void* SrcData, BufferHandle DstBuffer, uint64_t 
 
     BufferObject dstBuffer = MemoryRegistry::GetBuffer(stagingBufferHandle);
 
-    // --- Data copy into the stagin buffer ---
+    // --- Data copy into the staging buffer ---
     memcpy(dstBuffer.AllocationInfo.pMappedData, SrcData, Size);
-
+    
     // --- Record the upload command to execute ---
     persistentBufferUploads.emplace_back(stagingBufferHandle.Id, DstBuffer.Id, Size, DstOffset);
     persistentBuffers.emplace_back(DstBuffer, Usage::COPY_DESTINATION);

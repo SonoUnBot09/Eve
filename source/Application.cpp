@@ -91,7 +91,7 @@ void Application::Run()
         
         if(timer > 1)
         {
-            print(std::to_string(fps));
+            print("FPS: " + std::to_string(fps));
             timer = 0;
             fps = 0;
         }

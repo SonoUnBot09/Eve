@@ -245,7 +245,9 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
 
         vkAllocateDescriptorSets(GraphicsCore::Context.Device, &setAllocInfo, sets.data());
 
+        std::vector<VkDescriptorBufferInfo> bufferWritesInfo;
         std::vector<VkWriteDescriptorSet> descriptorWrites;
+        bufferWritesInfo.reserve(Eve::Settings::MAX_FRAMES_IN_FLIGHT * 2);
         descriptorWrites.reserve(Eve::Settings::MAX_FRAMES_IN_FLIGHT * 2);
 
         for (uint32_t i = 0; i < Eve::Settings::MAX_FRAMES_IN_FLIGHT; i++)
@@ -263,6 +265,8 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
                 .range = maxBuffersCount * sizeof(uint64_t)
             };
 
+            bufferWritesInfo.push_back(bufferWriteInfo);
+
             VkWriteDescriptorSet writeInfo
             {
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -271,7 +275,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                .pBufferInfo = &bufferWriteInfo
+                .pBufferInfo = &bufferWritesInfo[i]
             };
 
             descriptorWrites.push_back(writeInfo);
@@ -293,7 +297,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             };
 
             BufferHandle handle = MemoryRegistry::CreateCPUBuffer(bufferInfo);
-
+            
             stagingBufferHandles[i] = handle;
 
             BufferObject& buffer = MemoryRegistry::GetBuffer(handle);
@@ -674,9 +678,8 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     for (uint32_t i = 0; i < buffersToMap.size(); i++)
     {
         BufferToMap& resource = buffersToMap[i];
-
         if(resource.Countdown == 0) { continue; }
-
+        //std::cout << resource.Id << std::endl;
         resource.Countdown--;
 
         if(resource.Countdown == 0)
@@ -691,6 +694,8 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         };
 
         VkDeviceAddress address = vkGetBufferDeviceAddress(GraphicsCore::Context.Device, &addressInfo);
+
+        std::cout << "Buffer : "<< resource.Id << "  Address: " << (uint64_t)address << std::endl; 
 
         buffersAddress.push_back(address);
 
@@ -711,9 +716,9 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         vkUpdateDescriptorSets(GraphicsCore::Context.Device, descriptorSetWrites.size(), 
         descriptorSetWrites.data(), 0, nullptr);
     }
-
+    std::cout << "DESCRIPTOR" << std::endl;
     if(buffersAddress.empty()) { return; }
-
+    std::cout << "BUFFER" << std::endl;
     memcpy(stagingBuffers[frameIndex].AllocationInfo.pMappedData, buffersAddress.data(), buffersAddress.size() * sizeof(uint64_t));
 
     vkCmdCopyBuffer
