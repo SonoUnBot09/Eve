@@ -29,9 +29,9 @@ namespace Eve::Graphics
         uint32_t Width, Height, Depth;
         uint32_t ArrayLayers;
         uint32_t MipLevels;
-
         Format Format;
         VkImageUsageFlags Usage;
+        
 
         bool operator==(const TextureInfo& other) const 
         {

@@ -45,6 +45,7 @@ namespace Eve::Graphics
         uint64_t MemoryOffset;
         uint32_t Id;
         bool PooledResource;
+        bool isValid = false;
     };
 
     struct BufferResource
@@ -55,6 +56,7 @@ namespace Eve::Graphics
         uint64_t MemoryOffset;
         uint32_t Id;
         bool PooledResource;
+        bool isValid = false;
     };
 
     struct MemoryBucket
@@ -68,8 +70,8 @@ namespace Eve::Graphics
     {
         public:
 
-            static void AddTextureResource(const TextureInfo& textureInfo, const uint32_t Id, const uint32_t frameIndex);
-            static void AddBufferResource(const BufferInfo& bufferInfo, const uint32_t Id, const uint32_t frameIndex);
+            static void AddTextureResource(const TextureInfo& textureInfo, const uint32_t Id, const uint32_t frameIndex, uint32_t textureId);
+            static void AddBufferResource(const BufferInfo& bufferInfo, const uint32_t Id, const uint32_t frameIndex, uint32_t bufferId);
 
             inline static TextureResource& GetTextureObject(const uint32_t index, const uint32_t frameIndex) { return transientTextures[frameIndex][index]; }
             inline static BufferResource& GetBufferObject(const uint32_t index, const uint32_t frameIndex) { return transientBuffers[frameIndex][index]; }

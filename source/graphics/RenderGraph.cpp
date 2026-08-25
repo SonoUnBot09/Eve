@@ -32,20 +32,11 @@ namespace
             
             case (Usage::VERTEX_FRAGMENT_READ_TEXTURE_SAMPLED) :
                 return VK_IMAGE_USAGE_SAMPLED_BIT;
-            
-            case (Usage::VERTEX_READ_TEXTURE_STORAGE) :
-                return VK_IMAGE_USAGE_STORAGE_BIT;
-
-            case (Usage::FRAGMENT_READ_TEXTURE_STORAGE) :
-                return VK_IMAGE_USAGE_STORAGE_BIT;
-
-            case (Usage::VERTEX_FRAGMENT_READ_TEXTURE_STORAGE) :
-                return VK_IMAGE_USAGE_STORAGE_BIT;
 
             case (Usage::COMPUTE_READ_TEXTURE_STORAGE) :
                 return VK_IMAGE_USAGE_STORAGE_BIT;
 
-            case (Usage::COMPUTE_WRITE_TEXTURE_STORAGE) :
+            case (Usage::COMPUTE_READ_WRITE_TEXTURE_STORAGE) :
                 return VK_IMAGE_USAGE_STORAGE_BIT;
 
             case (Usage::COLOR_ATTACHMENT) :
@@ -97,7 +88,7 @@ namespace
             case(Usage::COMPUTE_READ_BUFFER_UNIFORM) :
                 return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
-            case(Usage::COMPUTE_WRITE_BUFFER_STORAGE) :
+            case(Usage::COMPUTE_READ_WRITE_BUFFER_STORAGE) :
                 return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
             case(Usage::COPY_SOURCE) :
@@ -114,10 +105,10 @@ namespace
     {
         switch (usage) 
         {
-            case(Usage::COMPUTE_WRITE_TEXTURE_STORAGE) :
+            case(Usage::COMPUTE_READ_WRITE_TEXTURE_STORAGE) :
                 return false;
 
-            case(Usage::COMPUTE_WRITE_BUFFER_STORAGE) :
+            case(Usage::COMPUTE_READ_WRITE_BUFFER_STORAGE) :
                 return false;
 
             case(Usage::COLOR_ATTACHMENT) :
@@ -198,30 +189,6 @@ namespace
                     .Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                 };
 
-            case(Usage::VERTEX_READ_TEXTURE_STORAGE) :
-                return
-                {
-                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                    .Layout = VK_IMAGE_LAYOUT_GENERAL
-                };
-
-            case(Usage::FRAGMENT_READ_TEXTURE_STORAGE) :
-                return
-                {
-                    .StageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                    .Layout = VK_IMAGE_LAYOUT_GENERAL
-                };
-
-            case(Usage::VERTEX_FRAGMENT_READ_TEXTURE_STORAGE) :
-                return
-                {
-                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                    .Layout = VK_IMAGE_LAYOUT_GENERAL
-                };
-
             case(Usage::COMPUTE_READ_TEXTURE_STORAGE) :
                 return
                 {
@@ -230,11 +197,11 @@ namespace
                     .Layout = VK_IMAGE_LAYOUT_GENERAL
                 };
 
-            case(Usage::COMPUTE_WRITE_TEXTURE_STORAGE) :
+            case(Usage::COMPUTE_READ_WRITE_TEXTURE_STORAGE) :
                 return
                 {
                     .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
                     .Layout = VK_IMAGE_LAYOUT_GENERAL
                 };
             case(Usage::COLOR_ATTACHMENT) :
@@ -298,13 +265,6 @@ namespace
     {
         switch(usage)
         {
-            case(Usage::BUFFER_INDEX_READ_ONLY) :
-                return
-                {
-                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_INDEX_READ_BIT
-                };
-
             case(Usage::VERTEX_READ_BUFFER_STORAGE) :
                 return
                 {
@@ -361,7 +321,7 @@ namespace
                     .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT
                 };
             
-            case(Usage::COMPUTE_WRITE_BUFFER_STORAGE) :
+            case(Usage::COMPUTE_READ_WRITE_BUFFER_STORAGE) :
                 return
                 {
                     .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
@@ -784,7 +744,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         TextureInfo newTextureInfo = transientRequestedTextures[textureId];
         newTextureInfo.Usage = usage;
        
-        TransientResourcePool::AddTextureResource(newTextureInfo, resourceId, frameIndex);
+        TransientResourcePool::AddTextureResource(newTextureInfo, resourceId, frameIndex, textureId);
 
         uint32_t poolIndex = TransientResourcePool::FindTexturePoolIndex(newTextureInfo, passesCount);
 
@@ -795,8 +755,6 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         
         texturesBucketPasses[pool.MemoryInfo.BucketIndex][firstPassIndex].TexturesToCreate.push_back(textureId);
         texturesBucketPasses[pool.MemoryInfo.BucketIndex][lastPassIndex].TexturesToDestroy.push_back(textureId);
-
-        bool shouldBeMapped = NeedTextureDescriptor(usage);
     }
     uint32_t buffersBarriersOffset = 0;
     barriersOffsetPerBuffer.push_back(buffersBarriersOffset);
@@ -871,7 +829,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         BufferInfo newBufferInfo = transientRequestedBuffers[bufferId];
         newBufferInfo.Usage = usage;
         
-        TransientResourcePool::AddBufferResource(newBufferInfo, resourceId, frameIndex);
+        TransientResourcePool::AddBufferResource(newBufferInfo, resourceId, frameIndex, bufferId);
 
         uint32_t poolIndex = TransientResourcePool::FindBufferPoolIndex(newBufferInfo, passesCount);
 
@@ -882,8 +840,6 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
         buffersBucketPasses[pool.MemoryInfo.BucketIndex][firstPassIndex].BuffersToCreate.push_back(bufferId);
         buffersBucketPasses[pool.MemoryInfo.BucketIndex][lastPassIndex].BuffersToDestroy.push_back(bufferId);
-
-        bool shouldBeMapped = NeedBufferDescriptor(usage);
     }
 
     transientRequestedTextureHandles.clear();
@@ -1146,6 +1102,8 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
     {
         TextureResource& resource = TransientResourcePool::GetTextureObject(textureId, frameIndex);
 
+        if(!resource.isValid) { continue; }
+
         uint64_t memoryOffset = resource.MemoryOffset;
 
         TexturePool& pool = TransientResourcePool::GetTexturePool(resource.TexturePoolIndex);
@@ -1228,6 +1186,8 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
     for(uint32_t bufferId = 0; bufferId < transientBuffersCount; bufferId++)
     {
         BufferResource& resource = TransientResourcePool::GetBufferObject(bufferId, frameIndex);
+
+        if(!resource.isValid) { continue; }
 
         uint64_t memoryOffset = resource.MemoryOffset;
 

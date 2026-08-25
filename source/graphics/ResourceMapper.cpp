@@ -679,7 +679,7 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     {
         BufferToMap& resource = buffersToMap[i];
         if(resource.Countdown == 0) { continue; }
-        //std::cout << resource.Id << std::endl;
+
         resource.Countdown--;
 
         if(resource.Countdown == 0)
@@ -694,8 +694,6 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         };
 
         VkDeviceAddress address = vkGetBufferDeviceAddress(GraphicsCore::Context.Device, &addressInfo);
-
-        std::cout << "Buffer : "<< resource.Id << "  Address: " << (uint64_t)address << std::endl; 
 
         buffersAddress.push_back(address);
 
@@ -716,9 +714,9 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         vkUpdateDescriptorSets(GraphicsCore::Context.Device, descriptorSetWrites.size(), 
         descriptorSetWrites.data(), 0, nullptr);
     }
-    std::cout << "DESCRIPTOR" << std::endl;
+
     if(buffersAddress.empty()) { return; }
-    std::cout << "BUFFER" << std::endl;
+    
     memcpy(stagingBuffers[frameIndex].AllocationInfo.pMappedData, buffersAddress.data(), buffersAddress.size() * sizeof(uint64_t));
 
     vkCmdCopyBuffer

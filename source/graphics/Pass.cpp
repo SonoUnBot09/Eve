@@ -1,9 +1,12 @@
 #include <eve/graphics/Pass.hpp>
 #include <graphics/registers/MemoryRegistry.hpp>
 #include "Resources.hpp"
+#include <eve/graphics/details/Usage.hpp>
 #include "registers/MemoryRegistry.hpp"
 
 using namespace Eve::Graphics;
+
+#pragma region Graphics Pass
 
 void GraphicsPass::Draw(uint32_t vertexShaderInvocations, ShaderHandle shader, const void* pushConstant, Words32 offset, Words32 size)
 {
@@ -56,6 +59,108 @@ void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, ShaderHandle 
     
     drawCalls.emplace_back(vertexShaderInvocations, instanceCount, shader, pushConstantData, offset, size);
 }
+
+void GraphicsPass::UseTextureVertex(TransientTextureHandle texture)
+{
+    transientTextures.emplace_back(texture, Usage::VERTEX_READ_TEXTURE_SAMPLED);
+}
+void GraphicsPass::UseTextureFragment(TransientTextureHandle texture)
+{
+    transientTextures.emplace_back(texture, Usage::FRAGMENT_READ_TEXTURE_SAMPLED);
+}
+void GraphicsPass::UseTextureVertexFragment(TransientTextureHandle texture)
+{
+    transientTextures.emplace_back(texture, Usage::VERTEX_FRAGMENT_READ_TEXTURE_SAMPLED);
+}
+
+void GraphicsPass::UseTextureVertex(TextureHandle texture)
+{
+    persistentTextures.emplace_back(texture, Usage::VERTEX_READ_TEXTURE_SAMPLED);
+}
+void GraphicsPass::UseTextureFragment(TextureHandle texture)
+{
+    persistentTextures.emplace_back(texture, Usage::FRAGMENT_READ_TEXTURE_SAMPLED);
+}
+void GraphicsPass::UseTextureVertexFragment(TextureHandle texture)
+{
+    persistentTextures.emplace_back(texture, Usage::VERTEX_FRAGMENT_READ_TEXTURE_SAMPLED);
+}
+
+void GraphicsPass::UseBufferReadOnlyVertex(BufferHandle buffer)
+{
+    persistentBuffers.emplace_back(buffer, Usage::VERTEX_READ_BUFFER_STORAGE);
+}
+void GraphicsPass::UseBufferReadOnlyFragment(BufferHandle buffer)
+{
+    persistentBuffers.emplace_back(buffer, Usage::FRAGMENT_READ_BUFFER_STORAGE);
+}
+void GraphicsPass::UseBufferReadOnlyVertexFragment(BufferHandle buffer)
+{
+    persistentBuffers.emplace_back(buffer, Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE);
+}
+
+void GraphicsPass::UseBufferReadOnlyVertex(TransientBufferHandle buffer)
+{
+    transientBuffers.emplace_back(buffer, Usage::VERTEX_READ_BUFFER_STORAGE);
+}
+void GraphicsPass::UseBufferReadOnlyFragment(TransientBufferHandle buffer)
+{
+    transientBuffers.emplace_back(buffer, Usage::FRAGMENT_READ_BUFFER_STORAGE);
+}
+void GraphicsPass::UseBufferReadOnlyVertexFragment(TransientBufferHandle buffer)
+{
+    transientBuffers.emplace_back(buffer, Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE);
+}
+
+
+void GraphicsPass::UseTransientTexture(TransientTextureHandle texture, Usage accessType)
+{
+    transientTextures.push_back(std::pair{texture, accessType});
+}
+void GraphicsPass::UseTransientBuffer(TransientBufferHandle buffer, Usage accessType)
+{
+    transientBuffers.push_back(std::pair{buffer, accessType});
+}
+
+void GraphicsPass::UseColorTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
+{
+    UseTransientTexture(texture, Usage::COLOR_ATTACHMENT);
+
+    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
+}
+
+void GraphicsPass::UseDepthStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
+{
+    UseTransientTexture(texture, Usage::DEPTH_STENCIL);
+
+    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
+}
+
+void GraphicsPass::UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
+{
+    UseTransientTexture(texture, Usage::DEPTH);
+
+    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
+}
+
+void GraphicsPass::UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
+{
+    UseTransientTexture(texture, Usage::STENCIL);
+
+    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
+}
+
+void ComputePass::UseTransientTexture(TransientTextureHandle texture, Usage accessType)
+{
+    transientTextures.push_back(std::pair{texture, accessType});
+}
+void ComputePass::UseTransientBuffer(TransientBufferHandle buffer, Usage accessType)
+{
+    transientBuffers.push_back(std::pair{buffer, accessType});
+}
+#pragma endregion
+
+#pragma region Transfer Pass
 
 void TransferPass::CopyBuffer(TransientBufferHandle SrcBuffer, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset, uint64_t DstOffset)
 {
@@ -201,55 +306,4 @@ void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TextureHandle Ds
     persistentTextures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
 }
 
-#pragma region Common
-void GraphicsPass::UseBufferReadVertex(BufferHandle buffer)
-{
-    persistentBuffers.emplace_back(buffer, Usage::VERTEX_READ_BUFFER_STORAGE);
-}
-
-void GraphicsPass::UseTransientTexture(TransientTextureHandle texture, Usage accessType)
-{
-    transientTextures.push_back(std::pair{texture, accessType});
-}
-void GraphicsPass::UseTransientBuffer(TransientBufferHandle buffer, Usage accessType)
-{
-    transientBuffers.push_back(std::pair{buffer, accessType});
-}
-
-void GraphicsPass::UseColorTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
-{
-    UseTransientTexture(texture, Usage::COLOR_ATTACHMENT);
-
-    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
-}
-
-void GraphicsPass::UseDepthStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
-{
-    UseTransientTexture(texture, Usage::DEPTH_STENCIL);
-
-    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
-}
-
-void GraphicsPass::UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
-{
-    UseTransientTexture(texture, Usage::DEPTH);
-
-    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
-}
-
-void GraphicsPass::UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp)
-{
-    UseTransientTexture(texture, Usage::STENCIL);
-
-    loadStoreOps.push_back(std::pair{texture,loadStoreOp});
-}
-
-void ComputePass::UseTransientTexture(TransientTextureHandle texture, Usage accessType)
-{
-    transientTextures.push_back(std::pair{texture, accessType});
-}
-void ComputePass::UseTransientBuffer(TransientBufferHandle buffer, Usage accessType)
-{
-    transientBuffers.push_back(std::pair{buffer, accessType});
-}
 #pragma endregion

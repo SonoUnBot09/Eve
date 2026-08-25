@@ -96,26 +96,28 @@ namespace
     };
 }
 
-void TransientResourcePool::AddTextureResource(const TextureInfo& textureInfo, const uint32_t Id, const uint32_t frameIndex)
+void TransientResourcePool::AddTextureResource(const TextureInfo& textureInfo, const uint32_t Id, const uint32_t frameIndex, uint32_t textureId)
 {
-    TextureResource resource
-    {
-        .TextureInfo = textureInfo,
-        .Id = Id
-    };
+    std::vector<TextureResource>& textures = transientTextures[frameIndex];
 
-    transientTextures[frameIndex].push_back(resource);
+    if(textures.size() <= textureId)
+    {
+        textures.resize(textureId + 1);
+    }
+
+    textures[textureId] = TextureResource { .TextureInfo = textureInfo, .Id = Id, .isValid = true };
 }
 
-void TransientResourcePool::AddBufferResource(const BufferInfo& bufferInfo, const uint32_t Id, const uint32_t frameIndex)
+void TransientResourcePool::AddBufferResource(const BufferInfo& bufferInfo, const uint32_t Id, const uint32_t frameIndex, uint32_t bufferId)
 {
-    BufferResource resource
+    std::vector<BufferResource>& buffers = transientBuffers[frameIndex];
+    
+    if(buffers.size() <= bufferId)
     {
-        .BufferInfo = bufferInfo,
-        .Id = Id
-    };
+        buffers.resize(bufferId + 1);
+    }
 
-    transientBuffers[frameIndex].push_back(resource);
+    buffers[bufferId] = BufferResource {.BufferInfo = bufferInfo, .Id = Id, .isValid = true};
 }
 
 uint32_t TransientResourcePool::FindTexturePoolIndex(const TextureInfo& textureInfo, const uint32_t passesCount)
@@ -416,6 +418,9 @@ void TransientResourcePool::UpdateTexturesPool(const uint32_t frameIndex)
     for(uint32_t i = 0; i < texturesCount; i++)
     {
         TextureResource& resource = textures[i];
+
+        if(!resource.isValid) {continue;}
+
         ResourceRegistry::FreeTransientTextureSlot(resource.Id);
         
         TexturePool& pool = GetTexturePool(resource.TexturePoolIndex);
@@ -494,6 +499,9 @@ void TransientResourcePool::UpdateBuffersPool(const uint32_t frameIndex)
     for(uint32_t i = 0; i < buffersCount; i++)
     {
         BufferResource& resource = buffers[i];
+
+        if(!resource.isValid) {continue;}
+
         ResourceRegistry::FreeTransientBufferSlot(resource.Id);
         
         BufferPool& pool = GetBufferPool(resource.BufferPoolIndex);

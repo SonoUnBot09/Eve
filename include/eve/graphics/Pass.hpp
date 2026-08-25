@@ -12,6 +12,8 @@
 
 namespace Eve::Graphics
 {
+    class RenderGraph;
+
     enum class LoadOperation
     {
         LOAD,
@@ -121,7 +123,21 @@ namespace Eve::Graphics
             void UseTransientTexture(TransientTextureHandle texture, Usage accessType);
             void UseTransientBuffer(TransientBufferHandle buffer, Usage accessType);
 
-            void UseBufferReadVertex(BufferHandle buffer);
+            void UseTextureVertex(TransientTextureHandle texture);
+            void UseTextureFragment(TransientTextureHandle texture);
+            void UseTextureVertexFragment(TransientTextureHandle texture);
+
+            void UseTextureVertex(TextureHandle texture);
+            void UseTextureFragment(TextureHandle texture);
+            void UseTextureVertexFragment(TextureHandle texture);
+
+            void UseBufferReadOnlyVertex(BufferHandle buffer);
+            void UseBufferReadOnlyFragment(BufferHandle buffer);
+            void UseBufferReadOnlyVertexFragment(BufferHandle buffer);
+
+            void UseBufferReadOnlyVertex(TransientBufferHandle buffer);
+            void UseBufferReadOnlyFragment(TransientBufferHandle buffer);
+            void UseBufferReadOnlyVertexFragment(TransientBufferHandle buffer);
 
             void UseColorTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
             void UseDepthStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
@@ -130,6 +146,8 @@ namespace Eve::Graphics
 
             void Draw(uint32_t vertexShaderInvocations, ShaderHandle shader, const void* pushConstant, Words32 offset, Words32 size);
             void DrawInstanced(uint32_t vertexShaderInvocations, ShaderHandle shader, uint32_t instanceCount, const void* pushConstant, Words32 offset, Words32 size);
+
+        private:
 
             inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTransientTextures() { return transientTextures; }
             inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }
@@ -140,8 +158,6 @@ namespace Eve::Graphics
 
             inline std::vector<DrawCall>& GetDrawCalls() { return drawCalls; }
 
-        private:
-
             std::vector<std::pair<TransientTextureHandle, Usage>> transientTextures;
             std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;
 
@@ -151,6 +167,8 @@ namespace Eve::Graphics
             std::vector<std::pair<TransientTextureHandle, LoadStoreOp>> loadStoreOps;
 
             std::vector<DrawCall> drawCalls;
+
+            friend class RenderGraph;
     };
 
     struct TransferPass
@@ -183,6 +201,8 @@ namespace Eve::Graphics
             void UploadTexture(void* SrcData, uint64_t Size, TextureHandle DstTexture, Vec3Int DstOffset, Vec3Int Extent,
                 uint32_t BufferRowLenght = 0, uint32_t BufferHeightLenght = 0);
             
+        private:
+
             inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTransientTextures() { return transientTextures; }
             inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }
             inline std::vector<std::pair<TextureHandle, Usage>>& GetPersistentTextures() { return persistentTextures; }
@@ -204,8 +224,6 @@ namespace Eve::Graphics
 
             inline std::vector<BufferUpload>& GetPersistentBufferUploads() { return persistentBufferUploads; }
             inline std::vector<TextureUpload>& GetPersistentTextureUploads() { return persistentTextureUploads; }
-            
-        private:
 
             std::vector<std::pair<TransientTextureHandle, Usage>> transientTextures;
             std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;
@@ -227,6 +245,7 @@ namespace Eve::Graphics
             std::vector<BufferUpload> persistentBufferUploads;
             std::vector<TextureUpload> persistentTextureUploads;
 
+            friend class RenderGraph;
 
     };
 
@@ -236,14 +255,18 @@ namespace Eve::Graphics
             void UseTransientTexture(TransientTextureHandle texture, Usage accessType);
             void UseTransientBuffer(TransientBufferHandle texture, Usage accessType);
 
+        private:
+
             std::vector<std::pair<TransientTextureHandle, Usage>>& GetTransientTextures() { return transientTextures; }
             std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }
             std::vector<std::pair<TextureHandle, Usage>>& GetPersistentTextures() { return persistentTextures; }
             std::vector<std::pair<BufferHandle, Usage>>& GetPersistentBuffers() { return persistentBuffers; }
-        private:
+
             std::vector<std::pair<TransientTextureHandle, Usage>> transientTextures;
             std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;
             std::vector<std::pair<TextureHandle, Usage>> persistentTextures;
             std::vector<std::pair<BufferHandle, Usage>> persistentBuffers;
+
+            friend class RenderGraph;
     };
 }
