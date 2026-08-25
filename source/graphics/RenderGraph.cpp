@@ -733,14 +733,16 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         texturesBarriersOffset += barriersCount;
         barriersOffsetPerTexture.push_back(texturesBarriersOffset);
 
-        bool isPresentTexture = false;
-        if(resourceId == presentTexture.Id)
+        bool isUsed = !(firstPassIndex == -1);
+
+        if(!isUsed) { continue; }
+
+        bool isPresentTexture = resourceId == presentTexture.Id;
+        if(isPresentTexture)
         {
             usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-            isPresentTexture = true;
+            isPresentTextureValid = true;
         }
-
-        if(firstPassIndex == -1 && !isPresentTexture) { continue; }
 
         TextureInfo newTextureInfo = transientRequestedTextures[textureId];
         newTextureInfo.Usage = usage;
@@ -1106,7 +1108,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
     for(uint32_t textureId = 0; textureId < lastValidTextureIndex + 1; textureId++)
     {
         TextureResource& resource = TransientResourcePool::GetTextureObject(textureId, frameIndex);
-        
+
         if(!resource.isValid) { continue; }
 
         uint64_t memoryOffset = resource.MemoryOffset;
@@ -1483,6 +1485,7 @@ void RenderGraph::Clear()
     buffersBarriersInfo.clear();
 
     presentTexture.Id = UINT32_MAX;
+    isPresentTextureValid = false;
 }
 
 void RenderGraph::RecordTransientBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
@@ -2218,7 +2221,7 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
     };
 
     uint32_t resourceIndex;
-    if(presentTexture.Id != UINT32_MAX)
+    if(isPresentTextureValid)
     {
         resourceIndex = transientTextureHandleToIndex[presentTexture.Id];
 
