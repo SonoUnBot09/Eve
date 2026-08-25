@@ -325,7 +325,7 @@ namespace
                 return
                 {
                     .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT
                 };
 
             case(Usage::COPY_SOURCE) :
