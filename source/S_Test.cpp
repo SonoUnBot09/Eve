@@ -170,7 +170,7 @@ void Update(float deltaTime, uint32_t systemId)
         .clearColor {0,0,0}
     };
 
-    pass.UseColorTarget(handle, loadStoreOp);
+    //pass.UseColorTarget(handle, loadStoreOp);
 
     float time = static_cast<float>(elapsedFrames);
     struct PushConstant
@@ -189,7 +189,7 @@ void Update(float deltaTime, uint32_t systemId)
 
     Graphics::AddPass(pass);
 
-    Graphics::SetPresentTexture(handle);
+    //Graphics::SetPresentTexture(handle);
 
     elapsedFrames++;
 }

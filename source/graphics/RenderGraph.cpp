@@ -664,6 +664,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
     // Calculate resources usage
     // Calculate resource memory info
     uint32_t texturesBarriersOffset = 0;
+    int32_t lastValidTextureIndex = -1;
     barriersOffsetPerTexture.push_back(texturesBarriersOffset);
     for(uint32_t textureId = 0; textureId < transientTexturesCount; textureId++)
     {
@@ -755,8 +756,11 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         
         texturesBucketPasses[pool.MemoryInfo.BucketIndex][firstPassIndex].TexturesToCreate.push_back(textureId);
         texturesBucketPasses[pool.MemoryInfo.BucketIndex][lastPassIndex].TexturesToDestroy.push_back(textureId);
+
+        lastValidTextureIndex = textureId;
     }
     uint32_t buffersBarriersOffset = 0;
+    int32_t lastValidBufferIndex = -1;
     barriersOffsetPerBuffer.push_back(buffersBarriersOffset);
     for(uint32_t bufferId = 0; bufferId < transientBuffersCount; bufferId++)
     {
@@ -840,6 +844,8 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
         buffersBucketPasses[pool.MemoryInfo.BucketIndex][firstPassIndex].BuffersToCreate.push_back(bufferId);
         buffersBucketPasses[pool.MemoryInfo.BucketIndex][lastPassIndex].BuffersToDestroy.push_back(bufferId);
+
+        lastValidBufferIndex = bufferId;        
     }
 
     transientRequestedTextureHandles.clear();
@@ -941,7 +947,6 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         }
     }
 
-
     VmaVirtualBlockCreateInfo virtualBlockCI
     {
         .size = UINT64_MAX
@@ -950,8 +955,8 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
     VmaVirtualBlock block;
     vmaCreateVirtualBlock(&virtualBlockCI, &block);
 
-    texturesVirtualAllocs.resize(transientTexturesCount);
-    buffersVirtualAllocs.resize(transientBuffersCount);
+    texturesVirtualAllocs.resize(lastValidTextureIndex + 1);
+    buffersVirtualAllocs.resize(lastValidBufferIndex + 1);
 
     // Textures Memory Aliasing
     for(uint32_t bucketIndex = 0; bucketIndex < texturesBucketPasses.size(); bucketIndex++)
@@ -1098,10 +1103,10 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
     // Create/Reuse textures and buffers
     // Insert the barriers info in the right passes so the barriers can be created later
-    for(uint32_t textureId = 0; textureId < transientTexturesCount; textureId++)
+    for(uint32_t textureId = 0; textureId < lastValidTextureIndex + 1; textureId++)
     {
         TextureResource& resource = TransientResourcePool::GetTextureObject(textureId, frameIndex);
-
+        
         if(!resource.isValid) { continue; }
 
         uint64_t memoryOffset = resource.MemoryOffset;
@@ -1183,7 +1188,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
             passes[passIndex].transientTexturesBarriers.emplace_back(srcBarrierInfo, dstBarrierInfo);
         }
     }
-    for(uint32_t bufferId = 0; bufferId < transientBuffersCount; bufferId++)
+    for(uint32_t bufferId = 0; bufferId < lastValidBufferIndex + 1; bufferId++)
     {
         BufferResource& resource = TransientResourcePool::GetBufferObject(bufferId, frameIndex);
 
