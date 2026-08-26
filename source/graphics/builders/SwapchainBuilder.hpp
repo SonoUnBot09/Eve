@@ -15,6 +15,5 @@ namespace Eve::Graphics
         private:
         
             inline static VkFormat chooseFormat = VK_FORMAT_UNDEFINED;
-            inline static uint32_t swapchainImagesCount = 0;
     };
 }

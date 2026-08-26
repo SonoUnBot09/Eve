@@ -44,8 +44,14 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
         
     }
 
-    swapchainImagesCount = std::max(2u, surfaceCaps.minImageCount);
-    if(surfaceCaps.maxImageCount == 0)
+    uint32_t swapchainImagesCount = 3; 
+
+    if(surfaceCaps.minImageCount > swapchainImagesCount)
+    {
+        swapchainImagesCount = surfaceCaps.minImageCount;
+    }
+    
+    if(surfaceCaps.maxImageCount != 0)
     {
         swapchainImagesCount = std::min(swapchainImagesCount, surfaceCaps.maxImageCount);
     }
@@ -192,6 +198,52 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
             surfaceCaps.maxImageExtent.height
         );
         
+    }
+
+    uint32_t swapchainImagesCount = 3; 
+
+    if(surfaceCaps.minImageCount > swapchainImagesCount)
+    {
+        swapchainImagesCount = surfaceCaps.minImageCount;
+    }
+    
+    if(surfaceCaps.maxImageCount != 0)
+    {
+        swapchainImagesCount = std::min(swapchainImagesCount, surfaceCaps.maxImageCount);
+    }
+
+    uint32_t supportedFormatsCount = 0;
+    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, 
+        &supportedFormatsCount, nullptr));
+    std::vector<VkSurfaceFormatKHR> supportedFormats(supportedFormatsCount);
+    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, 
+        &supportedFormatsCount, supportedFormats.data()));
+
+    bool isRequiredFormatSupported = false;
+    // Fallback for any format supported
+    if(supportedFormats[0].format == VK_FORMAT_UNDEFINED)
+    {
+        isRequiredFormatSupported = true;
+        chooseFormat = Eve::Settings::swapchainFormats[0];
+    }
+
+    for (const VkFormat proposedFormat : Eve::Settings::swapchainFormats)
+    {
+        for (const VkSurfaceFormatKHR validFormat : supportedFormats)
+        {
+            if(proposedFormat == validFormat.format)
+            {
+                isRequiredFormatSupported = true;
+                chooseFormat = proposedFormat;
+                break;
+            }
+        }
+    }
+
+    if(!isRequiredFormatSupported)
+    {
+        printError("The device does not support the required swapchain format");
+        return false;
     }
 
     swapchain.Format = chooseFormat;
