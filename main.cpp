@@ -4,8 +4,13 @@ int main(int argc, char* argv[])
 {
     std::cout <<"Hello World!" << std::endl;
     
+    std::vector<std::string> searchShaderPaths
+    {
+        "shaders"
+    };
+
     Eve::Application app;
-    if(app.Initialize())
+    if(app.Initialize(searchShaderPaths))
     {
         app.Start();
         

@@ -12,7 +12,7 @@
 
 using namespace Eve::Graphics;
 
-bool GraphicsCore::Initialize()
+bool GraphicsCore::Initialize(std::vector<std::string>& searchShaderPaths)
 {
     if(!WindowBuilder::Build(Window))
     {
@@ -26,6 +26,8 @@ bool GraphicsCore::Initialize()
 
     ResourceMapper::CreateGlobalDescriptor(1024, 8, 1024);
 
+    SlangCompiler::Initialize(searchShaderPaths);
+    
     PipelineBuilder::Initialize();
 
     if(!SwapchainBuilder::Build(Swapchain))

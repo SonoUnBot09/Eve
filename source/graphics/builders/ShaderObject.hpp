@@ -1,10 +1,6 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include <cstdint>
-#include <vector>
-#include <string>
-
 #include <eve/graphics/Texture.hpp>
 #include <eve/graphics/Geometry.hpp>
 

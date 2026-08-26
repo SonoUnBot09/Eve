@@ -14,7 +14,7 @@ namespace Eve
     {
         public:
 
-            static bool Initialize();
+            static bool Initialize(std::vector<std::string>& searchShaderPaths);
             static void Start();
             static void Run();
             static void Shutdown();

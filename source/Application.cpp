@@ -7,9 +7,9 @@ using namespace Eve::Graphics;
 using namespace Eve::Entities;
 using namespace Eve;
 
-bool Application::Initialize()
+bool Application::Initialize(std::vector<std::string>& searchShaderPaths)
 {
-    if(!GraphicsCore::Initialize())
+    if(!GraphicsCore::Initialize(searchShaderPaths))
     {
         return false;
     }

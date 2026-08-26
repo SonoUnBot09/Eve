@@ -15,7 +15,7 @@ namespace Eve::Graphics
     {
         public:
 
-            static bool Initialize();
+            static bool Initialize(std::vector<std::string>& searchShaderPaths);
             static void Destroy();
 
             static Vec2Int GetWindowSize() { return {Window.Width, Window.Height}; }

@@ -5,7 +5,6 @@
 #include <graphics/GraphicsCore.hpp>
 #include <EveSettings.hpp>
 #include <eve/Debug.hpp>
-#include "SlangCompiler.hpp"
 #include <graphics/ErrorManager.hpp>
 
 using namespace Debug;
@@ -44,9 +43,6 @@ bool ContextBuilder::Build(Context& context)
         printError("Unable to initialize VMA");
         return false;
     }
-
-    // Init the Slang compiler
-    SlangCompiler::Initialize();
 
     return true;
 }

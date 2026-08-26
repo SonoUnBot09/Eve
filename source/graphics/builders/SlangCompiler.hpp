@@ -6,7 +6,7 @@
 #include <string>
 #include <stdexcept>
 #include <iostream>
-#include <filesystem>
+#include <ExecutablePath.hpp>
 
 namespace Eve::Graphics
 {
@@ -22,7 +22,7 @@ namespace Eve::Graphics
     {
         public:
 
-            inline static void Initialize()
+            inline static void Initialize(std::vector<std::string>& searchPaths)
             {
                 if (SLANG_FAILED(slang::createGlobalSession(globalSession.writeRef()))) {
                     throw std::runtime_error("Errore GlobalSession");
@@ -32,16 +32,29 @@ namespace Eve::Graphics
                 targetDesc.format = SLANG_SPIRV;
                 targetDesc.profile = globalSession->findProfile("spirv_1_6");
 
-                const char* searchPaths[]
-                {
-                    "C:/Users/sonou/Desktop/LearnVulkan/Eve/source/shaders"
-                };
+                fs::path executablePath = GetExecutableDirectory();
 
+                std::vector<std::string> fullPaths;
+                fullPaths.reserve(searchPaths.size());
+
+                for (const auto& path : searchPaths)
+                {
+                    fs::path fullPath = executablePath / path;
+                    fullPaths.push_back(fullPath.string());
+                }
+
+                std::vector<const char*> searchPathPtrs;
+                searchPathPtrs.reserve(fullPaths.size());
+
+                for (const auto& path : fullPaths)
+                {
+                    searchPathPtrs.push_back(path.c_str());
+                }
                 slang::SessionDesc sessionDesc = {};
                 sessionDesc.targets = &targetDesc;
                 sessionDesc.targetCount = 1;
-                sessionDesc.searchPaths = searchPaths;
-                sessionDesc.searchPathCount = 1;
+                sessionDesc.searchPaths = searchPathPtrs.data();
+                sessionDesc.searchPathCount = static_cast<uint32_t>(searchPathPtrs.size());
 
                 if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) {
                     throw std::runtime_error("Errore Session");
