@@ -8,6 +8,7 @@
 #include "graphics/ResourceMapper.hpp"
 #include "graphics/builders/ContextBuilder.hpp"
 #include "graphics/helpers/VulkanMapping.hpp"
+#include "graphics/registers/MemoryRegistry.hpp"
 #include "helpers/VulkanMapping.hpp"
 #include "registers/ResourceTracker.hpp"
 #include <graphics/registers/MeshRegistry.hpp>
@@ -1542,7 +1543,7 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer cmdBuffer, Pass& pa
         TextureCopy copyInfo = copies[i];
 
         TextureResource& srcTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
-        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
+        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(copyInfo.DstTexture, frameIndex);
 
         VkImage srcImage = srcTexture.Image;
         VkImage dstImage = dstTexture.Image;
@@ -1550,14 +1551,14 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer cmdBuffer, Pass& pa
         VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Format);
         VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Format);
 
-        VkImageAspectFlags srcAspcetMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
+        VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
 
         VkImageCopy imageCopy
         {
             .srcSubresource
             {
-                .aspectMask = srcAspcetMask,
+                .aspectMask = srcAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
                 .layerCount = srcTexture.TextureInfo.ArrayLayers
@@ -1584,7 +1585,6 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer cmdBuffer, Pass& pa
             srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
     }
-
 }
 
 void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
@@ -1604,14 +1604,14 @@ void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer cmdBuffer, Pass& p
         VkFormat srcFormat = GetVkImageFormat(srcTexture.Format);
         VkFormat dstFormat = GetVkImageFormat(dstTexture.Format);
 
-        VkImageAspectFlags srcAspcetMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
+        VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
 
         VkImageCopy imageCopy
         {
             .srcSubresource
             {
-                .aspectMask = srcAspcetMask,
+                .aspectMask = srcAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
                 .layerCount = srcTexture.ArrayLayers
@@ -1638,7 +1638,6 @@ void RenderGraph::RecordPersistentTextureCopy(VkCommandBuffer cmdBuffer, Pass& p
             srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
     }
-
 }
 
 void RenderGraph::RecordTransientBufferToTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
@@ -1650,19 +1649,16 @@ void RenderGraph::RecordTransientBufferToTextureCopy(VkCommandBuffer cmdBuffer, 
         BufferToTextureCopy copyInfo = copies[i];
 
         TextureResource& dstTexture = TransientResourcePool::GetTextureObject(copyInfo.DstTexture, frameIndex);
-
         VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(copyInfo.SrcBuffer, frameIndex).Buffer;
         VkImage dstImage = dstTexture.Image;
-
         VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Format);
-
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
 
         VkBufferImageCopy bufferImageCopy
         {
             .bufferOffset = copyInfo.SrcOffset,
-            .bufferRowLength = copyInfo.BufferRowLenght,
-            .bufferImageHeight = copyInfo.BufferHeightLenght,
+            .bufferRowLength = copyInfo.BufferRowLength,
+            .bufferImageHeight = copyInfo.BufferHeightLength,
             .imageSubresource
             {
                 .aspectMask = dstAspectMask,
@@ -1691,19 +1687,16 @@ void RenderGraph::RecordPersistentBufferToTextureCopy(VkCommandBuffer cmdBuffer,
         BufferToTextureCopy copyInfo = copies[i];
 
         TextureInfo& dstTexture = MemoryRegistry::GetTextureInfo(copyInfo.DstTexture);
-
         VkBuffer srcBuffer = MemoryRegistry::GetBuffer(copyInfo.SrcBuffer).Buffer;
         VkImage dstImage = MemoryRegistry::GetTexture(copyInfo.DstTexture).Image;
-
         VkFormat dstFormat = GetVkImageFormat(dstTexture.Format);
-
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
 
         VkBufferImageCopy bufferImageCopy
         {
             .bufferOffset = copyInfo.SrcOffset,
-            .bufferRowLength = copyInfo.BufferRowLenght,
-            .bufferImageHeight = copyInfo.BufferHeightLenght,
+            .bufferRowLength = copyInfo.BufferRowLength,
+            .bufferImageHeight = copyInfo.BufferHeightLength,
             .imageSubresource
             {
                 .aspectMask = dstAspectMask,
@@ -1732,19 +1725,16 @@ void RenderGraph::RecordTransientTextureToBufferCopy(VkCommandBuffer cmdBuffer, 
         TextureToBufferCopy copyInfo = copies[i];
 
         TextureResource& srcTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
-
         VkImage srcImage = srcTexture.Image;
         VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(copyInfo.DstBuffer, frameIndex).Buffer;
-
         VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Format);
-
         VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
 
         VkBufferImageCopy bufferImageCopy
         {
             .bufferOffset = copyInfo.DstOffset,
-            .bufferRowLength = copyInfo.BufferRowLenght,
-            .bufferImageHeight = copyInfo.BufferHeightLenght,
+            .bufferRowLength = copyInfo.BufferRowLength,
+            .bufferImageHeight = copyInfo.BufferHeightLength,
             .imageSubresource
             {
                 .aspectMask = srcAspectMask,
@@ -1773,25 +1763,325 @@ void RenderGraph::RecordPersistentTextureToBufferCopy(VkCommandBuffer cmdBuffer,
         TextureToBufferCopy copyInfo = copies[i];
 
         TextureInfo& srcTexture = MemoryRegistry::GetTextureInfo(copyInfo.SrcTexture);
-
         VkImage srcImage = MemoryRegistry::GetTexture(copyInfo.SrcTexture).Image;
         VkBuffer dstBuffer = MemoryRegistry::GetBuffer(copyInfo.DstBuffer).Buffer;
-
         VkFormat srcFormat = GetVkImageFormat(srcTexture.Format);
-
         VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
 
         VkBufferImageCopy bufferImageCopy
         {
             .bufferOffset = copyInfo.DstOffset,
-            .bufferRowLength = copyInfo.BufferRowLenght,
-            .bufferImageHeight = copyInfo.BufferHeightLenght,
+            .bufferRowLength = copyInfo.BufferRowLength,
+            .bufferImageHeight = copyInfo.BufferHeightLength,
             .imageSubresource
             {
                 .aspectMask = srcAspectMask,
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
                 .layerCount = srcTexture.ArrayLayers
+            },
+            .imageOffset{copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
+            .imageExtent{
+                static_cast<uint32_t>(copyInfo.Extent.x), 
+                static_cast<uint32_t>(copyInfo.Extent.y), 
+                static_cast<uint32_t>(copyInfo.Extent.z)}
+        };
+
+        vkCmdCopyImageToBuffer(cmdBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+            dstBuffer, 1, &bufferImageCopy);
+    }
+}
+
+void RenderGraph::RecordTransientPersistentBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<BufferCopy>& copies = pass.transientPersistentBufferCopies;
+
+    for(uint32_t i = 0; i < copies.size(); i++)
+    {
+        BufferCopy copyInfo = copies[i];
+
+        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(copyInfo.SrcBuffer, frameIndex).Buffer;
+        VkBuffer dstBuffer = MemoryRegistry::GetBuffer(copyInfo.DstBuffer).Buffer;
+
+        VkBufferCopy bufferCopy
+        {
+            .srcOffset = copyInfo.SrcOffset,
+            .dstOffset = copyInfo.DstOffset,
+            .size = copyInfo.Size
+        };
+
+        vkCmdCopyBuffer(cmdBuffer, srcBuffer, dstBuffer, 1, &bufferCopy);
+    }
+}
+
+void RenderGraph::RecordPersistentTransientBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<BufferCopy>& copies = pass.persistentTransientBufferCopies;
+
+    for(uint32_t i = 0; i < copies.size(); i++)
+    {
+        BufferCopy copyInfo = copies[i];
+
+        VkBuffer srcBuffer = MemoryRegistry::GetBuffer(copyInfo.SrcBuffer).Buffer;
+        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(copyInfo.DstBuffer, frameIndex).Buffer;
+
+        VkBufferCopy bufferCopy
+        {
+            .srcOffset = copyInfo.SrcOffset,
+            .dstOffset = copyInfo.DstOffset,
+            .size = copyInfo.Size
+        };
+
+        vkCmdCopyBuffer(cmdBuffer, srcBuffer, dstBuffer, 1, &bufferCopy);
+    }
+}
+
+void RenderGraph::RecordTransientPersistentTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<TextureCopy>& copies = pass.transientPersistentTextureCopies;
+
+    for(uint32_t i = 0; i < copies.size(); i++)
+    {
+        TextureCopy copyInfo = copies[i];
+
+        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
+        TextureInfo& textureInfo = MemoryRegistry::GetTextureInfo(copyInfo.DstTexture);
+
+        VkImage srcImage = srcTexture.Image;
+        VkImage dstImage = MemoryRegistry::GetTexture(copyInfo.DstTexture).Image;
+
+        VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Format);
+        VkFormat dstFormat = GetVkImageFormat(textureInfo.Format);
+
+        // CORRETTO: typo srcAspcetMask -> srcAspectMask
+        VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
+        VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
+
+        VkImageCopy imageCopy
+        {
+            .srcSubresource
+            {
+                .aspectMask = srcAspectMask,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = srcTexture.TextureInfo.ArrayLayers
+            },
+            .srcOffset {copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
+
+            .dstSubresource
+            {
+                .aspectMask = dstAspectMask,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = textureInfo.ArrayLayers
+            },
+            .dstOffset {copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
+
+            .extent {
+                static_cast<uint32_t>(copyInfo.Extent.x),
+                static_cast<uint32_t>(copyInfo.Extent.y),
+                static_cast<uint32_t>(copyInfo.Extent.z)
+            }
+        };
+
+        vkCmdCopyImage(cmdBuffer, 
+            srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
+    }
+}
+
+void RenderGraph::RecordPersistentTransientTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<TextureCopy>& copies = pass.persistentTransientTextureCopies;
+
+    for(uint32_t i = 0; i < copies.size(); i++)
+    {
+        TextureCopy copyInfo = copies[i];
+
+        TextureInfo& textureInfo = MemoryRegistry::GetTextureInfo(copyInfo.SrcTexture);
+        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(copyInfo.DstTexture, frameIndex);
+
+        VkImage srcImage = MemoryRegistry::GetTexture(copyInfo.SrcTexture).Image;
+        VkImage dstImage = dstTexture.Image;
+
+        VkFormat srcFormat = GetVkImageFormat(textureInfo.Format);
+        VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Format);
+
+        VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
+        VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
+
+        VkImageCopy imageCopy
+        {
+            .srcSubresource
+            {
+                .aspectMask = srcAspectMask,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = textureInfo.ArrayLayers
+            },
+            .srcOffset {copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
+
+            .dstSubresource
+            {
+                .aspectMask = dstAspectMask,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = dstTexture.TextureInfo.ArrayLayers
+            },
+            .dstOffset {copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
+
+            .extent {
+                static_cast<uint32_t>(copyInfo.Extent.x),
+                static_cast<uint32_t>(copyInfo.Extent.y),
+                static_cast<uint32_t>(copyInfo.Extent.z)
+            }
+        };
+
+        vkCmdCopyImage(cmdBuffer, 
+            srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
+    }
+}
+
+void RenderGraph::RecordTransientPersistentBufferToTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<BufferToTextureCopy>& copies = pass.transientPersistentBufferToTextureCopies;
+
+    for(uint32_t i = 0; i < copies.size(); i++)
+    {
+        BufferToTextureCopy copyInfo = copies[i];
+
+        TextureInfo& textureInfo = MemoryRegistry::GetTextureInfo(copyInfo.DstTexture);
+        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(copyInfo.SrcBuffer, frameIndex).Buffer;
+        VkImage dstImage = MemoryRegistry::GetTexture(copyInfo.DstTexture).Image;
+        VkFormat dstFormat = GetVkImageFormat(textureInfo.Format);
+        VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
+
+        VkBufferImageCopy bufferImageCopy
+        {
+            .bufferOffset = copyInfo.SrcOffset,
+            .bufferRowLength = copyInfo.BufferRowLength,
+            .bufferImageHeight = copyInfo.BufferHeightLength,
+            .imageSubresource
+            {
+                .aspectMask = dstAspectMask,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = textureInfo.ArrayLayers
+            },
+            .imageOffset{copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
+            .imageExtent{
+                static_cast<uint32_t>(copyInfo.Extent.x),
+                static_cast<uint32_t>(copyInfo.Extent.y), 
+                static_cast<uint32_t>(copyInfo.Extent.z)}
+        };
+
+        vkCmdCopyBufferToImage(cmdBuffer, srcBuffer, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+             1, &bufferImageCopy);
+    }
+}
+
+void RenderGraph::RecordPersistentTransientBufferToTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<BufferToTextureCopy>& copies = pass.persistentTransientBufferToTextureCopies;
+
+    for(uint32_t i = 0; i < copies.size(); i++)
+    {
+        BufferToTextureCopy copyInfo = copies[i];
+
+        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(copyInfo.DstTexture, frameIndex);
+        VkBuffer srcBuffer = MemoryRegistry::GetBuffer(copyInfo.SrcBuffer).Buffer;
+        VkImage dstImage = dstTexture.Image;
+        VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Format);
+        VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
+
+        VkBufferImageCopy bufferImageCopy
+        {
+            .bufferOffset = copyInfo.SrcOffset,
+            .bufferRowLength = copyInfo.BufferRowLength,
+            .bufferImageHeight = copyInfo.BufferHeightLength,
+            .imageSubresource
+            {
+                .aspectMask = dstAspectMask,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = dstTexture.TextureInfo.ArrayLayers
+            },
+            .imageOffset{copyInfo.DstOffset.x, copyInfo.DstOffset.y, copyInfo.DstOffset.z},
+            .imageExtent{
+                static_cast<uint32_t>(copyInfo.Extent.x),
+                static_cast<uint32_t>(copyInfo.Extent.y), 
+                static_cast<uint32_t>(copyInfo.Extent.z)}
+        };
+
+        vkCmdCopyBufferToImage(cmdBuffer, srcBuffer, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+             1, &bufferImageCopy);
+    }
+}
+
+void RenderGraph::RecordTransientPersistentTextureToBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<TextureToBufferCopy>& copies = pass.transientPersistentTextureToBufferCopies;
+
+    for(uint32_t i = 0; i < copies.size(); i++)
+    {
+        TextureToBufferCopy copyInfo = copies[i];
+
+        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
+        VkImage srcImage = srcTexture.Image;
+        VkBuffer dstBuffer = MemoryRegistry::GetBuffer(copyInfo.DstBuffer).Buffer;
+        VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Format);
+        VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
+
+        VkBufferImageCopy bufferImageCopy
+        {
+            .bufferOffset = copyInfo.DstOffset,
+            .bufferRowLength = copyInfo.BufferRowLength,
+            .bufferImageHeight = copyInfo.BufferHeightLength,
+            .imageSubresource
+            {
+                .aspectMask = srcAspectMask,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = srcTexture.TextureInfo.ArrayLayers
+            },
+            .imageOffset{copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
+            .imageExtent{
+                static_cast<uint32_t>(copyInfo.Extent.x), 
+                static_cast<uint32_t>(copyInfo.Extent.y), 
+                static_cast<uint32_t>(copyInfo.Extent.z)}
+        };
+
+        vkCmdCopyImageToBuffer(cmdBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+            dstBuffer, 1, &bufferImageCopy);
+    }
+}
+
+void RenderGraph::RecordPersistentTransientTextureToBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<TextureToBufferCopy>& copies = pass.persistentTransientTextureToBufferCopies;
+
+    for(uint32_t i = 0; i < copies.size(); i++)
+    {
+        TextureToBufferCopy copyInfo = copies[i];
+
+        TextureInfo& textureInfo = MemoryRegistry::GetTextureInfo(copyInfo.SrcTexture);
+        VkImage srcImage = MemoryRegistry::GetTexture(copyInfo.SrcTexture).Image;
+        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(copyInfo.DstBuffer, frameIndex).Buffer;
+        VkFormat srcFormat = GetVkImageFormat(textureInfo.Format);
+        VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
+
+        VkBufferImageCopy bufferImageCopy
+        {
+            .bufferOffset = copyInfo.DstOffset,
+            .bufferRowLength = copyInfo.BufferRowLength,
+            .bufferImageHeight = copyInfo.BufferHeightLength,
+            .imageSubresource
+            {
+                .aspectMask = srcAspectMask,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = textureInfo.ArrayLayers
             },
             .imageOffset{copyInfo.SrcOffset.x, copyInfo.SrcOffset.y, copyInfo.SrcOffset.z},
             .imageExtent{
@@ -1856,7 +2146,7 @@ void RenderGraph::RecordPersistentBufferUpload(VkCommandBuffer cmdBuffer, Pass& 
 void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<TextureUpload>& uploads = pass.transientTextureUploads;
-    // To complete
+
     for(uint32_t i = 0; i < uploads.size(); i++)
     {
         TextureUpload uploadInfo = uploads[i];
@@ -1873,8 +2163,8 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer cmdBuffer, Pass& 
         VkBufferImageCopy bufferImageCopy
         {
             .bufferOffset = 0,
-            .bufferRowLength = uploadInfo.BufferRowLenght,
-            .bufferImageHeight = uploadInfo.BufferHeightLenght,
+            .bufferRowLength = uploadInfo.BufferRowLength,
+            .bufferImageHeight = uploadInfo.BufferHeightLength,
             .imageSubresource
             {
                 .aspectMask = aspectMask,
@@ -1899,7 +2189,7 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer cmdBuffer, Pass& 
 void RenderGraph::RecordPersistentTextureUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<TextureUpload>& uploads = pass.persistentTextureUploads;
-    // To complete
+
     for(uint32_t i = 0; i < uploads.size(); i++)
     {
         TextureUpload uploadInfo = uploads[i];
@@ -1916,8 +2206,8 @@ void RenderGraph::RecordPersistentTextureUpload(VkCommandBuffer cmdBuffer, Pass&
         VkBufferImageCopy bufferImageCopy
         {
             .bufferOffset = 0,
-            .bufferRowLength = uploadInfo.BufferRowLenght,
-            .bufferImageHeight = uploadInfo.BufferHeightLenght,
+            .bufferRowLength = uploadInfo.BufferRowLength,
+            .bufferImageHeight = uploadInfo.BufferHeightLength,
             .imageSubresource
             {
                 .aspectMask = aspectMask,
@@ -2734,6 +3024,16 @@ void RenderGraph::AddPass(TransferPass& pass)
         .persistentBufferToTextureCopies = pass.GetPersistentBufferToTextureCopies(),
         .persistentTextureToBufferCopies = pass.GetPersistentTextureToBufferCopies(),
 
+        .transientPersistentBufferCopies = pass.GetTransientPersistentBufferCopies(),
+        .persistentTransientBufferCopies = pass.GetPersistentTransientBufferCopies(),
+        .transientPersistentTextureCopies = pass.GetTransientPersistentTextureCopies(),
+        .persistentTransientTextureCopies = pass.GetPersistentTransientTextureCopies(),
+
+        .transientPersistentBufferToTextureCopies = pass.GetTransientPersistentBufferToTextureCopies(),
+        .persistentTransientBufferToTextureCopies = pass.GetPersistentTransientBufferToTextureCopies(),
+        .transientPersistentTextureToBufferCopies = pass.GetTransientPersistentTextureToBufferCopies(),
+        .persistentTransientTextureToBufferCopies = pass.GetPersistentTransientTextureToBufferCopies(),
+
         .transientBufferUploads = pass.GetTransientBufferUploads(),
         .transientTextureUploads = pass.GetTransientTextureUploads(),
         .persistentBufferUploads = pass.GetPersistentBufferUploads(),
@@ -2794,6 +3094,16 @@ void RenderGraph::AddPass(TransferPass& pass, uint32_t index)
         .persistentTextureCopies = pass.GetPersistentTextureCopies(),
         .persistentBufferToTextureCopies = pass.GetPersistentBufferToTextureCopies(),
         .persistentTextureToBufferCopies = pass.GetPersistentTextureToBufferCopies(),
+
+        .transientPersistentBufferCopies = pass.GetTransientPersistentBufferCopies(),
+        .persistentTransientBufferCopies = pass.GetPersistentTransientBufferCopies(),
+        .transientPersistentTextureCopies = pass.GetTransientPersistentTextureCopies(),
+        .persistentTransientTextureCopies = pass.GetPersistentTransientTextureCopies(),
+
+        .transientPersistentBufferToTextureCopies = pass.GetTransientPersistentBufferToTextureCopies(),
+        .persistentTransientBufferToTextureCopies = pass.GetPersistentTransientBufferToTextureCopies(),
+        .transientPersistentTextureToBufferCopies = pass.GetTransientPersistentTextureToBufferCopies(),
+        .persistentTransientTextureToBufferCopies = pass.GetPersistentTransientTextureToBufferCopies(),
 
         .transientBufferUploads = pass.GetTransientBufferUploads(),
         .transientTextureUploads = pass.GetTransientTextureUploads(),

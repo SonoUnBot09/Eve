@@ -104,6 +104,16 @@ namespace Eve::Graphics
                 std::vector<BufferToTextureCopy> persistentBufferToTextureCopies;
                 std::vector<TextureToBufferCopy> persistentTextureToBufferCopies;
 
+                std::vector<BufferCopy> transientPersistentBufferCopies;
+                std::vector<BufferCopy> persistentTransientBufferCopies;
+                std::vector<TextureCopy> transientPersistentTextureCopies;
+                std::vector<TextureCopy> persistentTransientTextureCopies;
+
+                std::vector<BufferToTextureCopy> transientPersistentBufferToTextureCopies;
+                std::vector<BufferToTextureCopy> persistentTransientBufferToTextureCopies;
+                std::vector<TextureToBufferCopy> transientPersistentTextureToBufferCopies;
+                std::vector<TextureToBufferCopy> persistentTransientTextureToBufferCopies;
+
                 std::vector<BufferUpload> transientBufferUploads;
                 std::vector<TextureUpload> transientTextureUploads;
                 std::vector<BufferUpload> persistentBufferUploads;
@@ -158,6 +168,16 @@ namespace Eve::Graphics
             static void RecordPersistentTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
             static void RecordPersistentBufferToTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
             static void RecordPersistentTextureToBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+
+            static void RecordTransientPersistentBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentTransientBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientPersistentTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentTransientTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            
+            static void RecordTransientPersistentBufferToTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentTransientBufferToTextureCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordTransientPersistentTextureToBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordPersistentTransientTextureToBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
 
             static void RecordTransientBufferUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
             static void RecordTransientTextureUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
