@@ -1,8 +1,5 @@
 #pragma once
 
-
-#include <vector>
-
 #include <vulkan/vulkan.hpp>
 #include <shaderc/shaderc.hpp>
 #include <graphics/helpers/VulkanMapping.hpp>
@@ -17,7 +14,7 @@ namespace Eve::Graphics
     {
         public:
 
-            static bool Initialize();
+            static void Initialize();
             static bool GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipelineLayout);
             inline static VkPipelineLayout GetGraphicsPipelineLayout() { return graphicsPipelineLayout; }
             static bool BuildGraphicsPipeline(ShaderInfo shaderInfo,  GraphicsShaderObject& pipeline);

@@ -3,6 +3,7 @@
 #include "Resources.hpp"
 #include "graphics/registers/MemoryRegistry.hpp"
 #include <graphics/helpers/VulkanMapping.hpp>
+#include <graphics/ErrorManager.hpp>
 
 using namespace Eve::Graphics;
 
@@ -147,7 +148,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             .pBindings = bindingsLayout.data()
         };
 
-        vkCreateDescriptorSetLayout(GraphicsCore::Context.Device, &layoutCI, nullptr, &layout);
+        VK_CHECK(vkCreateDescriptorSetLayout(GraphicsCore::Context.Device, &layoutCI, nullptr, &layout));
 
     #pragma endregion
 
@@ -227,7 +228,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             .pPoolSizes = poolSize.data()
         };
 
-        vkCreateDescriptorPool(GraphicsCore::Context.Device, &poolCI, nullptr, &pool);
+        VK_CHECK(vkCreateDescriptorPool(GraphicsCore::Context.Device, &poolCI, nullptr, &pool));
     
     #pragma endregion
 
@@ -243,7 +244,7 @@ void ResourceMapper::CreateGlobalDescriptor(uint32_t maxImagesCount, uint32_t ma
             .pSetLayouts = layouts.data()
         };
 
-        vkAllocateDescriptorSets(GraphicsCore::Context.Device, &setAllocInfo, sets.data());
+        VK_CHECK(vkAllocateDescriptorSets(GraphicsCore::Context.Device, &setAllocInfo, sets.data()));
 
         std::vector<VkDescriptorBufferInfo> bufferWritesInfo;
         std::vector<VkWriteDescriptorSet> descriptorWrites;

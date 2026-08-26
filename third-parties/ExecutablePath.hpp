@@ -2,7 +2,9 @@
 
 #include <filesystem>
 #include <string>
-#include <whereami.h>
+extern "C" { 
+    #include <whereami.h> 
+}
 
 namespace fs = std::filesystem;
 

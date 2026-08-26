@@ -1,11 +1,13 @@
 #pragma once
 
+#include <string>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vk_enum_string_helper.h>
 #include <ExecutablePath.hpp>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <SDL3/SDL.h>
 
 namespace Eve::Graphics
 {
@@ -83,7 +85,7 @@ namespace Eve::Graphics
     {
         auto now = std::chrono::system_clock::now();
         
-        return std::format("{:%Y-%m-%d %H:%M:%S}", now);
+        return std::format("{:%Y-%m-%d_%H-%M-%S}.log", now);
     }
 
     inline static void LogError(std::string message)
@@ -113,28 +115,35 @@ namespace Eve::Graphics
         bool foundError = FindError(error, errorIndex);
 
         const char* errName = string_VkResult(error);
-        std::string errorName = std::to_string(*errName);
+        std::string errorName = errName;
 
         if(foundError)
         {
             std::string message = errorMessages[errorIndex];
-            message = message + " || Vulkan error: " + errorName;
+            std::string logMessage = message + " || Vulkan error: " + errorName + " (" + std::to_string(error) + ")";
 
-            LogError(message);
+            LogError(logMessage);
+
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", message.c_str(), nullptr);
         }
         else 
         {
-            std::string message = "Unknown error || Vulkan error: " + errorName;
+            std::string message = "Unknown error || Vulkan error: " + errorName + " (" + std::to_string(error) + ")";
 
             LogError(message);
+
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "ERROR 201: Unknown error", nullptr);
         }
+
+        std::abort();
     }
 
     #define VK_CHECK(x) \
-        VkResult res = (f); \
-        if (res < 0) { \
-            std::string file = __FILE__\
-            int row = __LINE__\
-            HandleError(error, file, row);\
-        }
+        do {                                             \
+        VkResult res = (x);                              \
+        if (res < 0)                                     \
+        {                                                \
+            HandleError(res, __FILE__, __LINE__);        \
+        }                                                \
+    } while (0)
 }

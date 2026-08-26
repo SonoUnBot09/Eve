@@ -14,6 +14,7 @@
 #include <graphics/registers/TransientResourcePool.hpp>
 #include <graphics/ResourceMapper.hpp>
 #include <graphics/registers/ResourceRegistry.hpp>
+#include <graphics/ErrorManager.hpp>
 
 
 using namespace Eve::Graphics;
@@ -396,7 +397,7 @@ namespace
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
-        vkCreateImage(GraphicsCore::Context.Device, &imageCI, nullptr, &image);
+        VK_CHECK(vkCreateImage(GraphicsCore::Context.Device, &imageCI, nullptr, &image));
     }
 
     void CreateImageView(TextureInfo& textureInfo, VkImage image, VkImageView& imageView)
@@ -438,7 +439,7 @@ namespace
             }
         };
 
-        vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &imageView);
+        VK_CHECK(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &imageView));
 
     }
 
@@ -457,7 +458,7 @@ namespace
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
-        vkCreateBuffer(GraphicsCore::Context.Device, &bufferCI, nullptr, &buffer);
+        VK_CHECK(vkCreateBuffer(GraphicsCore::Context.Device, &bufferCI, nullptr, &buffer));
     }
 
     bool IsTextureBarrierNeeded(RenderGraph::TextureBarrierInfo src, RenderGraph::TextureBarrierInfo dst, Usage oldUsage, Usage newUsage)
@@ -614,7 +615,7 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
     };
 
-    vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+    VK_CHECK(vkBeginCommandBuffer(cmdBuffer, &beginInfo));
 
     ResourceMapper::MapResources(cmdBuffer, frameIndex);
 
@@ -633,7 +634,7 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
 
     RecordCommands(cmdBuffer, frameIndex, swapchainImageIndex);
 
-    vkEndCommandBuffer(cmdBuffer);
+    VK_CHECK(vkEndCommandBuffer(cmdBuffer));
 
     Clear();
 

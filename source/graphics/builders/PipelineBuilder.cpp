@@ -2,6 +2,7 @@
 #include "SlangCompiler.hpp"
 #include <graphics/ResourceMapper.hpp>
 #include "PipelineBuilder.hpp"
+#include <graphics/ErrorManager.hpp>
 
 #include <eve/Utils.hpp>
 #include <eve/Debug.hpp>
@@ -9,7 +10,7 @@
 using namespace Eve::Graphics;
 using namespace Debug;
 
-bool PipelineBuilder::Initialize()
+void PipelineBuilder::Initialize()
 {
     VkPushConstantRange pushConstantRange
     {
@@ -28,13 +29,7 @@ bool PipelineBuilder::Initialize()
         .pPushConstantRanges = &pushConstantRange
     };
 
-    if(vkCreatePipelineLayout(GraphicsCore::Context.Device, &pipelineLayoutCI, nullptr, &graphicsPipelineLayout) != VK_SUCCESS)
-    {
-        printError("Unable to create the graphics pipeline layout");
-        return false;
-    }
-
-    return true;
+    VK_CHECK(vkCreatePipelineLayout(GraphicsCore::Context.Device, &pipelineLayoutCI, nullptr, &graphicsPipelineLayout));
 }
 
 bool PipelineBuilder::GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipelineLayout)
@@ -184,11 +179,8 @@ bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo shaderInfo, GraphicsShade
         .layout = graphicsPipelineLayout
     };
 
-    if(vkCreateGraphicsPipelines(GraphicsCore::Context.Device, nullptr, 1, &pipelineCI, nullptr, &shaderObject.Pipeline) != VK_SUCCESS)
-    {
-        printError("Unable to create the graphics pipeline");
-        return false;
-    }
+    VK_CHECK(vkCreateGraphicsPipelines(GraphicsCore::Context.Device, nullptr, 1, &pipelineCI, nullptr,
+        &shaderObject.Pipeline));
 
     return true;
 }
@@ -204,11 +196,7 @@ VkShaderModule PipelineBuilder::CreateVertexModule(ShaderBytecode& input)
     };
     
     VkShaderModule shaderModule = nullptr;
-    if(vkCreateShaderModule(GraphicsCore::Context.Device, &shaderModuleCI, nullptr, &shaderModule) != VK_SUCCESS)
-    {
-        printError("Unable to create the shader module");
-        return nullptr;
-    }
+    VK_CHECK(vkCreateShaderModule(GraphicsCore::Context.Device, &shaderModuleCI, nullptr, &shaderModule));
 
     return shaderModule;
 }
@@ -224,11 +212,7 @@ VkShaderModule PipelineBuilder::CreateFragmentModule(ShaderBytecode& input)
     };
     
     VkShaderModule shaderModule = nullptr;
-    if(vkCreateShaderModule(GraphicsCore::Context.Device, &shaderModuleCI, nullptr, &shaderModule) != VK_SUCCESS)
-    {
-        printError("Unable to create the shader module");
-        return nullptr;
-    }
+    VK_CHECK(vkCreateShaderModule(GraphicsCore::Context.Device, &shaderModuleCI, nullptr, &shaderModule));
 
     return shaderModule;
 }
@@ -244,11 +228,7 @@ VkShaderModule PipelineBuilder::CreateComputeModule(ShaderBytecode& input)
     };
     
     VkShaderModule shaderModule = nullptr;
-    if(vkCreateShaderModule(GraphicsCore::Context.Device, &shaderModuleCI, nullptr, &shaderModule) != VK_SUCCESS)
-    {
-        printError("Unable to create the shader module");
-        return nullptr;
-    }
+    VK_CHECK(vkCreateShaderModule(GraphicsCore::Context.Device, &shaderModuleCI, nullptr, &shaderModule));
 
     return shaderModule;
 }

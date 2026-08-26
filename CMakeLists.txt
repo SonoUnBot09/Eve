@@ -58,6 +58,7 @@ file(GLOB_RECURSE SOURCES
 add_executable(Eve
     main.cpp
     ${SOURCES}
+    third-parties/whereami.c
 )
 
 target_compile_features(Eve PRIVATE cxx_std_20)

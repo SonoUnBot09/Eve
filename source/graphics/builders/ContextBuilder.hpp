@@ -26,7 +26,7 @@ namespace Eve::Graphics
             static bool ChoosePhysicalDevice(Context& context);
             static bool GetSurface(Context& context);
             static bool GetGraphicsQueue(Context& context);
-            static bool CreateDevice(Context& context);
+            static void CreateDevice(Context& context);
             static bool InitializeVMA(Context& context);
 
             // Vulkan dedicated func to print out errors

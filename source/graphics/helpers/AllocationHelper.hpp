@@ -1,7 +1,7 @@
 #pragma once
 
 #include <graphics/GraphicsCore.hpp>
-
+#include <graphics/ErrorManager.hpp>
 #include <eve/graphics/Buffer.hpp>
 #include <eve/graphics/Sampler.hpp>
 #include <eve/graphics/Texture.hpp>
@@ -68,7 +68,7 @@ namespace Eve::Graphics::Helpers
             .unnormalizedCoordinates = VK_FALSE
         };
 
-        vkCreateSampler(GraphicsCore::Context.Device, &samplerCI, nullptr, &sampler.Sampler);
+        VK_CHECK(vkCreateSampler(GraphicsCore::Context.Device, &samplerCI, nullptr, &sampler.Sampler));
 
     }
 
@@ -114,7 +114,7 @@ namespace Eve::Graphics::Helpers
             }
         };
 
-        vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
+        VK_CHECK(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView));
     }
 
     static inline void AllocateTexture2D(TextureInfo2D textureInfo, TextureObject& texture, VkImageUsageFlags usage)
@@ -159,7 +159,7 @@ namespace Eve::Graphics::Helpers
             }
         };
 
-        vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
+        VK_CHECK(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView));
     }
 
     static inline void AllocateTexture3D(TextureInfo3D textureInfo, TextureObject& texture, VkImageUsageFlags usage)
@@ -204,7 +204,7 @@ namespace Eve::Graphics::Helpers
             }
         };
 
-        vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
+        VK_CHECK(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView));
     }
 
     static inline void AllocateTextureCube(TextureInfo2D textureInfo, TextureObject& texture, VkImageUsageFlags usage)
@@ -250,6 +250,6 @@ namespace Eve::Graphics::Helpers
             }
         };
 
-        vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView);
+        VK_CHECK(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &texture.ImageView));
     }
 }

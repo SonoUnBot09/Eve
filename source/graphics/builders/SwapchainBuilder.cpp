@@ -4,6 +4,7 @@
 #include "graphics/registers/MemoryRegistry.hpp"
 #include <graphics/MemoryBin.hpp>
 #include <graphics/registers/ShaderRegistry.hpp>
+#include <graphics/ErrorManager.hpp>
 
 #include <EveSettings.hpp>
 #include <eve/Debug.hpp>
@@ -14,11 +15,8 @@ using namespace Eve::Graphics;
 bool SwapchainBuilder::Build(Swapchain& swapchain)
 {
     VkSurfaceCapabilitiesKHR surfaceCaps;
-    if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, &surfaceCaps) != VK_SUCCESS)
-    {
-        printError("Unable to get surface capabilities");
-        return false;
-    }
+    VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, 
+        &surfaceCaps));
 
     if(surfaceCaps.currentExtent.width != 0xFFFFFFFF)
     {
@@ -53,9 +51,11 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
     }
 
     uint32_t supportedFormatsCount = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, &supportedFormatsCount, nullptr);
+    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, 
+        &supportedFormatsCount, nullptr));
     std::vector<VkSurfaceFormatKHR> supportedFormats(supportedFormatsCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, &supportedFormatsCount, supportedFormats.data());
+    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, 
+        &supportedFormatsCount, supportedFormats.data()));
 
     bool isRequiredFormatSupported = false;
     // Fallback for any format supported
@@ -81,6 +81,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
     if(!isRequiredFormatSupported)
     {
         printError("The device does not support the required swapchain format");
+        return false;
     }
 
     swapchain.Format = chooseFormat;
@@ -100,17 +101,13 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
         .presentMode = VK_PRESENT_MODE_FIFO_KHR
     };
 
-    if(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain) != VK_SUCCESS)
-    {
-        printError("Unable to create the swapchain");
-        return false;
-    }
+    VK_CHECK(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain));
 
     // Swapchain images
     uint32_t imagesCount = 0;
-    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, nullptr);
+    VK_CHECK(vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, nullptr));
     swapchain.swapchainImages.resize(imagesCount);
-    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, swapchain.swapchainImages.data());
+    VK_CHECK(vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, swapchain.swapchainImages.data()));
 
     swapchain.swapchainImageViews.resize(imagesCount);
     for(int i = 0; i < imagesCount; i++)
@@ -131,11 +128,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
             }
         };
 
-        if(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchain.swapchainImageViews[i]) != VK_SUCCESS)
-        {
-            printError("Unable to create swapchain image views");
-            return false;
-        }
+        VK_CHECK(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchain.swapchainImageViews[i]));
     }
 
     Format format = swapchain.Format == VK_FORMAT_R8G8B8A8_SRGB ? Format::FORMAT_R8G8B8A8_SRGB : Format::FORMAT_B8G8R8A8_SRGB;
@@ -173,11 +166,7 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
     Destroy(swapchain);
 
     VkSurfaceCapabilitiesKHR surfaceCaps;
-    if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, &surfaceCaps) != VK_SUCCESS)
-    {
-        printError("Unable to get surface capabilities");
-        return false;
-    }
+    VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, &surfaceCaps));
 
     if(surfaceCaps.currentExtent.width != 0xFFFFFFFF)
     {
@@ -222,17 +211,13 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
         .presentMode = VK_PRESENT_MODE_FIFO_KHR
     };
 
-    if(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain) != VK_SUCCESS)
-    {
-        printError("Unable to create the swapchain");
-        return false;
-    }
+    VK_CHECK(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain));
 
     // Swapchain images
     uint32_t imagesCount = 0;
-    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, nullptr);
+    VK_CHECK(vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, nullptr));
     swapchain.swapchainImages.resize(imagesCount);
-    vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, swapchain.swapchainImages.data());
+    VK_CHECK(vkGetSwapchainImagesKHR(GraphicsCore::Context.Device, swapchain.Swapchain, &imagesCount, swapchain.swapchainImages.data()));
 
     swapchain.swapchainImageViews.resize(imagesCount);
     for(int i = 0; i < imagesCount; i++)
@@ -253,11 +238,7 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
             }
         };
 
-        if(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchain.swapchainImageViews[i]) != VK_SUCCESS)
-        {
-            printError("Unable to create swapchain image views");
-            return false;
-        }
+        VK_CHECK(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchain.swapchainImageViews[i]));
     }
 
     return true;

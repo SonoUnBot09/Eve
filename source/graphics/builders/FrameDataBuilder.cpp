@@ -1,6 +1,7 @@
 #include <graphics/GraphicsCore.hpp>
 #include "FrameDataBuilder.hpp"
 #include "EveSettings.hpp"
+#include <graphics/ErrorManager.hpp>
 
 using namespace Eve::Graphics;
 
@@ -16,8 +17,7 @@ bool FrameDataBuilder::Build(std::vector<FrameData>& frameData, VkSemaphore& tim
             .queueFamilyIndex = GraphicsCore::Context.GraphicsQueueIndex
         };
 
-        if(vkCreateCommandPool(GraphicsCore::Context.Device, &cmdPoolCI, nullptr, &frameData[i].CmdPool) != VK_SUCCESS)
-            { return false; }
+        VK_CHECK(vkCreateCommandPool(GraphicsCore::Context.Device, &cmdPoolCI, nullptr, &frameData[i].CmdPool));
 
         VkCommandBufferAllocateInfo cmdBufferAllocInfo
         {
@@ -27,21 +27,18 @@ bool FrameDataBuilder::Build(std::vector<FrameData>& frameData, VkSemaphore& tim
             .commandBufferCount = 1
         };
 
-        if(vkAllocateCommandBuffers(GraphicsCore::Context.Device, &cmdBufferAllocInfo, &frameData[i].CmdBuffer) != VK_SUCCESS)
-            {return  false;}
+        VK_CHECK(vkAllocateCommandBuffers(GraphicsCore::Context.Device, &cmdBufferAllocInfo, &frameData[i].CmdBuffer));
 
         VkSemaphoreCreateInfo semaphoreCI
         {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
         };
 
-        if(vkCreateSemaphore(GraphicsCore::Context.Device, &semaphoreCI, nullptr,
-            &frameData[i].AcquiredImageSemaphore) != VK_SUCCESS)
-            {return false;}
+        VK_CHECK(vkCreateSemaphore(GraphicsCore::Context.Device, &semaphoreCI, nullptr,
+            &frameData[i].AcquiredImageSemaphore));
 
-        if(vkCreateSemaphore(GraphicsCore::Context.Device, &semaphoreCI, nullptr, 
-            &frameData[i].RenderCompletedSemaphore) != VK_SUCCESS)
-            {return false;}
+        VK_CHECK(vkCreateSemaphore(GraphicsCore::Context.Device, &semaphoreCI, nullptr, 
+            &frameData[i].RenderCompletedSemaphore));
     }
 
     VkSemaphoreTypeCreateInfo semaphoreTypeCI
@@ -57,8 +54,7 @@ bool FrameDataBuilder::Build(std::vector<FrameData>& frameData, VkSemaphore& tim
         .pNext = &semaphoreTypeCI
     };
 
-    if(vkCreateSemaphore(GraphicsCore::Context.Device, & semaphoreCI, nullptr, &timelineSemaphore) != VK_SUCCESS)
-        {return false;}
+    VK_CHECK(vkCreateSemaphore(GraphicsCore::Context.Device, & semaphoreCI, nullptr, &timelineSemaphore));
 
     return true;
 }

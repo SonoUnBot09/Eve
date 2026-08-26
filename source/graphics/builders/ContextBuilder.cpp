@@ -6,6 +6,7 @@
 #include <EveSettings.hpp>
 #include <eve/Debug.hpp>
 #include "SlangCompiler.hpp"
+#include <graphics/ErrorManager.hpp>
 
 using namespace Debug;
 using namespace Eve::Graphics;
@@ -36,11 +37,7 @@ bool ContextBuilder::Build(Context& context)
         return false;
     }
 
-    if(!CreateDevice(context))
-    {
-        printError("Unable to create a logical device");
-        return false;
-    }
+    CreateDevice(context);
 
     if(!InitializeVMA(context))
     {
@@ -132,12 +129,8 @@ bool ContextBuilder::CreateInstance(Context& context)
         instanceCI.pNext = &debugInfo;
     }
 
-    if(vkCreateInstance(&instanceCI, nullptr, &context.Instance) != VK_SUCCESS)
-    {
-        printError("Unable to create the vulkan instance");
-        return false;
-    }
-    
+    VK_CHECK(vkCreateInstance(&instanceCI, nullptr, &context.Instance));
+
     volkLoadInstance(context.Instance);
 
     return true;
@@ -146,9 +139,9 @@ bool ContextBuilder::CreateInstance(Context& context)
 bool ContextBuilder::ChoosePhysicalDevice(Context& context)
 {
     uint32_t count = 0;
-    vkEnumeratePhysicalDevices(context.Instance, &count, nullptr);
+    VK_CHECK(vkEnumeratePhysicalDevices(context.Instance, &count, nullptr));
     std::vector<VkPhysicalDevice> physicalDevices(count);
-    vkEnumeratePhysicalDevices(context.Instance, &count, physicalDevices.data());
+    VK_CHECK(vkEnumeratePhysicalDevices(context.Instance, &count, physicalDevices.data()));
 
     if(count == 0)
     {
@@ -208,7 +201,7 @@ bool ContextBuilder::GetGraphicsQueue(Context& context)
     for (int i = 0; i < count; i++)
     {
         VkBool32 isPresentationSupported = VK_FALSE;
-        vkGetPhysicalDeviceSurfaceSupportKHR(context.PhysicalDevice, i, context.Surface, &isPresentationSupported);
+        VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR(context.PhysicalDevice, i, context.Surface, &isPresentationSupported));
 
         if(queueFamProps[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT && isPresentationSupported)
         {
@@ -218,11 +211,10 @@ bool ContextBuilder::GetGraphicsQueue(Context& context)
     }
 
     printError("Unable to get a graphics queue with required properties");
-
     return false;
 }
 
-bool ContextBuilder::CreateDevice(Context& context)
+void ContextBuilder::CreateDevice(Context& context)
 {
     #pragma region Features
 
@@ -310,20 +302,9 @@ bool ContextBuilder::CreateDevice(Context& context)
         .ppEnabledExtensionNames = deviceExtensions.data()
     };
 
-    if(vkCreateDevice(context.PhysicalDevice, &deviceCI, nullptr, &context.Device) != VK_SUCCESS)
-    {
-        printError("Unable to create the vulkan device");
-        return false;
-    }
+    VK_CHECK(vkCreateDevice(context.PhysicalDevice, &deviceCI, nullptr, &context.Device));
 
     vkGetDeviceQueue(context.Device, context.GraphicsQueueIndex, 0, &context.GraphicsQueue);
-    if(!context.GraphicsQueue)
-    {
-        printError("Unable to get the graphics queue");
-        return false;
-    }
-
-    return true;
 }
 
 bool ContextBuilder::InitializeVMA(Context& context)

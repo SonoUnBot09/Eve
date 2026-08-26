@@ -1,6 +1,7 @@
 #include <graphics/GraphicsCore.hpp>
 #include <graphics/CommandManager.hpp>
 #include <EveSettings.hpp>
+#include <graphics/ErrorManager.hpp>
 
 using namespace Eve::Graphics;
 
@@ -27,8 +28,8 @@ CommandBufferHandle CommandManager::AllocateCommandBuffer(CommandPoolHandle pool
             .commandBufferCount = 1
         };
 
-        vkAllocateCommandBuffers(GraphicsCore::Context.Device, &cmdBufferAllocInfo, 
-            &cmdBuffers[handle.Id + i]);
+        VK_CHECK(vkAllocateCommandBuffers(GraphicsCore::Context.Device, &cmdBufferAllocInfo, 
+            &cmdBuffers[handle.Id + i]));
     }
 
     return handle;

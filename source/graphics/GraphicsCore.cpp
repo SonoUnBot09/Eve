@@ -8,6 +8,7 @@
 #include "registers/ShaderRegistry.hpp"
 #include <graphics/RenderGraph.hpp>
 #include <cstdint>
+#include <graphics/ErrorManager.hpp>
 
 using namespace Eve::Graphics;
 
@@ -25,10 +26,7 @@ bool GraphicsCore::Initialize()
 
     ResourceMapper::CreateGlobalDescriptor(1024, 8, 1024);
 
-    if(!PipelineBuilder::Initialize())
-    {
-        return false;
-    }
+    PipelineBuilder::Initialize();
 
     if(!SwapchainBuilder::Build(Swapchain))
     {
@@ -47,7 +45,7 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
 {
     if(isSwapchainRebuildNeeded)
     {
-        vkDeviceWaitIdle(Context.Device);
+        VK_CHECK(vkDeviceWaitIdle(Context.Device));
         SwapchainBuilder::Rebuild(Swapchain);
         MemoryBin::DestroyAllPendingResources();
         isSwapchainRebuildNeeded = false;
@@ -65,11 +63,11 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
         .pValues = &timelineWaitValue
     };
 
-    vkWaitSemaphores(Context.Device, &timelineWaitInfo, UINT64_MAX);
+    VK_CHECK(vkWaitSemaphores(Context.Device, &timelineWaitInfo, UINT64_MAX));
 
     FrameData& frameData = framesData[frameIndex];
 
-    vkResetCommandPool(Context.Device, frameData.CmdPool, 0);
+    VK_CHECK(vkResetCommandPool(Context.Device, frameData.CmdPool, 0));
 
     uint32_t swaphchainImageIndex = 0;
     VkResult result = vkAcquireNextImageKHR(Context.Device, Swapchain.Swapchain, UINT64_MAX, 
@@ -83,6 +81,10 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
     else if(result == VK_SUBOPTIMAL_KHR)
     {
         isSwapchainRebuildNeeded = true;
+    }
+    else 
+    {
+        VK_CHECK(result);
     }
 
     // Compile Graph, Update Descriptor Set, Record Commands
@@ -135,7 +137,7 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
         .pSignalSemaphoreInfos = signalSemaphores.data()
     };
 
-    vkQueueSubmit2(Context.GraphicsQueue, 1, &submitInfo, nullptr);
+    VK_CHECK(vkQueueSubmit2(Context.GraphicsQueue, 1, &submitInfo, nullptr));
 
     VkPresentInfoKHR presentInfo
     {
@@ -147,7 +149,7 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
         .pImageIndices = &swaphchainImageIndex
     };
 
-    vkQueuePresentKHR(Context.GraphicsQueue, &presentInfo);
+    VK_CHECK(vkQueuePresentKHR(Context.GraphicsQueue, &presentInfo));
 
     MemoryBin::DestroyPendingResources();
 
@@ -156,19 +158,10 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
 
 void GraphicsCore::Destroy()
 {
-    if(!Context.Device) 
+    if(Context.Device) 
     {
-        if(Window.Window)
-        {
-            SDL_DestroyWindow(Window.Window);
-        }
-
-        SDL_Quit();
-
-        return;
+        VK_CHECK(vkDeviceWaitIdle(Context.Device));
     }
-    
-    vkDeviceWaitIdle(Context.Device);
 
     for(uint32_t i = 0; i < framesData.size(); i++)
     {
