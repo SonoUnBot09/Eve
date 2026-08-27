@@ -137,14 +137,14 @@ uint32_t TransientResourcePool::FindTexturePoolIndex(const TextureInfo& textureI
     VkImageCreateInfo imageCI {};
     CreateVkImageCreateInfo(textureInfo, imageCI);
 
-    VkDeviceImageMemoryRequirements reqs
+    VkDeviceImageMemoryRequirementsKHR reqs
     {
-        .sType = VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS,
+        .sType = VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS_KHR,
         .pCreateInfo = &imageCI
     };
 
     VkMemoryRequirements2 memoryRequirements { .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
-    vkGetDeviceImageMemoryRequirements(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
+    vkGetDeviceImageMemoryRequirementsKHR(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
 
     uint32_t memoryTypeIndex = FindBestMemoryTypeIndex(memoryRequirements);
 
@@ -199,14 +199,14 @@ uint32_t TransientResourcePool::FindBufferPoolIndex(const BufferInfo& bufferInfo
     VkBufferCreateInfo bufferCI {};
     CreateVkBufferCreateInfo(bufferInfo, bufferCI);
 
-    VkDeviceBufferMemoryRequirements reqs
+    VkDeviceBufferMemoryRequirementsKHR reqs
     {
-        .sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS,
+        .sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS_KHR,
         .pCreateInfo = &bufferCI
     };
 
     VkMemoryRequirements2 memoryRequirements { .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
-    vkGetDeviceBufferMemoryRequirements(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
+    vkGetDeviceBufferMemoryRequirementsKHR(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
 
     uint32_t memoryTypeIndex = FindBestMemoryTypeIndex(memoryRequirements);
 

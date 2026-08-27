@@ -17,7 +17,7 @@ bool ContextBuilder::Build(Context& context)
         printError("Unable to create the vulkan instance");
         return false;
     }
-    
+
     if(!ChoosePhysicalDevice(context))
     {
         printError("Unable to choose a GPU");
@@ -214,39 +214,60 @@ void ContextBuilder::CreateDevice(Context& context)
 {
     #pragma region Features
 
-    VkPhysicalDeviceVulkan14Features availableFeatures14 {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES, .pNext = nullptr};
-    VkPhysicalDeviceVulkan13Features availableFeatures13 {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &availableFeatures14};
-    VkPhysicalDeviceVulkan12Features availableFeatures12 {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, .pNext = &availableFeatures13};
-    VkPhysicalDeviceVulkan11Features availableFeatures11 {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &availableFeatures12};
-    VkPhysicalDeviceFeatures2 availableFeatures {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &availableFeatures11};
+    VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4Features{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR,
+        .pNext = nullptr,
+        .maintenance4 = VK_TRUE
+    };
+
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR availableDynamicRendering {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR, 
+        .pNext = &maintenance4Features
+    };
+    VkPhysicalDeviceSynchronization2FeaturesKHR availableSync2 {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR, 
+        .pNext = &availableDynamicRendering
+    };
+
+    VkPhysicalDeviceVulkan12Features availableFeatures12 {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, 
+        .pNext = &availableSync2
+    };
+    VkPhysicalDeviceVulkan11Features availableFeatures11 {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, 
+        .pNext = &availableFeatures12
+    };
+    VkPhysicalDeviceFeatures2 availableFeatures {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, 
+        .pNext = &availableFeatures11
+    };
 
     vkGetPhysicalDeviceFeatures2(context.PhysicalDevice, &availableFeatures);
 
-    // Check if all the required features are available on the machine 
-    if(!availableFeatures13.dynamicRendering || !availableFeatures13.synchronization2 || !availableFeatures12.timelineSemaphore || 
-       !availableFeatures.features.fillModeNonSolid || !availableFeatures12.bufferDeviceAddress || !availableFeatures12.descriptorBindingPartiallyBound ||
-       !availableFeatures12.descriptorBindingVariableDescriptorCount || !availableFeatures12.runtimeDescriptorArray || 
-       !availableFeatures12.shaderSampledImageArrayNonUniformIndexing || !availableFeatures12.descriptorBindingSampledImageUpdateAfterBind ||
-       !availableFeatures12.descriptorBindingStorageImageUpdateAfterBind || !availableFeatures12.descriptorBindingUniformBufferUpdateAfterBind ||
-       !availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind || !availableFeatures11.shaderDrawParameters || 
-       !availableFeatures.features.shaderInt64)
+    if(!maintenance4Features.maintenance4 || !availableDynamicRendering.dynamicRendering || !availableSync2.synchronization2 || 
+       !availableFeatures12.timelineSemaphore || !availableFeatures.features.fillModeNonSolid || !availableFeatures12.bufferDeviceAddress || 
+       !availableFeatures12.descriptorBindingPartiallyBound || !availableFeatures12.descriptorBindingVariableDescriptorCount || 
+       !availableFeatures12.runtimeDescriptorArray || !availableFeatures12.shaderSampledImageArrayNonUniformIndexing ||
+       !availableFeatures12.descriptorBindingSampledImageUpdateAfterBind || !availableFeatures12.descriptorBindingStorageImageUpdateAfterBind ||
+       !availableFeatures12.descriptorBindingUniformBufferUpdateAfterBind || !availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind ||
+       !availableFeatures11.shaderDrawParameters || !availableFeatures.features.shaderInt64)
     {
         printError("Available device features do not respect application features requirement");
     }
 
-    VkPhysicalDeviceVulkan14Features features14{};
-    features14.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
-    features14.pNext = nullptr;
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures{};
+    dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+    dynamicRenderingFeatures.pNext = nullptr;
+    dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
 
-    VkPhysicalDeviceVulkan13Features features13{};
-    features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-    features13.pNext = &features14;
-    features13.synchronization2 = VK_TRUE;
-    features13.dynamicRendering = VK_TRUE;
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2Features{};
+    sync2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
+    sync2Features.pNext = &dynamicRenderingFeatures;
+    sync2Features.synchronization2 = VK_TRUE;
 
     VkPhysicalDeviceVulkan12Features features12{};
     features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-    features12.pNext = &features13;
+    features12.pNext = &sync2Features;
     features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
     features12.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
     features12.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
@@ -285,7 +306,12 @@ void ContextBuilder::CreateDevice(Context& context)
     #pragma endregion
 
     #pragma region Extensions
-    const std::vector<const char*> deviceExtensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    const std::vector<const char*> deviceExtensions { 
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+        VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+        VK_KHR_MAINTENANCE_4_EXTENSION_NAME
+    };
     #pragma endregion
 
     VkDeviceCreateInfo deviceCI

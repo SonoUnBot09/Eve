@@ -170,95 +170,95 @@ namespace
             case(Usage::VERTEX_READ_TEXTURE_SAMPLED) :
                 return 
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR,
                     .Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                 };
 
             case(Usage::FRAGMENT_READ_TEXTURE_SAMPLED) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR,
                     .Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                 };
 
             case(Usage::VERTEX_FRAGMENT_READ_TEXTURE_SAMPLED) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR,
                     .Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                 };
 
             case(Usage::COMPUTE_READ_TEXTURE_STORAGE) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR,
                     .Layout = VK_IMAGE_LAYOUT_GENERAL
                 };
 
             case(Usage::COMPUTE_READ_WRITE_TEXTURE_STORAGE) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR | VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR,
                     .Layout = VK_IMAGE_LAYOUT_GENERAL
                 };
             case(Usage::COLOR_ATTACHMENT) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                    .AccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR,
                     .Layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
                 };
 
             case(Usage::DEPTH_STENCIL) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-                    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR,
                     .Layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
                 };
 
             case(Usage::DEPTH) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-                    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR,
                     .Layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
                 };
 
             case(Usage::STENCIL) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-                    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR,
                     .Layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
                 };
 
             case(Usage::COPY_SOURCE) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                    .AccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR,
                     .Layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
                 };
 
             case(Usage::COPY_DESTINATION) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                    .AccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR,
                     .Layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
                 };
 
             default:
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_NONE,
-                    .AccessMask = VK_ACCESS_2_NONE,
+                    .StageMask = VK_PIPELINE_STAGE_2_NONE_KHR,
+                    .AccessMask = VK_ACCESS_2_NONE_KHR,
                     .Layout = VK_IMAGE_LAYOUT_UNDEFINED
                 };
         }
@@ -270,85 +270,85 @@ namespace
             case(Usage::VERTEX_READ_BUFFER_STORAGE) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR
                 };
             
             case(Usage::VERTEX_READ_BUFFER_UNIFORM) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT_KHR
                 };
 
             case(Usage::FRAGMENT_READ_BUFFER_STORAGE) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR
                 };
             
             case(Usage::FRAGMENT_READ_BUFFER_UNIFORM) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT_KHR
                 };
 
             case(Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR
                 };
             
             case(Usage::VERTEX_FRAGMENT_READ_BUFFER_UNIFORM) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT_KHR
                 };
             
             case(Usage::COMPUTE_READ_BUFFER_STORAGE) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR
                 };
 
             case(Usage::COMPUTE_READ_BUFFER_UNIFORM) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_UNIFORM_READ_BIT_KHR
                 };
             
             case(Usage::COMPUTE_READ_WRITE_BUFFER_STORAGE) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT
+                    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR | VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR
                 };
 
             case(Usage::COPY_SOURCE) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                    .AccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR,
                 };
 
             case(Usage::COPY_DESTINATION) :
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                    .AccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                    .StageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR,
+                    .AccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR,
                 };
 
             default:
                 return
                 {
-                    .StageMask = VK_PIPELINE_STAGE_2_NONE,
-                    .AccessMask = VK_ACCESS_2_NONE,
+                    .StageMask = VK_PIPELINE_STAGE_2_NONE_KHR,
+                    .AccessMask = VK_ACCESS_2_NONE_KHR,
                 };
             
         }
@@ -1277,8 +1277,8 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
 bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
 {
-    std::vector<VkImageMemoryBarrier2> textureMemoryBarriers;
-    std::vector<VkBufferMemoryBarrier2> bufferMemoryBarriers;
+    std::vector<VkImageMemoryBarrier2KHR> textureMemoryBarriers;
+    std::vector<VkBufferMemoryBarrier2KHR> bufferMemoryBarriers;
 
     uint32_t passCount = passes.size();
     for(uint32_t passIndex = 0; passIndex < passCount; passIndex++)
@@ -1302,9 +1302,9 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
             VkFormat format = GetVkImageFormat(texture.TextureInfo.Format);
             VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
 
-            VkImageMemoryBarrier2 barrier
+            VkImageMemoryBarrier2KHR barrier
             {
-                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR,
                 .srcStageMask = barrierInfo.SrcInfo.StageMask,
                 .srcAccessMask = barrierInfo.SrcInfo.AccessMask,
                 .dstStageMask = barrierInfo.DstInfo.StageMask,
@@ -1336,9 +1336,9 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
 
             VkBuffer buffer = TransientResourcePool::GetBufferObject(bufferIndex, frameIndex).Buffer;
 
-            VkBufferMemoryBarrier2 barrier
+            VkBufferMemoryBarrier2KHR barrier
             {
-                .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR,
                 .srcStageMask = barrierInfo.SrcInfo.StageMask,
                 .srcAccessMask = barrierInfo.SrcInfo.AccessMask,
                 .dstStageMask = barrierInfo.DstInfo.StageMask,
@@ -1367,9 +1367,9 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
             VkFormat format = GetVkImageFormat(textureInfo.Format);
             VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
 
-            VkImageMemoryBarrier2 barrier
+            VkImageMemoryBarrier2KHR barrier
             {
-                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR,
                 .srcStageMask = barrierInfo.SrcInfo.StageMask,
                 .srcAccessMask = barrierInfo.SrcInfo.AccessMask,
                 .dstStageMask = barrierInfo.DstInfo.StageMask,
@@ -1401,9 +1401,9 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
 
             VkBuffer buffer = MemoryRegistry::GetBuffer(bufferId).Buffer;
 
-            VkBufferMemoryBarrier2 barrier
+            VkBufferMemoryBarrier2KHR barrier
             {
-                .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR,
                 .srcStageMask = barrierInfo.SrcInfo.StageMask,
                 .srcAccessMask = barrierInfo.SrcInfo.AccessMask,
                 .dstStageMask = barrierInfo.DstInfo.StageMask,
@@ -1418,9 +1418,9 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
             bufferMemoryBarriers.push_back(barrier);
         }
 
-        VkDependencyInfo dependency
+        VkDependencyInfoKHR dependency
         {
-            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR,
             .bufferMemoryBarrierCount = static_cast<uint32_t>(bufferMemoryBarriers.size()),
             .pBufferMemoryBarriers = bufferMemoryBarriers.data(),
             .imageMemoryBarrierCount = static_cast<uint32_t>(textureMemoryBarriers.size()),
@@ -1429,7 +1429,7 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
 
         if(bufferMemoryBarriers.size() > 0 || textureMemoryBarriers.size() > 0)
         {
-            vkCmdPipelineBarrier2(cmdBuffer, &dependency);
+            vkCmdPipelineBarrier2KHR(cmdBuffer, &dependency);
         }
 
         textureMemoryBarriers.clear();
@@ -2298,9 +2298,9 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
     // No target to write onto
     if(useColorTarget == false && useDepthTarget == false && useStencilTarget == false) { return; }
 
-    std::vector<VkRenderingAttachmentInfo> colorsAttachmentInfo;
-    VkRenderingAttachmentInfo depthAttachmentInfo{};
-    VkRenderingAttachmentInfo stencilAttachmentInfo{};
+    std::vector<VkRenderingAttachmentInfoKHR> colorsAttachmentInfo;
+    VkRenderingAttachmentInfoKHR depthAttachmentInfo{};
+    VkRenderingAttachmentInfoKHR stencilAttachmentInfo{};
 
     uint32_t width = UINT32_MAX;
     uint32_t height = UINT32_MAX;
@@ -2329,9 +2329,9 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
         VkAttachmentLoadOp loadOp = GetVkLoadOp(loadStoreOp.loadOp);
         VkAttachmentStoreOp storeOp = GetVkStoreOp(loadStoreOp.storeOp);
 
-        VkRenderingAttachmentInfo attachment
+        VkRenderingAttachmentInfoKHR attachment
         {
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
             .imageView = imageView,
             .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .loadOp = loadOp,
@@ -2369,9 +2369,9 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
         VkAttachmentLoadOp loadOp = GetVkLoadOp(loadStoreOp.loadOp);
         VkAttachmentStoreOp storeOp = GetVkStoreOp(loadStoreOp.storeOp);
 
-        VkRenderingAttachmentInfo attachment
+        VkRenderingAttachmentInfoKHR attachment
         {
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
             .imageView = imageView,
             .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
             .loadOp = loadOp,
@@ -2404,9 +2404,9 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
         VkAttachmentLoadOp loadOp = GetVkLoadOp(loadStoreOp.loadOp);
         VkAttachmentStoreOp storeOp = GetVkStoreOp(loadStoreOp.storeOp);
 
-        VkRenderingAttachmentInfo attachment
+        VkRenderingAttachmentInfoKHR attachment
         {
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
             .imageView = imageView,
             .imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
             .loadOp = loadOp,
@@ -2420,9 +2420,9 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
     // Invalid resolution
     if(width == UINT32_MAX || height == UINT32_MAX) { return; }
 
-    VkRenderingInfo renderInfo
+    VkRenderingInfoKHR renderInfo
     {
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
         .renderArea
         {
             .offset {.x = 0, .y = 0},
@@ -2435,7 +2435,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
         .pStencilAttachment = useStencilTarget ? &stencilAttachmentInfo : nullptr
     };
 
-    vkCmdBeginRendering(cmdBuffer, &renderInfo);
+    vkCmdBeginRenderingKHR(cmdBuffer, &renderInfo);
     {
 
         VkViewport viewport
@@ -2496,7 +2496,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             vkCmdDraw(cmdBuffer, drawCall.VertexShaderInvocations, drawCall.InstanceCount, 0, 0);
         }
     }
-    vkCmdEndRendering(cmdBuffer);
+    vkCmdEndRenderingKHR(cmdBuffer);
 }
 
 void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
@@ -2504,15 +2504,15 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
     VkImage swapchainImage = GraphicsCore::Swapchain.swapchainImages[swapchainImageIndex];
     VkImageView swapchainImageView = GraphicsCore::Swapchain.swapchainImageViews[swapchainImageIndex];
 
-    std::vector<VkImageMemoryBarrier2> barriers
+    std::vector<VkImageMemoryBarrier2KHR> barriers
     {
-        VkImageMemoryBarrier2
+        VkImageMemoryBarrier2KHR
         {
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .srcAccessMask = VK_ACCESS_2_NONE,
-            .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR,
+            .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+            .srcAccessMask = VK_ACCESS_2_NONE_KHR,
+            .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+            .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR,
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .image = swapchainImage,
@@ -2554,13 +2554,13 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         VkFormat format = GetVkImageFormat(colorTexture.TextureInfo.Format);
         VkImageAspectFlags aspectMask = GetVkImageAspectMaskBasedOnFormat(format);
 
-        VkImageMemoryBarrier2 colorBarrier
+        VkImageMemoryBarrier2KHR colorBarrier
         {
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR,
             .srcStageMask = srcBarrierInfo.StageMask,
             .srcAccessMask = srcBarrierInfo.AccessMask,
-            .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-            .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR,
+            .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR,
             .oldLayout = srcBarrierInfo.Layout,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .image = colorTexture.Image,
@@ -2577,18 +2577,18 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         barriers.push_back(colorBarrier);
     }
 
-    VkDependencyInfo drawDep
+    VkDependencyInfoKHR drawDep
     {
-        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR,
         .imageMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
         .pImageMemoryBarriers = barriers.data()
     };
 
-    vkCmdPipelineBarrier2(cmdBuffer, &drawDep);
+    vkCmdPipelineBarrier2KHR(cmdBuffer, &drawDep);
 
-    VkRenderingAttachmentInfo colorAttachment
+    VkRenderingAttachmentInfoKHR colorAttachment
     {
-        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
         .imageView = swapchainImageView,
         .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -2600,9 +2600,9 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
             1.0}}}
     };
 
-    VkRenderingInfo renderInfo
+    VkRenderingInfoKHR renderInfo
     {
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
         .renderArea
         {
             .offset {.x = 0, .y = 0},
@@ -2613,7 +2613,7 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         .pColorAttachments = &colorAttachment
     };
 
-    vkCmdBeginRendering(cmdBuffer, &renderInfo);
+    vkCmdBeginRenderingKHR(cmdBuffer, &renderInfo);
     if(presentTexture.Id != UINT32_MAX)
     {
         VkViewport viewport
@@ -2654,15 +2654,15 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
 
         vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
     }
-    vkCmdEndRendering(cmdBuffer);
+    vkCmdEndRenderingKHR(cmdBuffer);
 
-    VkImageMemoryBarrier2 presentBarrier
+    VkImageMemoryBarrier2KHR presentBarrier
     {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-        .dstStageMask = VK_PIPELINE_STAGE_2_NONE,
-        .dstAccessMask = VK_ACCESS_2_NONE,
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR,
+        .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+        .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR,
+        .dstStageMask = VK_PIPELINE_STAGE_2_NONE_KHR,
+        .dstAccessMask = VK_ACCESS_2_NONE_KHR,
         .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
         .image = swapchainImage,
@@ -2676,14 +2676,14 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         }
     };
 
-    VkDependencyInfo presentDep
+    VkDependencyInfoKHR presentDep
     {
-        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR,
         .imageMemoryBarrierCount = 1,
         .pImageMemoryBarriers = &presentBarrier
     };
 
-    vkCmdPipelineBarrier2(cmdBuffer, &presentDep);
+    vkCmdPipelineBarrier2KHR(cmdBuffer, &presentDep);
 }
 
 RenderGraph::TextureBarrierInfo RenderGraph::GetFirstTextureBarrierInfo(const uint32_t newAllocIndex, const uint64_t newAllocOffset, const uint64_t newAllocSize)

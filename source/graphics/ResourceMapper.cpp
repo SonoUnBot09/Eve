@@ -731,26 +731,26 @@ void ResourceMapper::MapResources(VkCommandBuffer cmdBuffer, uint32_t frameIndex
         copyRegions.data()
     );
 
-    VkBufferMemoryBarrier2 barrier
+    VkBufferMemoryBarrier2KHR barrier
     {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-        .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-        .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-        .dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+        .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR,
+        .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR,
+        .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR,
+        .dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR,
         .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
         .buffer = MemoryRegistry::GetBuffer(BDABuffers[frameIndex]).Buffer,
         .offset = 0,
         .size = VK_WHOLE_SIZE
     };
 
-    VkDependencyInfo dependencyInfo
+    VkDependencyInfoKHR dependencyInfo
     {
-        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR,
         .bufferMemoryBarrierCount = 1,
         .pBufferMemoryBarriers = &barrier
     };
 
-    vkCmdPipelineBarrier2(cmdBuffer, &dependencyInfo);
+    vkCmdPipelineBarrier2KHR(cmdBuffer, &dependencyInfo);
 }
 
 void  ResourceMapper::ScheduleImageMapping(TextureHandle handle, VkImageView imageView, TextureInfo& textureInfo)

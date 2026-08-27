@@ -125,9 +125,9 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
         .commandBuffer = frameData.CmdBuffer
     };
 
-    VkSubmitInfo2 submitInfo
+    VkSubmitInfo2KHR submitInfo
     {
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR,
 
         .waitSemaphoreInfoCount = static_cast<uint32_t>(waitSemaphores.size()),
         .pWaitSemaphoreInfos = waitSemaphores.data(),
@@ -139,7 +139,7 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
         .pSignalSemaphoreInfos = signalSemaphores.data()
     };
 
-    VK_CHECK(vkQueueSubmit2(Context.GraphicsQueue, 1, &submitInfo, nullptr));
+    VK_CHECK(vkQueueSubmit2KHR(Context.GraphicsQueue, 1, &submitInfo, nullptr));
 
     VkPresentInfoKHR presentInfo
     {
