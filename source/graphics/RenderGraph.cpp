@@ -1455,6 +1455,22 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
         RecordPersistentBufferUpload(cmdBuffer, pass, frameIndex);
         RecordPersistentTextureUpload(cmdBuffer, pass, frameIndex);
 
+        // --- Buffer copies mix ---
+        RecordTransientPersistentBufferCopy(cmdBuffer, pass, frameIndex);
+        RecordPersistentTransientBufferCopy(cmdBuffer, pass, frameIndex);
+
+        // --- Texture copies mix ---
+        RecordTransientPersistentTextureCopy(cmdBuffer, pass, frameIndex);
+        RecordPersistentTransientTextureCopy(cmdBuffer, pass, frameIndex);
+
+        // --- Buffer To Texture copies mix ---
+        RecordTransientPersistentBufferToTextureCopy(cmdBuffer, pass, frameIndex);
+        RecordPersistentTransientBufferToTextureCopy(cmdBuffer, pass, frameIndex);
+
+        // --- Texture To Buffer copies mix ---
+        RecordTransientPersistentTextureToBufferCopy(cmdBuffer, pass, frameIndex);
+        RecordPersistentTransientTextureToBufferCopy(cmdBuffer, pass, frameIndex);
+
         RecordDrawCalls(cmdBuffer, pass, frameIndex);
 
     }

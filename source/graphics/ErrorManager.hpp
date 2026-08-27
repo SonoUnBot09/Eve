@@ -120,7 +120,7 @@ namespace Eve::Graphics
         if(foundError)
         {
             std::string message = errorMessages[errorIndex];
-            std::string logMessage = message + " || Vulkan error: " + errorName + " (" + std::to_string(error) + ")";
+            std::string logMessage = message + " | Vulkan error: " + errorName + " (" + std::to_string(error) + ") | " + fileName + "  (" + std::to_string(row) + ")";
 
             LogError(logMessage);
 
@@ -128,7 +128,7 @@ namespace Eve::Graphics
         }
         else 
         {
-            std::string message = "Unknown error || Vulkan error: " + errorName + " (" + std::to_string(error) + ")";
+            std::string message = "Unknown error | Vulkan error: " + errorName + " (" + std::to_string(error) + ") | " + fileName + "  (" + std::to_string(row) + ")";
 
             LogError(message);
 

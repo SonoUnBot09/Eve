@@ -17,7 +17,7 @@ bool ContextBuilder::Build(Context& context)
         printError("Unable to create the vulkan instance");
         return false;
     }
-
+    
     if(!ChoosePhysicalDevice(context))
     {
         printError("Unable to choose a GPU");
