@@ -30,7 +30,7 @@ namespace Eve::Graphics
 
                 slang::TargetDesc targetDesc = {};
                 targetDesc.format = SLANG_SPIRV;
-                targetDesc.profile = globalSession->findProfile("spirv_1_6");
+                targetDesc.profile = globalSession->findProfile("spirv_1_5");
 
                 fs::path executablePath = GetExecutableDirectory();
 
@@ -57,7 +57,7 @@ namespace Eve::Graphics
                 sessionDesc.searchPathCount = static_cast<uint32_t>(searchPathPtrs.size());
 
                 if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) {
-                    throw std::runtime_error("Errore Session");
+                    throw std::runtime_error("Error Session");
                 }
             }
 
