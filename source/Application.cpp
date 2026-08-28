@@ -11,17 +11,17 @@ bool Application::Initialize(std::vector<std::string>& searchShaderPaths)
 {
     if(!GraphicsCore::Initialize(searchShaderPaths))
     {
+        std::cout << "Eve graphics initialization failed" << std::endl;
         return false;
     }
 
     EntityManager::Initialize(1000);
-    
+
     return true;
 }
 
 void Application::Start()
 {
-    //print("Going to execute start stages");
     SystemDispatcher::ExecuteAwakeStage();
     
     EntityManager::ExecuteAllCommandPools();
@@ -29,8 +29,6 @@ void Application::Start()
     SystemDispatcher::ExecuteStartStage();
 
     EntityManager::ExecuteAllCommandPools();
-
-    //print("Start stage executed");
 }
 
 void Application::Run()
@@ -102,7 +100,7 @@ void Application::Run()
         SystemDispatcher::ExecuteUpdateStage(deltaTime);
 
         EntityManager::ExecuteAllCommandPools();
-        
+
         GraphicsCore::Render(elapsedFrames);
         
         elapsedFrames++;

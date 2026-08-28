@@ -1023,12 +1023,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         vmaClearVirtualBlock(block);
         virtualMemorySlots.clear();
 
-        bool success = TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(bucketIndex, peakSize, peakAlignment);
-
-        if(!success)
-        {
-            return false;
-        }
+        TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(bucketIndex, peakSize, peakAlignment);
     }
 
     // Buffers Memory Aliasing
@@ -1091,13 +1086,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
         vmaClearVirtualBlock(block);
         virtualMemorySlots.clear();
 
-        bool success = TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(bucketIndex, peakSize, peakAlignment);
-
-        if(!success)
-        {
-            return false;
-        }
-
+        TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(bucketIndex, peakSize, peakAlignment);
     }
 
     texturesVirtualAllocs.clear();
@@ -1107,7 +1096,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
     // Create/Reuse textures and buffers
     // Insert the barriers info in the right passes so the barriers can be created later
-    for(uint32_t textureId = 0; textureId < lastValidTextureIndex + 1; textureId++)
+    for(uint32_t textureId = 0; textureId < static_cast<uint32_t>(lastValidTextureIndex + 1); textureId++)
     {
         TextureResource& resource = TransientResourcePool::GetTextureObject(textureId, frameIndex);
 
@@ -1149,7 +1138,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
             if(shouldBeMapped)
             {
                 ResourceMapper::ScheduleImageMapping(resource.Id, resource.ImageView, pool.TextureInfo);
-            }
+            };
         }
         else 
         {
@@ -1192,7 +1181,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
             passes[passIndex].transientTexturesBarriers.emplace_back(srcBarrierInfo, dstBarrierInfo);
         }
     }
-    for(uint32_t bufferId = 0; bufferId < lastValidBufferIndex + 1; bufferId++)
+    for(uint32_t bufferId = 0; bufferId < static_cast<uint32_t>(lastValidBufferIndex + 1); bufferId++)
     {
         BufferResource& resource = TransientResourcePool::GetBufferObject(bufferId, frameIndex);
 
@@ -1472,7 +1461,6 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
         RecordPersistentTransientTextureToBufferCopy(cmdBuffer, pass, frameIndex);
 
         RecordDrawCalls(cmdBuffer, pass, frameIndex);
-
     }
 
     RecordSwapchainDrawingPass(cmdBuffer, frameIndex, swapchainImageIndex);
@@ -2515,6 +2503,8 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
             .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR,
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .image = swapchainImage,
             .subresourceRange
             {
@@ -2563,6 +2553,8 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
             .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR,
             .oldLayout = srcBarrierInfo.Layout,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .image = colorTexture.Image,
             .subresourceRange
             {
@@ -2665,6 +2657,8 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         .dstAccessMask = VK_ACCESS_2_NONE_KHR,
         .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .image = swapchainImage,
         .subresourceRange
         {

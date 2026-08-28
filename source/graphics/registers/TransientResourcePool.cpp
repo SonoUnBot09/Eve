@@ -41,58 +41,126 @@ namespace
         bufferCI.pQueueFamilyIndices = nullptr;
     }
 
-    uint32_t FindBestMemoryTypeIndex(const VkMemoryRequirements2& memoryRequirements)
+    void FindBestMemoryTypeIndexDGPU(std::vector<uint32_t>& memoryTypeIndicies, const VkMemoryRequirements2& memoryRequirements)
     {
-        bool isDedicatedGPU = GraphicsCore::Context.PhysicalDeviceInfo.isDedicated;
+        memoryTypeIndicies.resize(1);
+
         int32_t score = INT32_MIN;
-        int32_t memoryTypeIndex = 0;
         for(uint32_t i = 0; i < GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypeCount; i++)
         {
-            bool isCompatibleBit = (memoryRequirements.memoryRequirements.memoryTypeBits & (1 << i)) != 0;
+            bool isCompatibleBit = (memoryRequirements.memoryRequirements.memoryTypeBits & (1u << i)) != 0;
 
             if(!isCompatibleBit) { continue; }
+
+            VkMemoryPropertyFlags flags = GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags;
 
             int32_t currentScore = 0;
 
             // Local Device?
-            if(GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+            if((flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) > 0)
             {
-                currentScore += 500;
+                currentScore += 100;
             }
 
             // Host Visible?
-            if(isDedicatedGPU && (GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
+            if((flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) > 0)
             {
-                currentScore -= 200;
+                currentScore -= 30;
             }
 
             // Host Coherent?
-            if(isDedicatedGPU && (GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+            if((flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) > 0)
             {
-                currentScore -= 150;
+                currentScore -= 30;
             }
 
             // Lazily Allocated?
-            if((GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT))
+            if((flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) > 0)
             {
                 currentScore -= 1000;
             }
 
-            // Some kink of memory which is not DEVICE_LOCAL, HOST_VISIBLE and HOST_COHERENT
-            if((GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags &
-                ~(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) > 0 )
-            {
-                currentScore -= 5000;
-            }
 
             if(currentScore > score)
             {
-                memoryTypeIndex = i;
                 score = currentScore;
+                memoryTypeIndicies[0] = i;
             }
         }
+    }
 
-        return memoryTypeIndex;
+    void FindBestMemoryTypeIndexIGPU(std::vector<uint32_t>& memoryTypeIndicies, const VkMemoryRequirements2& memoryRequirements)
+    {
+        memoryTypeIndicies.resize(2);
+
+        std::vector<int32_t> scores { INT32_MIN, INT32_MIN };
+        for(uint32_t i = 0; i < GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypeCount; i++)
+        {
+            bool isCompatibleBit = (memoryRequirements.memoryRequirements.memoryTypeBits & (1u << i)) != 0;
+
+            if(!isCompatibleBit) { continue; }
+
+            VkMemoryPropertyFlags flags = GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypes[i].propertyFlags;
+
+            int32_t currentScore = 0;
+
+            if((flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) > 0)
+            {
+                
+                currentScore += 150;
+            }
+
+            // Host Visible?
+            if((flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) > 0)
+            {
+                currentScore += 100;
+            }
+
+            // Host Coherent?
+            if((flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) > 0)
+            {
+                currentScore += 100;
+            }
+
+            if((flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) > 0)
+            {
+                currentScore += 100;
+            }
+
+            // Lazily Allocated?
+            if((flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) > 0)
+            {
+                currentScore -= 1000;
+            }
+
+            for (uint32_t j = 0; j < 2; j++)
+            {
+                if(currentScore > scores[j])
+                {
+                    scores[j] = currentScore;
+                    memoryTypeIndicies[j] = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    std::vector<uint32_t> FindBestMemoryTypeIndicies(const VkMemoryRequirements2& memoryRequirements)
+    {
+        bool isDedicatedGPU = GraphicsCore::Context.PhysicalDeviceInfo.isDedicated;
+
+        std::vector<uint32_t> memoryTypeIndicies;
+
+        if(isDedicatedGPU)
+        {
+            FindBestMemoryTypeIndexDGPU(memoryTypeIndicies, memoryRequirements);
+        }
+        else 
+        {
+            FindBestMemoryTypeIndexIGPU(memoryTypeIndicies, memoryRequirements);
+        }
+
+        return memoryTypeIndicies;
     };
 }
 
@@ -146,9 +214,9 @@ uint32_t TransientResourcePool::FindTexturePoolIndex(const TextureInfo& textureI
     VkMemoryRequirements2 memoryRequirements { .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
     vkGetDeviceImageMemoryRequirementsKHR(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
 
-    uint32_t memoryTypeIndex = FindBestMemoryTypeIndex(memoryRequirements);
+    std::vector<uint32_t> memoryTypeIndicies = FindBestMemoryTypeIndicies(memoryRequirements);
 
-    uint32_t bucketIndex = GetTexturesBucketIndex(memoryTypeIndex, passesCount);
+    uint32_t bucketIndex = GetTexturesBucketIndex(memoryTypeIndicies, passesCount);
 
     MemoryInfo memoryInfo
     {
@@ -208,9 +276,9 @@ uint32_t TransientResourcePool::FindBufferPoolIndex(const BufferInfo& bufferInfo
     VkMemoryRequirements2 memoryRequirements { .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
     vkGetDeviceBufferMemoryRequirementsKHR(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
 
-    uint32_t memoryTypeIndex = FindBestMemoryTypeIndex(memoryRequirements);
+    std::vector<uint32_t> memoryTypeIndicies = FindBestMemoryTypeIndicies(memoryRequirements);
 
-    uint32_t bucketIndex = GetTexturesBucketIndex(memoryTypeIndex, passesCount);
+    uint32_t bucketIndex = GetTexturesBucketIndex(memoryTypeIndicies, passesCount);
 
     MemoryInfo memoryInfo
     {
@@ -244,18 +312,37 @@ uint32_t TransientResourcePool::FindBufferPoolIndex(const BufferInfo& bufferInfo
     return poolIndex;
 }
 
-uint32_t TransientResourcePool::GetTexturesBucketIndex(const uint32_t memoryTypeIndex, const uint32_t passesCount)
+uint32_t TransientResourcePool::GetTexturesBucketIndex(const std::vector<uint32_t>& memoryTypeIndicies, const uint32_t passesCount)
 {
     uint32_t bucketsCount = texturesMemoryTypeIndicies.size();
     for (uint32_t i = 0; i < bucketsCount; i++)
     {
-        if(texturesMemoryTypeIndicies[i] == memoryTypeIndex)
+        std::vector<uint32_t>& _memoryTypeIndicies = GetTextureMemoryTypeIndicies(i);
+
+        uint32_t size = _memoryTypeIndicies.size();
+
+        if(size != memoryTypeIndicies.size())
+        {
+            continue;
+        }
+
+        bool isTheSame = true;
+        for(uint32_t i = 0; i < size; i++)
+        {
+            if(_memoryTypeIndicies[i] != memoryTypeIndicies[i])
+            {
+                isTheSame = false;
+                break;
+            }
+        }
+
+        if(isTheSame)
         {
             return i;
         }
     }
 
-    texturesMemoryTypeIndicies.push_back(memoryTypeIndex);
+    texturesMemoryTypeIndicies.push_back(memoryTypeIndicies);
     uint32_t bucketIndex = bucketsCount;
 
     RenderGraph::AddTextureBucketPasses(passesCount);
@@ -269,18 +356,37 @@ uint32_t TransientResourcePool::GetTexturesBucketIndex(const uint32_t memoryType
     return bucketIndex;
 }
 
-uint32_t TransientResourcePool::GetBuffersBucketIndex(const uint32_t memoryTypeIndex, const uint32_t passesCount)
+uint32_t TransientResourcePool::GetBuffersBucketIndex(const std::vector<uint32_t>& memoryTypeIndicies, const uint32_t passesCount)
 {
     uint32_t bucketsCount = buffersMemoryTypeIndicies.size();
     for (uint32_t i = 0; i < bucketsCount; i++)
     {
-        if(buffersMemoryTypeIndicies[i] == memoryTypeIndex)
+        std::vector<uint32_t>& _memoryTypeIndicies = GetBufferMemoryTypeIndicies(i);
+
+        uint32_t size = _memoryTypeIndicies.size();
+
+        if(size != memoryTypeIndicies.size())
+        {
+            continue;
+        }
+
+        bool isTheSame = true;
+        for(uint32_t i = 0; i < size; i++)
+        {
+            if(_memoryTypeIndicies[i] != memoryTypeIndicies[i])
+            {
+                isTheSame = false;
+                break;
+            }
+        }
+
+        if(isTheSame)
         {
             return i;
         }
     }
 
-    buffersMemoryTypeIndicies.push_back(memoryTypeIndex);
+    buffersMemoryTypeIndicies.push_back(memoryTypeIndicies);
     uint32_t bucketIndex = bucketsCount;
 
     RenderGraph::AddBufferBucketPasses(passesCount);
@@ -294,15 +400,15 @@ uint32_t TransientResourcePool::GetBuffersBucketIndex(const uint32_t memoryTypeI
     return bucketIndex;
 }
 
-bool TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment)
+void TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment)
 {
-    if(peakSize == 0) { return true; }
+    if(peakSize == 0) { return; }
 
     MemoryBucket& memoryBucket = GetTextureMemoryBucket(bucketIndex);
 
     if(memoryBucket.IsActive && memoryBucket.AllocationInfo.size >= peakSize)
     {
-        return true;
+        return;
     }
 
     MemoryBin::DestroyMemoryBucket(memoryBucket);
@@ -327,40 +433,77 @@ bool TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(const uint32_t buc
         memoryBucket.IsActive = false;
     }
 
-    VkMemoryRequirements memReqs
-    {
-        .size = peakSize + Eve::Settings::transientTexturesStepPoolSize,
-        .alignment = peakAlignment,
-        .memoryTypeBits = (1u << GetTextureMemoryTypeIndex(bucketIndex))
-    };
+    std::vector<uint32_t>& memoryTypeIndicies = GetTextureMemoryTypeIndicies(bucketIndex);
 
-    VmaAllocationCreateInfo allocInfo
+    if(memoryTypeIndicies.size() == 1)
     {
-        .usage = VMA_MEMORY_USAGE_UNKNOWN
-    };
+        uint32_t memoryTypeIndex = memoryTypeIndicies[0];
+        VkMemoryRequirements memReqs
+        {
+            .size = peakSize + Eve::Settings::transientTexturesStepPoolSize,
+            .alignment = peakAlignment,
+            .memoryTypeBits = (1u << memoryTypeIndex)
+        };
 
-    VkResult result = vmaAllocateMemory(GraphicsCore::Context.Allocator, &memReqs, &allocInfo, 
-        &memoryBucket.Allocation, &memoryBucket.AllocationInfo);
+        VmaAllocationCreateInfo allocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_UNKNOWN
+        };
 
-    if(result != VK_SUCCESS)
+        VK_CHECK(vmaAllocateMemory(GraphicsCore::Context.Allocator, &memReqs, &allocInfo, 
+            &memoryBucket.Allocation, &memoryBucket.AllocationInfo));
+    }
+    else 
     {
-        return false;
+        uint32_t firstMemoryTypeIndex = memoryTypeIndicies[0];
+        VkMemoryRequirements firstMemReqs
+        {
+            .size = peakSize + Eve::Settings::transientTexturesStepPoolSize,
+            .alignment = peakAlignment,
+            .memoryTypeBits = (1u << firstMemoryTypeIndex)
+        };
+
+        VmaAllocationCreateInfo allocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_UNKNOWN
+        };
+
+        VkResult result = vmaAllocateMemory(GraphicsCore::Context.Allocator, &firstMemReqs, &allocInfo, 
+            &memoryBucket.Allocation, &memoryBucket.AllocationInfo);
+
+        if(result == VK_SUCCESS)
+        {
+            memoryBucket.IsActive = true;
+            return;
+        }
+
+        // Allocation fallback
+
+        uint32_t secondMemoryTypeIndex = memoryTypeIndicies[1];
+        VkMemoryRequirements secondMemReqs
+        {
+            .size = peakSize + Eve::Settings::transientTexturesStepPoolSize,
+            .alignment = peakAlignment,
+            .memoryTypeBits = (1u << secondMemoryTypeIndex)
+        };
+
+        VK_CHECK(vmaAllocateMemory(GraphicsCore::Context.Allocator, &secondMemReqs, &allocInfo, 
+            &memoryBucket.Allocation, &memoryBucket.AllocationInfo));
+
     }
 
     memoryBucket.IsActive = true;
-
-    return true;
 }
 
-bool TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment)
+void TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment)
 {
-    if(peakSize == 0) { return true; }
+    if(peakSize == 0) { return; }
 
     MemoryBucket& memoryBucket = GetBufferMemoryBucket(bucketIndex);
 
     if(memoryBucket.IsActive && memoryBucket.AllocationInfo.size >= peakSize)
     {
-        return true;
+        return;
     }
 
     MemoryBin::DestroyMemoryBucket(memoryBucket);
@@ -385,29 +528,68 @@ bool TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(const uint32_t buck
         memoryBucket.IsActive = false;
     }
 
-    VkMemoryRequirements memReqs
-    {
-        .size = peakSize + Eve::Settings::transientBuffersStepPoolSize,
-        .alignment = peakAlignment,
-        .memoryTypeBits = (1u << GetBufferMemoryTypeIndex(bucketIndex))
-    };
+    std::vector<uint32_t>& memoryTypeIndicies = GetBufferMemoryTypeIndicies(bucketIndex);
 
-    VmaAllocationCreateInfo allocInfo
+    if(memoryTypeIndicies.size() == 1)
     {
-        .usage = VMA_MEMORY_USAGE_UNKNOWN
-    };
+        uint32_t memoryTypeIndex = memoryTypeIndicies[0];
+        VkMemoryRequirements memReqs
+        {
+            .size = peakSize + Eve::Settings::transientBuffersStepPoolSize,
+            .alignment = peakAlignment,
+            .memoryTypeBits = (1u << memoryTypeIndex)
+        };
 
-    VkResult result = vmaAllocateMemory(GraphicsCore::Context.Allocator, &memReqs, &allocInfo, 
-        &memoryBucket.Allocation, &memoryBucket.AllocationInfo);
+        VmaAllocationCreateInfo allocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_UNKNOWN
+        };
 
-    if(result != VK_SUCCESS)
+        VK_CHECK(vmaAllocateMemory(GraphicsCore::Context.Allocator, &memReqs, &allocInfo, 
+            &memoryBucket.Allocation, &memoryBucket.AllocationInfo));
+    }
+    else 
     {
-        return false;
+        uint32_t firstMemoryTypeIndex = memoryTypeIndicies[0];
+        VkMemoryRequirements firstMemReqs
+        {
+            .size = peakSize + Eve::Settings::transientBuffersStepPoolSize,
+            .alignment = peakAlignment,
+            .memoryTypeBits = (1u << firstMemoryTypeIndex)
+        };
+
+        VmaAllocationCreateInfo allocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_UNKNOWN
+        };
+
+        VkResult result = vmaAllocateMemory(GraphicsCore::Context.Allocator, &firstMemReqs, &allocInfo, 
+            &memoryBucket.Allocation, &memoryBucket.AllocationInfo);
+
+        if(result == VK_SUCCESS)
+        {
+            memoryBucket.IsActive = true;
+            return;
+        }
+
+        // Allocation fallback
+
+        uint32_t secondMemoryTypeIndex = memoryTypeIndicies[1];
+        VkMemoryRequirements secondMemReqs
+        {
+            .size = peakSize + Eve::Settings::transientTexturesStepPoolSize,
+            .alignment = peakAlignment,
+            .memoryTypeBits = (1u << secondMemoryTypeIndex)
+        };
+
+        VK_CHECK(vmaAllocateMemory(GraphicsCore::Context.Allocator, &secondMemReqs, &allocInfo, 
+            &memoryBucket.Allocation, &memoryBucket.AllocationInfo));
+
     }
 
     memoryBucket.IsActive = true;
 
-    return true;
+    return;
 }
 
 void TransientResourcePool::UpdateTexturesPool(const uint32_t frameIndex)

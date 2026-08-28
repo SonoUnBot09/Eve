@@ -92,16 +92,16 @@ namespace Eve::Graphics
             static void UpdateTexturesPool(const uint32_t frameIndex);
             static void UpdateBuffersPool(const uint32_t frameIndex);
 
-            static bool ResizeTextureMemoryBucketIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment);
-            static bool ResizeBufferMemoryBucketIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment);
+            static void ResizeTextureMemoryBucketIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment);
+            static void ResizeBufferMemoryBucketIfNeeded(const uint32_t bucketIndex, const uint64_t peakSize, const uint64_t peakAlignment);
 
         private:
 
-            static uint32_t GetTexturesBucketIndex(const uint32_t memoryTypeIndex, const uint32_t passesCount);
-            static uint32_t GetBuffersBucketIndex(const uint32_t memoryTypeIndex, const uint32_t passesCount);
+            static uint32_t GetTexturesBucketIndex(const std::vector<uint32_t>& memoryTypeIndicies, const uint32_t passesCount);
+            static uint32_t GetBuffersBucketIndex(const std::vector<uint32_t>& memoryTypeIndicies, const uint32_t passesCount);
 
-            inline static uint32_t GetTextureMemoryTypeIndex(const uint32_t bucketIndex) { return texturesMemoryTypeIndicies[bucketIndex]; }
-            inline static uint32_t GetBufferMemoryTypeIndex(const uint32_t bucketIndex) { return buffersMemoryTypeIndicies[bucketIndex]; }
+            inline static std::vector<uint32_t>& GetTextureMemoryTypeIndicies(const uint32_t bucketIndex) { return texturesMemoryTypeIndicies[bucketIndex]; }
+            inline static std::vector<uint32_t>& GetBufferMemoryTypeIndicies(const uint32_t bucketIndex) { return buffersMemoryTypeIndicies[bucketIndex]; }
 
             inline static std::array<std::vector<TextureResource>, Eve::Settings::MAX_FRAMES_IN_FLIGHT> transientTextures;
             inline static std::array<std::vector<BufferResource>, Eve::Settings::MAX_FRAMES_IN_FLIGHT> transientBuffers;
@@ -114,8 +114,8 @@ namespace Eve::Graphics
 
             // The index of the vector represent the bucket index and
             // its value represent the memory type index
-            inline static std::vector<uint32_t> texturesMemoryTypeIndicies;
-            inline static std::vector<uint32_t> buffersMemoryTypeIndicies;
+            inline static std::vector<std::vector<uint32_t>> texturesMemoryTypeIndicies;
+            inline static std::vector<std::vector<uint32_t>> buffersMemoryTypeIndicies;
 
             inline static std::vector<MemoryBucket> texturesMemoryBucket;
             inline static std::vector<MemoryBucket> buffersMemoryBucket;

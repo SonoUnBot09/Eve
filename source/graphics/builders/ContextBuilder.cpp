@@ -214,37 +214,42 @@ void ContextBuilder::CreateDevice(Context& context)
 {
     #pragma region Features
 
-    VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4Features{
+    VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4
+    {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR,
-        .pNext = nullptr,
-        .maintenance4 = VK_TRUE
+        .pNext = nullptr
     };
 
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR availableDynamicRendering {
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR availableDynamicRendering
+    {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR, 
-        .pNext = &maintenance4Features
+        .pNext = &maintenance4
     };
-    VkPhysicalDeviceSynchronization2FeaturesKHR availableSync2 {
+    VkPhysicalDeviceSynchronization2FeaturesKHR availableSync2
+    {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR, 
         .pNext = &availableDynamicRendering
     };
 
-    VkPhysicalDeviceVulkan12Features availableFeatures12 {
+    VkPhysicalDeviceVulkan12Features availableFeatures12
+    {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, 
         .pNext = &availableSync2
     };
-    VkPhysicalDeviceVulkan11Features availableFeatures11 {
+    VkPhysicalDeviceVulkan11Features availableFeatures11
+    {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, 
         .pNext = &availableFeatures12
     };
-    VkPhysicalDeviceFeatures2 availableFeatures {
+    VkPhysicalDeviceFeatures2 availableFeatures
+    {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, 
         .pNext = &availableFeatures11
     };
 
     vkGetPhysicalDeviceFeatures2(context.PhysicalDevice, &availableFeatures);
 
-    if(!maintenance4Features.maintenance4 || !availableDynamicRendering.dynamicRendering || !availableSync2.synchronization2 || 
+    if(!maintenance4.maintenance4 || !availableDynamicRendering.dynamicRendering || !availableSync2.synchronization2 || 
        !availableFeatures12.timelineSemaphore || !availableFeatures.features.fillModeNonSolid || !availableFeatures12.bufferDeviceAddress || 
        !availableFeatures12.descriptorBindingPartiallyBound || !availableFeatures12.descriptorBindingVariableDescriptorCount || 
        !availableFeatures12.runtimeDescriptorArray || !availableFeatures12.shaderSampledImageArrayNonUniformIndexing ||
@@ -255,9 +260,14 @@ void ContextBuilder::CreateDevice(Context& context)
         printError("Available device features do not respect application features requirement");
     }
 
+    VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4Features {};
+    maintenance4Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR;
+    maintenance4Features.pNext = nullptr;
+    maintenance4Features.maintenance4 = VK_TRUE;
+
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures{};
     dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
-    dynamicRenderingFeatures.pNext = nullptr;
+    dynamicRenderingFeatures.pNext = &maintenance4Features;
     dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
 
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2Features{};
@@ -325,6 +335,8 @@ void ContextBuilder::CreateDevice(Context& context)
     };
 
     VK_CHECK(vkCreateDevice(context.PhysicalDevice, &deviceCI, nullptr, &context.Device));
+
+    volkLoadDevice(context.Device);
 
     vkGetDeviceQueue(context.Device, context.GraphicsQueueIndex, 0, &context.GraphicsQueue);
 }

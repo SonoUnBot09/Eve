@@ -54,10 +54,12 @@ bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo shaderInfo, GraphicsShade
 
     if(vertexShader == nullptr)
     {
+        std::cerr << "Failed to create the vertex shader" << std::endl;
         return false;
     }
     if(fragmentShader == nullptr)
     {
+        std::cerr << "Failed to create the fragment shader" << std::endl;
         return false;
     }
     
@@ -154,9 +156,9 @@ bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo shaderInfo, GraphicsShade
     };
 
     VkFormat colorFormat = GetVkImageFormat(shaderInfo.ColorFormat);
-    VkPipelineRenderingCreateInfo renderInfo
+    VkPipelineRenderingCreateInfoKHR renderInfo
     {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
         .colorAttachmentCount = 1,
         .pColorAttachmentFormats = &colorFormat,
         .depthAttachmentFormat = GetVkImageFormat(shaderInfo.DepthFormat)
