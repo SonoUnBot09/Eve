@@ -27,7 +27,7 @@ namespace Eve::Graphics
             static bool GetSurface(Context& context);
             static bool GetGraphicsQueue(Context& context);
             static void CreateDevice(Context& context);
-            static bool InitializeVMA(Context& context);
+            static void InitializeVMA(Context& context);
 
             // Vulkan dedicated func to print out errors
             static inline VKAPI_ATTR VkBool32 VKAPI_CALL PrintVulkanMessages( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

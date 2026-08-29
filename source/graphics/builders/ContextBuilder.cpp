@@ -38,11 +38,7 @@ bool ContextBuilder::Build(Context& context)
 
     CreateDevice(context);
 
-    if(!InitializeVMA(context))
-    {
-        printError("Unable to initialize VMA");
-        return false;
-    }
+    InitializeVMA(context);
 
     return true;
 }
@@ -341,7 +337,7 @@ void ContextBuilder::CreateDevice(Context& context)
     vkGetDeviceQueue(context.Device, context.GraphicsQueueIndex, 0, &context.GraphicsQueue);
 }
 
-bool ContextBuilder::InitializeVMA(Context& context)
+void ContextBuilder::InitializeVMA(Context& context)
 {
     VmaVulkanFunctions vmaFunctionsInfo {};
     VmaAllocatorCreateInfo allocatorCI
@@ -354,17 +350,7 @@ bool ContextBuilder::InitializeVMA(Context& context)
         .vulkanApiVersion = Eve::Settings::vulkanVersion
     };
 
-    if(vmaImportVulkanFunctionsFromVolk(&allocatorCI, &vmaFunctionsInfo) != VK_SUCCESS)
-    {
-        printError("Unable to load Vulkan functions in VMA with Volk");
-        return false;
-    }
+    VK_CHECK(vmaImportVulkanFunctionsFromVolk(&allocatorCI, &vmaFunctionsInfo));
 
-    if(vmaCreateAllocator(&allocatorCI, &context.Allocator) != VK_SUCCESS)
-    {
-        printError("Unable to create the VMA allocator");
-        return false;
-    }
-
-    return true;
+    VK_CHECK(vmaCreateAllocator(&allocatorCI, &context.Allocator));
 }

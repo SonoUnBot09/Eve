@@ -957,7 +957,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
     };
 
     VmaVirtualBlock block;
-    vmaCreateVirtualBlock(&virtualBlockCI, &block);
+    VK_CHECK(vmaCreateVirtualBlock(&virtualBlockCI, &block));
 
     texturesVirtualAllocs.resize(lastValidTextureIndex + 1);
     buffersVirtualAllocs.resize(lastValidBufferIndex + 1);
@@ -992,7 +992,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
                 VmaVirtualAllocation allocation;
                 VkDeviceSize offset;
-                vmaVirtualAllocate(block, &allocCI, &allocation, &offset);
+                VK_CHECK(vmaVirtualAllocate(block, &allocCI, &allocation, &offset));
 
                 peakSize = std::max(peakSize, static_cast<uint64_t>(offset) + pool.MemoryInfo.Size);
                 peakAlignment = std::max(peakAlignment, pool.MemoryInfo.Alignment);
@@ -1056,7 +1056,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
                 VmaVirtualAllocation allocation;
                 VkDeviceSize offset;
-                vmaVirtualAllocate(block, &allocCI, &allocation, &offset);
+                VK_CHECK(vmaVirtualAllocate(block, &allocCI, &allocation, &offset));
 
                 peakSize = std::max(peakSize, static_cast<uint64_t>(offset) + pool.MemoryInfo.Size);
                 peakAlignment = std::max(peakAlignment, pool.MemoryInfo.Alignment);
@@ -1149,8 +1149,8 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
             resource.PooledResource = false;
 
             MemoryBucket& memoryPool = TransientResourcePool::GetTextureMemoryBucket(pool.MemoryInfo.BucketIndex);
-            vmaBindImageMemory2(GraphicsCore::Context.Allocator, memoryPool.Allocation, 
-                memoryOffset, image, nullptr);
+            VK_CHECK(vmaBindImageMemory2(GraphicsCore::Context.Allocator, memoryPool.Allocation, 
+                memoryOffset, image, nullptr));
 
             VkImageView imageView;
             CreateImageView(pool.TextureInfo, image, imageView);
@@ -1233,8 +1233,8 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
             resource.PooledResource = false;
 
             MemoryBucket& memoryPool = TransientResourcePool::GetBufferMemoryBucket(pool.MemoryInfo.BucketIndex);
-            vmaBindBufferMemory2(GraphicsCore::Context.Allocator, memoryPool.Allocation, 
-                memoryOffset, buffer, nullptr);
+            VK_CHECK(vmaBindBufferMemory2(GraphicsCore::Context.Allocator, memoryPool.Allocation, 
+                memoryOffset, buffer, nullptr));
 
             TransientBufferHandle handle = { resource.Id };
 

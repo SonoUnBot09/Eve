@@ -30,8 +30,8 @@ namespace Eve::Graphics::Helpers
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
-        vmaCreateBuffer(GraphicsCore::Context.Allocator, &bufferCI, &bufferAllocInfo,
-            &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo);
+        VK_CHECK(vmaCreateBuffer(GraphicsCore::Context.Allocator, &bufferCI, &bufferAllocInfo,
+            &buffer.Buffer, &buffer.Allocation, &buffer.AllocationInfo));
     }
 
     static inline void AllocateCPUBuffer(BufferInfo bufferInfo, BufferObject& buffer)
@@ -95,8 +95,8 @@ namespace Eve::Graphics::Helpers
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
-        vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
-            &texture.Image, &texture.Allocation, &texture.AllocationInfo);
+        VK_CHECK(vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
+            &texture.Image, &texture.Allocation, &texture.AllocationInfo));
         
         VkImageViewCreateInfo imageViewCI
         {
@@ -140,8 +140,8 @@ namespace Eve::Graphics::Helpers
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
-        vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
-            &texture.Image, &texture.Allocation, &texture.AllocationInfo);
+        VK_CHECK(vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
+            &texture.Image, &texture.Allocation, &texture.AllocationInfo));
         
         VkImageViewCreateInfo imageViewCI
         {
@@ -185,8 +185,8 @@ namespace Eve::Graphics::Helpers
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
-        vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
-            &texture.Image, &texture.Allocation, &texture.AllocationInfo);
+        VK_CHECK(vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
+            &texture.Image, &texture.Allocation, &texture.AllocationInfo));
         
         VkImageViewCreateInfo imageViewCI
         {
@@ -231,8 +231,8 @@ namespace Eve::Graphics::Helpers
             .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
         };
 
-        vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
-            &texture.Image, &texture.Allocation, &texture.AllocationInfo);
+        VK_CHECK(vmaCreateImage(GraphicsCore::Context.Allocator, &imageCI, &imageAllocInfo, 
+            &texture.Image, &texture.Allocation, &texture.AllocationInfo));
         
         VkImageViewCreateInfo imageViewCI
         {
