@@ -269,7 +269,7 @@ void ContextBuilder::CreateDevice(Context& context)
     dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
     dynamicRenderingFeatures.pNext = &maintenance4Features;
     dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
-
+    
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2Features{};
     sync2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
     sync2Features.pNext = &dynamicRenderingFeatures;
