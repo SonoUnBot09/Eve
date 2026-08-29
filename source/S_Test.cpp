@@ -2,23 +2,24 @@
 #include "eve/graphics/Pass.hpp"
 #include "eve/graphics/ShaderHandle.hpp"
 #include "eve/graphics/Texture.hpp"
-#include "eve/utils/Vec.hpp"
 #include <eve/components/Camera.hpp>
 #include <eve/entities/SystemRegistrar.hpp>
 #include <eve/Debug.hpp>
 #include <eve/entities/EntityManager.hpp>
 #include <eve/components/Transform.hpp>
 #include <eve/graphics/Graphics.hpp>
+#include <eve/math/Vector2.hpp>
 
 using namespace Eve::Entities;
 using namespace Eve::Graphics;
+using namespace Eve::Math;
 
 static ShaderHandle shaderHandle;
 static BufferHandle buffer;
 static uint64_t elapsedFrames = 0;
 static uint32_t elementsCount = 20 * 20;
 
-static Vec2 positions[] = {
+static Vector2 positions[] = {
     {-0.95f,-0.95f},{-0.85f,-0.95f},{-0.75f,-0.95f},{-0.65f,-0.95f},{-0.55f,-0.95f},
     {-0.45f,-0.95f},{-0.35f,-0.95f},{-0.25f,-0.95f},{-0.15f,-0.95f},{-0.05f,-0.95f},
     { 0.05f,-0.95f},{ 0.15f,-0.95f},{ 0.25f,-0.95f},{ 0.35f,-0.95f},{ 0.45f,-0.95f},
@@ -138,17 +139,17 @@ void Start(uint32_t systemId)
 
     shaderHandle = Graphics::CreateGraphicsShader(shaderInfo);
 
-    buffer = Graphics::CreateGPUBuffer(sizeof(Vec2) * elementsCount);
+    buffer = Graphics::CreateGPUBuffer(sizeof(Vector2) * elementsCount);
 
     TransferPass pass {};
-    pass.UploadBuffer(&positions[0], buffer, sizeof(Vec2) * elementsCount, 0);
+    pass.UploadBuffer(&positions[0], buffer, sizeof(Vector2) * elementsCount, 0);
 
     Graphics::AddPass(pass);
 }
 
 void Update(float deltaTime, uint32_t systemId)
 {
-    Vec2Int windowSize = Graphics::GetWindowSize();
+    Vector2Int windowSize = Graphics::GetWindowSize();
 
     TransientTextureInfo2D textureInfo
     {
@@ -175,7 +176,7 @@ void Update(float deltaTime, uint32_t systemId)
     float time = static_cast<float>(elapsedFrames);
     struct PushConstant
     {
-        Vec2 resolution;
+        Vector2 resolution;
         float time;
         uint32_t bufferId;
     } pushConstant;

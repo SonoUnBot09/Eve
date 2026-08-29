@@ -126,7 +126,7 @@ void Graphics::SetPresentTexture(TransientTextureHandle handle)
     RenderGraph::SetPresentTexture(handle);
 }
 
-Vec2Int Graphics::GetWindowSize()
+Vector2Int Graphics::GetWindowSize()
 {
     return GraphicsCore::GetWindowSize();
 }

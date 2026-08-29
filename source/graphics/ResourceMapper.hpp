@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <vector>
-#include <utility>
 #include <mutex>
 
 #include <graphics/builders/ContextBuilder.hpp>

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "eve/utils/Vec.hpp"
+#include <eve/math/Vector2Int.hpp>
+#include <eve/math/Vector3Int.hpp>
 #include <array>
 #include <vector>
 #include <utility>
@@ -9,6 +10,8 @@
 #include <eve/graphics/Mesh.hpp>
 #include <eve/graphics/ShaderHandle.hpp>
 #include <eve/graphics/details/Usage.hpp>
+
+using namespace Eve::Math;;
 
 namespace Eve::Graphics
 {
@@ -54,7 +57,7 @@ namespace Eve::Graphics
     {
         LoadOperation loadOp;
         StoreOperation storeOp;
-        Vec3 clearColor;
+        Vector3 clearColor;
         float clearDepth;
         uint8_t clearStencil;
     };
@@ -72,9 +75,9 @@ namespace Eve::Graphics
     {
         uint32_t SrcTexture;
         uint32_t DstTexture;
-        Vec3Int Extent;
-        Vec3Int SrcOffset;
-        Vec3Int DstOffset;
+        Vector3Int Extent;
+        Vector3Int SrcOffset;
+        Vector3Int DstOffset;
     };
 
     struct BufferToTextureCopy
@@ -84,16 +87,16 @@ namespace Eve::Graphics
         uint64_t SrcOffset;
         uint32_t BufferRowLength;
         uint32_t BufferHeightLength;
-        Vec3Int DstOffset;
-        Vec3Int Extent;
+        Vector3Int DstOffset;
+        Vector3Int Extent;
     };
 
     struct TextureToBufferCopy
     {
         uint32_t SrcTexture; 
         uint32_t DstBuffer; 
-        Vec3Int SrcOffset;
-        Vec3Int Extent;
+        Vector3Int SrcOffset;
+        Vector3Int Extent;
         uint64_t DstOffset;
         uint32_t BufferRowLength;
         uint32_t BufferHeightLength;
@@ -111,8 +114,8 @@ namespace Eve::Graphics
     {
         uint32_t SrcBufferId; 
         uint32_t DstTexture; 
-        Vec3Int DstOffset;
-        Vec3Int Extent;
+        Vector3Int DstOffset;
+        Vector3Int Extent;
         uint32_t BufferRowLength;
         uint32_t BufferHeightLength;
     };
@@ -178,18 +181,18 @@ namespace Eve::Graphics
 
             // Transient
             void CopyBuffer(TransientBufferHandle SrcBuffer, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset = 0, uint64_t DstOffset = 0);
-            void CopyTexture(TransientTextureHandle SrcTexture, TransientTextureHandle DstTexture, Vec3Int Extent, Vec3Int SrcOffset = {0,0,0}, Vec3Int DstOffset = {0,0,0});
-            void CopyBufferToTexture(TransientBufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent,
+            void CopyTexture(TransientTextureHandle SrcTexture, TransientTextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset = {0,0,0}, Vector3Int DstOffset = {0,0,0});
+            void CopyBufferToTexture(TransientBufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
-            void CopyTextureToBuffer(TransientTextureHandle SrcTexture, TransientBufferHandle DstBuffer, Vec3Int SrcOffset, Vec3Int Extent, uint64_t DstOffset, 
+            void CopyTextureToBuffer(TransientTextureHandle SrcTexture, TransientBufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset, 
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
 
             // Persistent
             void CopyBuffer(BufferHandle SrcBuffer, BufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset = 0, uint64_t DstOffset = 0);
-            void CopyTexture(TextureHandle SrcTexture, TextureHandle DstTexture, Vec3Int Extent, Vec3Int SrcOffset = {0,0,0}, Vec3Int DstOffset = {0,0,0});
-            void CopyBufferToTexture(BufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent,
+            void CopyTexture(TextureHandle SrcTexture, TextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset = {0,0,0}, Vector3Int DstOffset = {0,0,0});
+            void CopyBufferToTexture(BufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
-            void CopyTextureToBuffer(TextureHandle SrcTexture, BufferHandle DstBuffer, Vec3Int SrcOffset, Vec3Int Extent, uint64_t DstOffset, 
+            void CopyTextureToBuffer(TextureHandle SrcTexture, BufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset, 
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLenght = 0);
 
             // Buffer Mix
@@ -197,29 +200,29 @@ namespace Eve::Graphics
             void CopyBuffer(BufferHandle SrcBuffer, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset = 0, uint64_t DstOffset = 0);
 
             // Texture Mix
-            void CopyTexture(TransientTextureHandle SrcTexture, TextureHandle DstTexture, Vec3Int Extent, Vec3Int SrcOffset = {0,0,0}, Vec3Int DstOffset = {0,0,0});
-            void CopyTexture(TextureHandle SrcTexture, TransientTextureHandle DstTexture, Vec3Int Extent, Vec3Int SrcOffset = {0,0,0}, Vec3Int DstOffset = {0,0,0});
+            void CopyTexture(TransientTextureHandle SrcTexture, TextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset = {0,0,0}, Vector3Int DstOffset = {0,0,0});
+            void CopyTexture(TextureHandle SrcTexture, TransientTextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset = {0,0,0}, Vector3Int DstOffset = {0,0,0});
 
             // Buffer To Texture Mix
-            void CopyBufferToTexture(TransientBufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent,
+            void CopyBufferToTexture(TransientBufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
-                void CopyBufferToTexture(BufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vec3Int DstOffset, Vec3Int Extent,
+                void CopyBufferToTexture(BufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
 
             // Texture To Buffer Mix
-            void CopyTextureToBuffer(TransientTextureHandle SrcTexture, BufferHandle DstBuffer, Vec3Int SrcOffset, Vec3Int Extent, uint64_t DstOffset, 
+            void CopyTextureToBuffer(TransientTextureHandle SrcTexture, BufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset, 
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
-            void CopyTextureToBuffer(TextureHandle SrcTexture, TransientBufferHandle DstBuffer, Vec3Int SrcOffset, Vec3Int Extent, uint64_t DstOffset, 
+            void CopyTextureToBuffer(TextureHandle SrcTexture, TransientBufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset, 
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
 
             // Transient
             void UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t DstOffset = 0);
-            void UploadTexture(void* SrcData, uint64_t Size, TransientTextureHandle DstTexture, Vec3Int DstOffset, Vec3Int Extent,
+            void UploadTexture(void* SrcData, uint64_t Size, TransientTextureHandle DstTexture, Vector3Int DstOffset, Vector3Int Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
 
             // Persistent
             void UploadBuffer(void* SrcData, BufferHandle DstBuffer, uint64_t Size, uint64_t DstOffset = 0);
-            void UploadTexture(void* SrcData, uint64_t Size, TextureHandle DstTexture, Vec3Int DstOffset, Vec3Int Extent,
+            void UploadTexture(void* SrcData, uint64_t Size, TextureHandle DstTexture, Vector3Int DstOffset, Vector3Int Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
             
         private:

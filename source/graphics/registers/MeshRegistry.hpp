@@ -14,12 +14,12 @@ namespace Eve::Graphics
             inline static CPUMesh& GetCPUMesh(MeshHandle handle) { return cpuMeshes[handle.Id]; }
             inline static GraphicsMesh& GetGraphicsMesh(MeshHandle handle) { return graphicsMeshes[handle.Id]; } 
 
-            static void SetVertices(MeshHandle meshHandle, std::vector<Vec3>& verticies);
+            static void SetVertices(MeshHandle meshHandle, std::vector<Vector3>& verticies);
             static void SetIndicies(MeshHandle meshHandle, std::vector<uint32_t>& indicies);
-            static void SetNormals(MeshHandle meshHandle, std::vector<Vec3>& normals);
-            static void SetColors(MeshHandle meshHandle, std::vector<Vec3>& colors);
-            static void SetUVs(MeshHandle meshHandle, std::vector<Vec2>& uvs);
-            static void SetTangents(MeshHandle meshHandle, std::vector<Vec4>& tangents);
+            static void SetNormals(MeshHandle meshHandle, std::vector<Vector3>& normals);
+            static void SetColors(MeshHandle meshHandle, std::vector<Vector3>& colors);
+            static void SetUVs(MeshHandle meshHandle, std::vector<Vector2>& uvs);
+            static void SetTangents(MeshHandle meshHandle, std::vector<Vector4>& tangents);
 
             static void ApplyMeshToGPU(MeshHandle meshHandle);
 

@@ -53,7 +53,7 @@ namespace Eve::Graphics
 
             static void SetPresentTexture(TransientTextureHandle handle);
 
-            static Vec2Int GetWindowSize();
+            static Vector2Int GetWindowSize();
 
 
 

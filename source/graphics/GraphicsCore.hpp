@@ -5,9 +5,9 @@
 #include <graphics/builders/ContextBuilder.hpp>
 #include <graphics/builders/SwapchainBuilder.hpp>
 #include <graphics/builders/FrameDataBuilder.hpp>
-#include <eve/utils/Vec.hpp>
+#include <eve/math/Vector2Int.hpp>
 
-using namespace Eve::Utils;
+using namespace Eve::Math;
 
 namespace Eve::Graphics
 {
@@ -18,7 +18,7 @@ namespace Eve::Graphics
             static bool Initialize(std::vector<std::string>& searchShaderPaths);
             static void Destroy();
 
-            static Vec2Int GetWindowSize() { return {Window.Width, Window.Height}; }
+            static Vector2Int GetWindowSize() { return {static_cast<int32_t>(Window.Width), static_cast<int32_t>(Window.Height)}; }
             static bool Render(uint64_t elapsedFrames);
             
             inline static Window Window;
