@@ -12,7 +12,7 @@
 
 namespace Eve
 {
-    class Application;
+    class Core;
 }
 
 namespace Eve::Entities
@@ -73,6 +73,6 @@ namespace Eve::Entities
 
             friend class Table;
             friend class EntityCommandPool;
-            friend class Eve::Application;
+            friend class Eve::Core;
     };
 }

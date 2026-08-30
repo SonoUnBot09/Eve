@@ -1,9 +1,9 @@
 #include "WindowBuilder.hpp"
 
 #include <SDL3/SDL.h>
-#include <eve/Debug.hpp>
+#include <eve/debug/Debug.hpp>
 
-using namespace Debug;
+using namespace Eve::Debug;
 using namespace Eve::Graphics;
 
 bool WindowBuilder::Build(Window& window)

@@ -1,4 +1,5 @@
-#include <Application.hpp>
+#include <Core.hpp>
+#include <iostream>
 
 int main(int argc, char* argv[])
 {
@@ -9,7 +10,7 @@ int main(int argc, char* argv[])
         "shaders"
     };
 
-    Eve::Application app;
+    Eve::Core app;
     if(app.Initialize(searchShaderPaths))
     {
         app.Start();

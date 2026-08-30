@@ -1,16 +1,12 @@
+
+#include <cstdint>
+#include <vector>
+#include <string>
 #include "EveSettings.hpp"
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_vulkan.h>
-
-#include <eve/Debug.hpp>
-#include <eve/Utils.hpp>
-
-using namespace Debug;
-using namespace Utils;
 
 namespace Eve
 {
-    class Application
+    class Core
     {
         public:
 

@@ -4,10 +4,10 @@
 #include "ContextBuilder.hpp"
 #include <graphics/GraphicsCore.hpp>
 #include <EveSettings.hpp>
-#include <eve/Debug.hpp>
+#include <eve/debug/Debug.hpp>
 #include <graphics/ErrorManager.hpp>
 
-using namespace Debug;
+using namespace Eve::Debug;
 using namespace Eve::Graphics;
 
 bool ContextBuilder::Build(Context& context)

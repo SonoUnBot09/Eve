@@ -4,15 +4,17 @@
 #include "eve/graphics/Texture.hpp"
 #include <eve/components/Camera.hpp>
 #include <eve/entities/SystemRegistrar.hpp>
-#include <eve/Debug.hpp>
+#include <eve/debug/Debug.hpp>
 #include <eve/entities/EntityManager.hpp>
 #include <eve/components/Transform.hpp>
 #include <eve/graphics/Graphics.hpp>
 #include <eve/math/Vector2.hpp>
+#include <eve/input/Input.hpp>
 
 using namespace Eve::Entities;
 using namespace Eve::Graphics;
 using namespace Eve::Math;
+using namespace Eve::Input;
 
 static ShaderHandle shaderHandle;
 static BufferHandle buffer;

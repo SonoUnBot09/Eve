@@ -5,10 +5,10 @@
 #include <graphics/ErrorManager.hpp>
 
 #include <eve/Utils.hpp>
-#include <eve/Debug.hpp>
+#include <eve/debug/Debug.hpp>
 
 using namespace Eve::Graphics;
-using namespace Debug;
+using namespace Eve::Debug;
 
 void PipelineBuilder::Initialize()
 {

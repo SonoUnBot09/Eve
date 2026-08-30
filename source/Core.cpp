@@ -1,13 +1,71 @@
+#include "SDL3/SDL_mouse.h"
+#include "input/InputManager.hpp"
 #include <graphics/GraphicsCore.hpp>
-#include <Application.hpp>
+#include <Core.hpp>
 #include <eve/entities/EntityManager.hpp>
 #include <entities/systems/SystemDispatcher.hpp>
+#include <input/InputManager.hpp>
+#include <eve/debug/Debug.hpp>
 
 using namespace Eve::Graphics;
 using namespace Eve::Entities;
+using namespace Eve::Input;
+using namespace Eve::Debug;
 using namespace Eve;
 
-bool Application::Initialize(std::vector<std::string>& searchShaderPaths)
+namespace 
+{
+    void UpdateKeys()
+    {
+        int numKeys = 0;
+        const bool* keys = SDL_GetKeyboardState(&numKeys);
+
+        for(uint32_t i = 0; i < numKeys; i++)
+        {
+            if(!keys[i]) { continue; }
+
+            InputManager::UpdateKeys(static_cast<SDL_Scancode>(i));
+        }
+    }
+
+    void UpdateMouse()
+    {
+        float x, y;
+        uint32_t mouseState = SDL_GetMouseState(&x, &y);
+
+        uint32_t leftButton = mouseState & SDL_BUTTON_LMASK;
+        uint32_t rightButton = mouseState & SDL_BUTTON_RMASK;
+        uint32_t wheelButton = mouseState & SDL_BUTTON_MMASK;
+
+        if (leftButton > 0) 
+        {
+           InputManager::UpdateMouse(leftButton);
+        }
+
+        if (rightButton > 0) 
+        {
+            InputManager::UpdateMouse(rightButton);
+        }
+
+        if (wheelButton > 0) 
+        {
+            InputManager::UpdateMouse(wheelButton);
+        }
+
+        float xRel, yRel;
+        SDL_GetRelativeMouseState(&xRel, &yRel);
+
+        MouseState state
+        {
+            .MousePos {x, y},
+            .MouseDir {xRel, yRel}
+        };
+
+        InputManager::SetMouseState(state);
+    }
+}
+
+bool Core::Initialize(std::vector<std::string>& searchShaderPaths)
 {
     if(!GraphicsCore::Initialize(searchShaderPaths))
     {
@@ -20,7 +78,7 @@ bool Application::Initialize(std::vector<std::string>& searchShaderPaths)
     return true;
 }
 
-void Application::Start()
+void Core::Start()
 {
     SystemDispatcher::ExecuteAwakeStage();
     
@@ -31,21 +89,23 @@ void Application::Start()
     EntityManager::ExecuteAllCommandPools();
 }
 
-void Application::Run()
+void Core::Run()
 {
     uint32_t fps = 0;
     float timer = 0;
-    Uint64 lastTick = SDL_GetTicksNS();
-    Uint64 currentTick = 0;
+    uint64_t lastTick = SDL_GetTicksNS();
+    uint64_t currentTick = 0;
     while(isAppRunning)
     {
         currentTick = SDL_GetTicksNS();
 
-        Uint64 elapsedNS = currentTick - lastTick;
+        uint64_t elapsedNS = currentTick - lastTick;
 
         const float deltaTime = (double)elapsedNS / SDL_NS_PER_SECOND;
 
         lastTick = currentTick;
+
+        InputManager::ResetKeys();
 
         SDL_Event event;
         while(SDL_PollEvent(&event))
@@ -60,6 +120,22 @@ void Application::Run()
                 GraphicsCore::Window.Width = event.window.data1;
                 GraphicsCore::Window.Height = event.window.data2;
                 continue;
+            }
+            else if(event.type == SDL_EVENT_KEY_DOWN && event.key.repeat == 0)
+            {
+                InputManager::UpdateKeysDown(event);
+            }
+            else if(event.type == SDL_EVENT_KEY_UP && event.key.repeat == 0)
+            {
+                InputManager::UpdateKeysUp(event);
+            }
+            else if(event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
+            {
+                InputManager::UpdateMouseDown(event);
+            }
+            else if(event.type == SDL_EVENT_MOUSE_BUTTON_UP)
+            {
+                InputManager::UpdateMouseUp(event);
             }
         
             /*
@@ -87,6 +163,9 @@ void Application::Run()
             }*/
         }
         
+        UpdateKeys();
+        UpdateMouse();
+        
         if(timer > 1)
         {
             print("FPS: " + std::to_string(fps));
@@ -107,8 +186,7 @@ void Application::Run()
     }
 }
 
-void Application::Shutdown()
+void Core::Shutdown()
 {
-    //EntityManager::Destroy();
     GraphicsCore::Destroy();
 }

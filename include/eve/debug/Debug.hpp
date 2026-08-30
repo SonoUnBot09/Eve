@@ -3,14 +3,14 @@
 #include <iostream>
 #include <string>
 
-namespace Debug
+namespace Eve::Debug
 {
-    inline void printError(std::string errorMessage)
+    inline static void printError(std::string errorMessage)
     {
         std::cerr << "ERROR: " << errorMessage << std::endl;
     }
 
-    inline void print(std::string message)
+    inline static void print(std::string message)
     {
         std::cout << message << std::endl;
     }

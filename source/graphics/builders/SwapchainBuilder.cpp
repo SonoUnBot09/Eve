@@ -7,9 +7,9 @@
 #include <graphics/ErrorManager.hpp>
 
 #include <EveSettings.hpp>
-#include <eve/Debug.hpp>
+#include <eve/debug/Debug.hpp>
 
-using namespace Debug;
+using namespace Eve::Debug;
 using namespace Eve::Graphics;
 
 bool SwapchainBuilder::Build(Swapchain& swapchain)

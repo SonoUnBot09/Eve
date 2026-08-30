@@ -8,7 +8,7 @@
 #include <eve/entities/ComponentsRegistry.hpp>
 #include <eve/entities/Entity.hpp>
 
-#include <eve/Debug.hpp>
+#include <eve/debug/Debug.hpp>
 
 namespace Eve::Entities
 {
