@@ -110,6 +110,8 @@ namespace Eve::Math
             return t;
         }
 
+        
+
         Matrix4x4 operator*(const Matrix4x4& rhs) const 
         {
             Matrix4x4 res;

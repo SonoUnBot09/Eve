@@ -7,7 +7,7 @@ int main(int argc, char* argv[])
     
     std::vector<std::string> searchShaderPaths
     {
-        "shaders"
+        "../../source/shaders"
     };
 
     Eve::Core app;
