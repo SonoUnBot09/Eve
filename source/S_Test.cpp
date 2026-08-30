@@ -42,7 +42,8 @@ void Start(uint32_t systemId)
         .DepthWrite = true,
         .StencilTest = false,
         .CompareOp = DepthTest::DEPTH_COMPARE_LESS,
-        .ColorFormat = Format::FORMAT_R8G8B8A8_SRGB
+        .ColorFormat = Format::FORMAT_R8G8B8A8_SRGB,
+        .DepthFormat = Format::FORMAT_D32_SFLOAT
     };
 
     shaderHandle = Graphics::CreateGraphicsShader(shaderInfo);
