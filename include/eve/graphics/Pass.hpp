@@ -1,7 +1,9 @@
 #pragma once
 
+#include "eve/math/Matrix4x4.hpp"
 #include <eve/math/Vector2Int.hpp>
 #include <eve/math/Vector3Int.hpp>
+#include <eve/math/Vector4Int.hpp>
 #include <array>
 #include <vector>
 #include <utility>
@@ -224,6 +226,17 @@ namespace Eve::Graphics
             void UploadBuffer(void* SrcData, BufferHandle DstBuffer, uint64_t Size, uint64_t DstOffset = 0);
             void UploadTexture(void* SrcData, uint64_t Size, TextureHandle DstTexture, Vector3Int DstOffset, Vector3Int Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
+
+            void SetUInt(std::string paramName, uint32_t value, ShaderHandle handle);
+            void SetInt(std::string paramName, int32_t value, ShaderHandle handle);
+            void SetFloat(std::string paramName, float value, ShaderHandle handle);
+            void SetVector2(std::string paramName, Vector2 value, ShaderHandle handle);
+            void SetVector2Int(std::string paramName, Vector2Int value, ShaderHandle handle);
+            void SetVector3(std::string paramName, Vector3 value, ShaderHandle handle);
+            void SetVector3Int(std::string paramName, Vector3Int value, ShaderHandle handle);
+            void SetVector4(std::string paramName, Vector4 value, ShaderHandle handle);
+            void SetVector4Int(std::string paramName, Vector4Int value, ShaderHandle handle);
+            void SetMatrix4x4(std::string paramName, Matrix4x4 value, ShaderHandle handle);
             
         private:
 

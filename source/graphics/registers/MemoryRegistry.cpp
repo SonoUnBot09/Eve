@@ -222,6 +222,29 @@ BufferHandle MemoryRegistry::CreateGPUBuffer(uint64_t size)
     return handle;
 }
 
+BufferHandle MemoryRegistry::CreateUBOBuffer(uint64_t size)
+{
+    BufferInfo info
+    {
+        .Size = size,
+        .Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
+    };
+
+    BufferObject buffer {};
+    Helpers::AllocateGPUBuffer(info, buffer);
+
+    BufferHandle handle = ResourceRegistry::RequestPersistentBufferSlot();
+
+    ResourceMapper::ScheduleBufferMapping(handle, buffer.Buffer);
+
+    buffers.resize(ResourceRegistry::bufferResourcesPeakIndex);
+    buffersInfo.resize(ResourceRegistry::bufferResourcesPeakIndex);
+
+    buffers[handle.Id] = buffer;
+    buffersInfo[handle.Id] = info;
+
+    return handle;
+}
 BufferHandle MemoryRegistry::CreateCPUBuffer(BufferInfo bufferInfo)
 {
     BufferObject buffer {};

@@ -6,6 +6,7 @@
 #include <graphics/builders/SlangCompiler.hpp>
 
 #include "ShaderObject.hpp"
+#include "SlangCompiler.hpp"
 #include <eve/graphics/ShaderHandle.hpp>
 
 namespace Eve::Graphics
@@ -17,7 +18,7 @@ namespace Eve::Graphics
             static void Initialize();
             static bool GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipelineLayout);
             inline static VkPipelineLayout GetGraphicsPipelineLayout() { return graphicsPipelineLayout; }
-            static bool BuildGraphicsPipeline(ShaderInfo shaderInfo,  GraphicsShaderObject& pipeline);
+            static bool BuildGraphicsPipeline(ShaderInfo shaderInfo,  GraphicsShaderObject& pipeline, MaterialProperties& properties);
 
         private:
 

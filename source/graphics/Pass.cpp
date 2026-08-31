@@ -3,6 +3,7 @@
 #include "Resources.hpp"
 #include <eve/graphics/details/Usage.hpp>
 #include "registers/MemoryRegistry.hpp"
+#include "registers/ShaderRegistry.hpp"
 
 using namespace Eve::Graphics;
 
@@ -360,6 +361,47 @@ void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TextureHandle Ds
 
     persistentTextureUploads.emplace_back(stagingBufferHandle.Id, DstTexture.Id, DstOffset, Extent, BufferRowLength, BufferHeightLength);
     persistentTextures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
+}
+
+void TransferPass::SetUInt(std::string paramName, uint32_t value, ShaderHandle handle)
+{
+    ShaderRegistry::UpdateMaterial(paramName, &value, 4, handle);
+}
+void TransferPass::SetInt(std::string paramName, int32_t value, ShaderHandle handle)
+{
+    ShaderRegistry::UpdateMaterial(paramName, &value, 4, handle);
+}
+void TransferPass::SetFloat(std::string paramName, float value, ShaderHandle handle)
+{
+    ShaderRegistry::UpdateMaterial(paramName, &value, 4, handle);
+}
+void TransferPass::SetVector2(std::string paramName, Vector2 value, ShaderHandle handle)
+{
+    ShaderRegistry::UpdateMaterial(paramName, &value, 8, handle);
+}
+void TransferPass::SetVector2Int(std::string paramName, Vector2Int value, ShaderHandle handle)
+{
+    ShaderRegistry::UpdateMaterial(paramName, &value, 8, handle);
+}
+void TransferPass::SetVector3(std::string paramName, Vector3 value, ShaderHandle handle)
+{
+    ShaderRegistry::UpdateMaterial(paramName, &value, 12, handle);
+}
+void TransferPass::SetVector3Int(std::string paramName, Vector3Int value, ShaderHandle handle)
+{
+    ShaderRegistry::UpdateMaterial(paramName, &value, 12, handle);
+}
+void TransferPass::SetVector4(std::string paramName, Vector4 value, ShaderHandle handle)
+{
+    ShaderRegistry::UpdateMaterial(paramName, &value, 16, handle);
+}
+void TransferPass::SetVector4Int(std::string paramName, Vector4Int value, ShaderHandle handle)
+{
+    ShaderRegistry::UpdateMaterial(paramName, &value, 16, handle);
+}
+void TransferPass::SetMatrix4x4(std::string paramName, Matrix4x4 value, ShaderHandle handle)
+{
+    ShaderRegistry::UpdateMaterial(paramName, &value, 64, handle);
 }
 
 #pragma endregion

@@ -26,6 +26,7 @@ namespace Eve::Graphics
 
             // --- Buffer Creation ---
             static BufferHandle CreateGPUBuffer(uint64_t size);
+            static BufferHandle CreateUBOBuffer(uint64_t size);
             static BufferHandle CreateCPUBuffer(BufferInfo bufferInfo);
 
 

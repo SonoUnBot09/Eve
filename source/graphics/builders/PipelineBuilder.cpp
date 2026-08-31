@@ -43,11 +43,14 @@ bool PipelineBuilder::GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipeli
     return false;
 }
 
-bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo shaderInfo, GraphicsShaderObject& shaderObject)
+bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo shaderInfo, GraphicsShaderObject& shaderObject, MaterialProperties& properties)
 {
-    ShaderBytecode shaders = SlangCompiler::CompileVertFrag(shaderInfo.ShaderModule.c_str());
-    VkShaderModule vertexShader = CreateVertexModule(shaders);
-    VkShaderModule fragmentShader = CreateFragmentModule(shaders);
+    Shader shader = SlangCompiler::CompileVertFrag(shaderInfo.ShaderModule.c_str());
+
+    properties = shader.properties;
+
+    VkShaderModule vertexShader = CreateVertexModule(shader.bytecode);
+    VkShaderModule fragmentShader = CreateFragmentModule(shader.bytecode);
 
     shaderObject.VertexModule = vertexShader;
     shaderObject.FragmentModule = fragmentShader;
