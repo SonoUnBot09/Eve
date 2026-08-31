@@ -9,6 +9,11 @@ struct V2F
     float3 color : COLOR;
 };
 
+struct Properties
+{
+    float a;
+}
+
 struct Data
 {
     float4x4 model;

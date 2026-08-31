@@ -24,7 +24,8 @@ namespace Eve::Graphics
 
             inline static void Initialize(std::vector<std::string>& searchPaths)
             {
-                if (SLANG_FAILED(slang::createGlobalSession(globalSession.writeRef()))) {
+                if (SLANG_FAILED(slang::createGlobalSession(globalSession.writeRef())))
+                {
                     throw std::runtime_error("Errore GlobalSession");
                 }
 
@@ -55,8 +56,10 @@ namespace Eve::Graphics
                 sessionDesc.targetCount = 1;
                 sessionDesc.searchPaths = searchPathPtrs.data();
                 sessionDesc.searchPathCount = static_cast<uint32_t>(searchPathPtrs.size());
+                sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_ROW_MAJOR; 
 
-                if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) {
+                if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) 
+                {
                     throw std::runtime_error("Error Session");
                 }
             }
@@ -64,78 +67,22 @@ namespace Eve::Graphics
             inline static ShaderBytecode CompileVertFrag(const char* shaderModule)
             {
                 Slang::ComPtr<slang::IBlob> diagnostics;
-                
                 slang::IModule* module = session->loadModule(shaderModule, diagnostics.writeRef());
+                CheckSlangDiagnostics(diagnostics.get(), "Module Load");
 
-                if (diagnostics) {
-                    std::cerr << "Slang Log (Module):\n" << (const char*)diagnostics->getBufferPointer() << "\n";
-                }
                 if (!module) {
                     throw std::runtime_error("Unable to get a valid Slang module");
                 }
 
                 ShaderBytecode result;
+                slang::ProgramLayout* programLayout = nullptr;
 
-                // --- Compile Vertex ---
+                result.vertex = CompileEntryPoint(session, module, "vertex", &programLayout);
+                result.fragment = CompileEntryPoint(session, module, "fragment");
+
+                if (programLayout) 
                 {
-                    Slang::ComPtr<slang::IEntryPoint> entryPoint;
-                    module->findEntryPointByName("vertex", entryPoint.writeRef());
-                    
-                    slang::IComponentType* components[] = { module, entryPoint };
-                    Slang::ComPtr<slang::IComponentType> program;
-                    
-                    Slang::ComPtr<slang::IBlob> linkDiagnostics;
-                    session->createCompositeComponentType(components, 2, program.writeRef(), linkDiagnostics.writeRef());
-                    if (linkDiagnostics) {
-                        std::cerr << "Slang Log (Vertex Link):\n" << (const char*)linkDiagnostics->getBufferPointer() << "\n";
-                    }
-
-                    Slang::ComPtr<slang::IBlob> spirvBlob;
-                    Slang::ComPtr<slang::IBlob> codeDiagnostics;
-                    
-                    program->getEntryPointCode(0, 0, spirvBlob.writeRef(), codeDiagnostics.writeRef());
-                    if (codeDiagnostics) {
-                        std::cerr << "Slang Log (Vertex CodeGen):\n" << (const char*)codeDiagnostics->getBufferPointer() << "\n";
-                    }
-
-                    if (!spirvBlob) {
-                        throw std::runtime_error("Failed to generate SPIR-V for vertex shader.");
-                    }
-
-                    const uint32_t* buffer = (const uint32_t*)spirvBlob->getBufferPointer();
-                    size_t wordCount = spirvBlob->getBufferSize() / sizeof(uint32_t);
-                    result.vertex.assign(buffer, buffer + wordCount);
-                }
-
-                // --- Compile Fragment ---
-                {
-                    Slang::ComPtr<slang::IEntryPoint> entryPoint;
-                    module->findEntryPointByName("fragment", entryPoint.writeRef());
-                    
-                    slang::IComponentType* components[] = { module, entryPoint };
-                    Slang::ComPtr<slang::IComponentType> program;
-                    
-                    Slang::ComPtr<slang::IBlob> linkDiagnostics;
-                    session->createCompositeComponentType(components, 2, program.writeRef(), linkDiagnostics.writeRef());
-                    if (linkDiagnostics) {
-                        std::cerr << "Slang Log (Fragment Link):\n" << (const char*)linkDiagnostics->getBufferPointer() << "\n";
-                    }
-
-                    Slang::ComPtr<slang::IBlob> spirvBlob;
-                    Slang::ComPtr<slang::IBlob> codeDiagnostics;
-                    
-                    program->getEntryPointCode(0, 0, spirvBlob.writeRef(), codeDiagnostics.writeRef());
-                    if (codeDiagnostics) {
-                        std::cerr << "Slang Log (Fragment CodeGen):\n" << (const char*)codeDiagnostics->getBufferPointer() << "\n";
-                    }
-
-                    if (!spirvBlob) {
-                        throw std::runtime_error("Failed to generate SPIR-V for fragment shader.");
-                    }
-
-                    const uint32_t* buffer = (const uint32_t*)spirvBlob->getBufferPointer();
-                    size_t wordCount = spirvBlob->getBufferSize() / sizeof(uint32_t);
-                    result.fragment.assign(buffer, buffer + wordCount);
+                    SearchProperties(programLayout);
                 }
 
                 return result;
@@ -144,39 +91,103 @@ namespace Eve::Graphics
             inline static ShaderBytecode CompileCompute(const char* shaderModule)
             {
                 Slang::ComPtr<slang::IBlob> diagnostics;
-                
                 slang::IModule* module = session->loadModule(shaderModule, diagnostics.writeRef());
+                CheckSlangDiagnostics(diagnostics.get(), "Compute Module Load");
 
-                if (diagnostics) {
-                    std::cerr << "Slang Log:\n" << (const char*)diagnostics->getBufferPointer() << "\n";
-                }
                 if (!module) {
                     throw std::runtime_error("Unable to get a valid Slang module");
                 }
 
                 ShaderBytecode result;
+                slang::ProgramLayout* programLayout = nullptr;
+                
+                result.compute = CompileEntryPoint(session, module, "compute", &programLayout);
 
-                // --- Compile Compute ---
+                if (programLayout) 
                 {
-                    Slang::ComPtr<slang::IEntryPoint> entryPoint;
-                    module->findEntryPointByName("compute", entryPoint.writeRef());
-                    
-                    slang::IComponentType* components[] = { module, entryPoint };
-                    Slang::ComPtr<slang::IComponentType> program;
-                    session->createCompositeComponentType(components, 2, program.writeRef(), nullptr);
-
-                    Slang::ComPtr<slang::IBlob> spirvBlob;
-                    program->getEntryPointCode(0, 0, spirvBlob.writeRef(), nullptr);
-
-                    const uint32_t* buffer = (const uint32_t*)spirvBlob->getBufferPointer();
-                    size_t wordCount = spirvBlob->getBufferSize() / sizeof(uint32_t);
-                    result.compute.assign(buffer, buffer + wordCount);
+                    SearchProperties(programLayout); 
                 }
 
                 return result;
             }
 
         private:
+
+            inline static void SearchProperties(slang::ProgramLayout* programLayout)
+            {
+                slang::TypeReflection* propertiesType = programLayout->findTypeByName("Properties");
+
+                if(propertiesType == nullptr) { return; }
+
+                slang::TypeReflection::Kind kind = propertiesType->getKind();
+
+                if(kind != slang::TypeReflection::Kind::Struct) { return; }
+
+                std::cout << "Struct Materiale Trovata" << std::endl;
+
+                slang::TypeLayoutReflection* propertiesStruct = programLayout->getTypeLayout(propertiesType);
+
+                uint32_t fieldCount = propertiesStruct->getFieldCount();
+
+                for(uint32_t i = 0; i < fieldCount; i++)
+                {
+                    slang::VariableLayoutReflection* fieldLayout = propertiesStruct->getFieldByIndex(i);
+                    slang::VariableReflection* field = fieldLayout->getVariable();
+
+                    size_t offset = fieldLayout->getOffset(slang::ParameterCategory::Uniform);
+
+
+                    std::cout << field->getName() << std::endl;
+                }
+            }
+
+            inline static std::vector<uint32_t> CompileEntryPoint(slang::ISession* session, slang::IModule* module, 
+                const char* entryPointName, slang::ProgramLayout** outLayout = nullptr) 
+            {
+                Slang::ComPtr<slang::IEntryPoint> entryPoint;
+                module->findEntryPointByName(entryPointName, entryPoint.writeRef());
+                if (!entryPoint) {
+                    throw std::runtime_error(std::string("Entry point not found: ") + entryPointName);
+                }
+
+                slang::IComponentType* components[] = { module, entryPoint.get() };
+                Slang::ComPtr<slang::IComponentType> program;
+                Slang::ComPtr<slang::IBlob> linkDiagnostics;
+
+                session->createCompositeComponentType(components, 2, program.writeRef(), linkDiagnostics.writeRef());
+                CheckSlangDiagnostics(linkDiagnostics.get(), std::string(entryPointName) + " Link");
+
+                // Estrae il layout solo se richiesto (es. per il vertex)
+                if (outLayout) {
+                    *outLayout = program->getLayout();
+                }
+
+                Slang::ComPtr<slang::IBlob> spirvBlob;
+                Slang::ComPtr<slang::IBlob> codeDiagnostics;
+                
+                // Slang assegna l'indice dell'entry point (0) nel programma composito appena creato
+                program->getEntryPointCode(0, 0, spirvBlob.writeRef(), codeDiagnostics.writeRef());
+                CheckSlangDiagnostics(codeDiagnostics.get(), std::string(entryPointName) + " CodeGen");
+
+                if (!spirvBlob || spirvBlob->getBufferSize() == 0) {
+                    throw std::runtime_error(std::string("Failed to generate SPIR-V for: ") + entryPointName);
+                }
+
+                // Estrazione pulita dei dati in un std::vector<uint32_t>
+                const auto* buffer = static_cast<const uint32_t*>(spirvBlob->getBufferPointer());
+                size_t wordCount = spirvBlob->getBufferSize() / sizeof(uint32_t);
+                
+                return std::vector<uint32_t>(buffer, buffer + wordCount);
+            }
+
+            inline static void CheckSlangDiagnostics(slang::IBlob* diagnostics, std::string_view context) 
+            {
+                if (diagnostics && diagnostics->getBufferSize() > 0) {
+                    std::cerr << "Slang Log (" << context << "):\n" 
+                            << static_cast<const char*>(diagnostics->getBufferPointer()) << "\n";
+                }
+            }
+
 
             inline static Slang::ComPtr<slang::IGlobalSession> globalSession;
             inline static Slang::ComPtr<slang::ISession> session;
