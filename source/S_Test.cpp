@@ -52,8 +52,6 @@ void Start(uint32_t systemId)
 
     buffer = Graphics::CreateGPUBuffer(256);
 
-    //glm::mat4 projView = projection * view;
-
     material.SetVector3("color", Vector3(0.5,0.7,0));
 }
 
@@ -127,15 +125,15 @@ void Update(float deltaTime, uint32_t systemId)
     material.SetMatrix4x4("mvp", mvp);
 
     float time = static_cast<float>(elapsedFrames);
-    struct PushConstant
-    {
-        uint32_t materialId;
-    } pushConstant;
 
-    pushConstant.materialId = material.GetPropertiesUBOId();
-   
-    Words32 size = Words32(std::ceil(sizeof(pushConstant) / 4.0f));
-    pass.Draw(36, material, &pushConstant, Words32(0), Words32(2));
+    uint32_t materialId = material.GetPropertiesUBOId();
+
+    PushConstant pushConstant{};
+    pushConstant.Data = &materialId;
+    pushConstant.SizeBytes = 4;
+    pushConstant.OffsetBytes = 0;
+    std::cout << "Material ID: " << materialId << std::endl;
+    pass.Draw(36, material, &pushConstant);
 
     Graphics::AddPass(pass);
 

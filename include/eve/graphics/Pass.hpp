@@ -34,26 +34,26 @@ namespace Eve::Graphics
         DISCARD
     };
 
-    struct Words32
+    struct PushConstant
     {
-        uint32_t count;
-
-        explicit Words32(uint32_t c) : count(c) {};
-
-        uint32_t ToBytes() const
-        {
-            return count * 4;
-        }
+        void* Data;
+        uint32_t OffsetBytes;
+        uint32_t SizeBytes;
     };
 
     struct DrawCall
     {
+        // Shader
         uint32_t VertexShaderInvocations;
         uint32_t InstanceCount;
+
+        // Material
         MaterialHandle MaterialHandle;
-        std::array<std::byte, 128> PushCostant;
-        Words32 Offset;
-        Words32 Size;
+
+        // Push Constant
+        std::array<std::byte, 128> PushConstantData;
+        uint32_t OffsetBytes;
+        uint32_t SizeBytes;
     };
 
     struct LoadStoreOp
@@ -151,8 +151,8 @@ namespace Eve::Graphics
             void UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
             void UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
 
-            void Draw(uint32_t vertexShaderInvocations, MaterialHandle material, const void* pushConstant, Words32 offset, Words32 size);
-            void DrawInstanced(uint32_t vertexShaderInvocations, MaterialHandle material, uint32_t instanceCount, const void* pushConstant, Words32 offset, Words32 size);
+            void Draw(uint32_t vertexShaderInvocations, MaterialHandle material, PushConstant* pushConstant);
+            void DrawInstanced(uint32_t vertexShaderInvocations, MaterialHandle material, uint32_t instanceCount, PushConstant* pushConstant);
 
         private:
 

@@ -148,11 +148,8 @@ namespace Eve::Graphics
                 
                 if (propertiesStruct == nullptr) 
                 { 
-                    std::cerr << "Attenzione: Struct trovata ma non usata (Nessun layout di memoria generato).\n";
                     return properties; 
                 }
-
-                std::cout << "Struct Materiale Trovata" << std::endl;
 
                 uint32_t fieldCount = propertiesStruct->getFieldCount();
 
@@ -168,6 +165,12 @@ namespace Eve::Graphics
                     uint32_t alignment = CalculateAlignment(typeLayout);
 
                     offset = std::ceil(offset / alignment) * alignment;
+
+                    if(offset + size > 16 * 1024)
+                    {
+                        std::cout << "WARNING: Material properties struct exceed the 16 KB limit, not all field will be mapped." << std::endl;
+                        return properties;
+                    }
 
                     const char* name = field->getName();
             

@@ -2450,8 +2450,8 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
         {
             DrawCall drawCall = drawCalls[i];
 
-            uint32_t pushConstantSize = drawCall.Size.ToBytes();
-            uint32_t pushConstantOffset = drawCall.Offset.ToBytes();
+            uint32_t pushConstantSize = drawCall.SizeBytes;
+            uint32_t pushConstantOffset = drawCall.OffsetBytes;
             ShaderHandle shaderHandle = drawCall.MaterialHandle.GetShader();
             GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(shaderHandle);
 
@@ -2459,7 +2459,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
 
             // --- Push Constant ---
             std::byte* currentData = currentPushConstantData.data() + pushConstantOffset;
-            const std::byte* newData = drawCall.PushCostant.data() + pushConstantOffset;
+            std::byte* newData = drawCall.PushConstantData.data() + pushConstantOffset;
 
             bool dataChanged = std::memcmp(currentData, newData, pushConstantSize) != 0;
 

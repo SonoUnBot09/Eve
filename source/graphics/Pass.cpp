@@ -9,12 +9,22 @@ using namespace Eve::Graphics;
 
 #pragma region Graphics Pass
 
-void GraphicsPass::Draw(uint32_t vertexShaderInvocations, MaterialHandle material, const void* pushConstant, Words32 offset, Words32 size)
+void GraphicsPass::Draw(uint32_t vertexShaderInvocations, MaterialHandle material, PushConstant* pushConstant)
 {
     static constexpr uint32_t maxPushCostantSize = 128;
 
-    uint32_t offsetBytes = offset.ToBytes();
-    uint32_t sizeBytes = size.ToBytes();
+    uint32_t offsetBytes;
+    uint32_t sizeBytes;
+    if(pushConstant == nullptr)
+    {
+        offsetBytes = 0;
+        sizeBytes = 0;
+    }
+    else 
+    {
+        offsetBytes = std::ceil((float)pushConstant->OffsetBytes / 4.0f) * 4;
+        sizeBytes = std::ceil((float)pushConstant->SizeBytes / 4.0f) * 4;
+    }
 
     if(offsetBytes > maxPushCostantSize)
     {
@@ -30,17 +40,27 @@ void GraphicsPass::Draw(uint32_t vertexShaderInvocations, MaterialHandle materia
 
     std::array<std::byte, maxPushCostantSize> pushConstantData;
 
-    memcpy(pushConstantData.data() + offsetBytes, (std::byte*)pushConstant, sizeBytes);
+    memcpy(pushConstantData.data() + offsetBytes, pushConstant->Data, sizeBytes);
     
-    drawCalls.emplace_back(vertexShaderInvocations, 1, material, pushConstantData, offset, size);
+    drawCalls.emplace_back(vertexShaderInvocations, 1, material, pushConstantData, offsetBytes, sizeBytes);
 }
 
-void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, MaterialHandle material, uint32_t instanceCount, const void* pushConstant, Words32 offset, Words32 size)
+void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, MaterialHandle material, uint32_t instanceCount, PushConstant* pushConstant)
 {
     static constexpr uint32_t maxPushCostantSize = 128;
 
-    uint32_t offsetBytes = offset.ToBytes();
-    uint32_t sizeBytes = size.ToBytes();
+    uint32_t offsetBytes;
+    uint32_t sizeBytes;
+    if(pushConstant == nullptr)
+    {
+        offsetBytes = 0;
+        sizeBytes = 0;
+    }
+    else 
+    {
+        offsetBytes = std::ceil(pushConstant->OffsetBytes / 4) * 4;
+        sizeBytes = std::ceil(pushConstant->SizeBytes / 4) * 4;
+    }
 
     if(offsetBytes > maxPushCostantSize)
     {
@@ -56,9 +76,9 @@ void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, MaterialHandl
 
     std::array<std::byte, maxPushCostantSize> pushConstantData;
 
-    memcpy(pushConstantData.data() + offsetBytes, (std::byte*)pushConstant, sizeBytes);
+    memcpy(pushConstantData.data() + offsetBytes, pushConstant->Data, sizeBytes);
     
-    drawCalls.emplace_back(vertexShaderInvocations, instanceCount, material, pushConstantData, offset, size);
+    drawCalls.emplace_back(vertexShaderInvocations, instanceCount, material, pushConstantData, offsetBytes, sizeBytes);
 }
 
 void GraphicsPass::UseTextureVertex(TransientTextureHandle texture)
