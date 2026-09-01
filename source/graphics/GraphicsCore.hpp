@@ -9,6 +9,12 @@
 
 using namespace Eve::Math;
 
+namespace Eve
+{
+    class Core;
+}
+
+
 namespace Eve::Graphics
 {
     class GraphicsCore
@@ -28,11 +34,15 @@ namespace Eve::Graphics
             inline static uint32_t GetFrameIndex() { return frameIndex; }
         
         private:
+            inline static void SetFrameIndex(uint32_t index) { frameIndex = index; }
+
             inline static bool isSwapchainRebuildNeeded = false;
 
             inline static std::vector<FrameData> framesData;
             inline static VkSemaphore timelineSemaphore;
 
             inline static uint32_t frameIndex = 0;
+
+            friend class Eve::Core;
     };
 }

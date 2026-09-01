@@ -1,6 +1,7 @@
+#include <graphics/GraphicsCore.hpp>
+#include "EveSettings.hpp"
 #include "SDL3/SDL_mouse.h"
 #include "input/InputManager.hpp"
-#include <graphics/GraphicsCore.hpp>
 #include <Core.hpp>
 #include <eve/entities/EntityManager.hpp>
 #include <entities/systems/SystemDispatcher.hpp>
@@ -97,6 +98,9 @@ void Core::Run()
     uint64_t currentTick = 0;
     while(isAppRunning)
     {
+        uint32_t frameIndex = elapsedFrames % Eve::Settings::MAX_FRAMES_IN_FLIGHT;
+        GraphicsCore::SetFrameIndex(frameIndex);
+
         currentTick = SDL_GetTicksNS();
 
         uint64_t elapsedNS = currentTick - lastTick;

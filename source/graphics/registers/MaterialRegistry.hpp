@@ -6,6 +6,7 @@
 #include <eve/graphics/Buffer.hpp>
 #include <array>
 #include <graphics/GraphicsCore.hpp>
+#include <iostream>
 
 namespace Eve::Graphics 
 {

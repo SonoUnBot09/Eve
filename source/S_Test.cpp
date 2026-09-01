@@ -132,7 +132,7 @@ void Update(float deltaTime, uint32_t systemId)
     pushConstant.Data = &materialId;
     pushConstant.SizeBytes = 4;
     pushConstant.OffsetBytes = 0;
-    std::cout << "Material ID: " << materialId << std::endl;
+    
     pass.Draw(36, material, &pushConstant);
 
     Graphics::AddPass(pass);
