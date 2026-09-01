@@ -36,7 +36,7 @@ void Start(uint32_t systemId)
         .ShaderModule = "triangle",
         .Topology = Topology::TOPOLOGY_TRIANGLE_LIST,
         .PolygonMode = PolygonMode::POLYGON_MODE_FILL,
-        .CullMode = CullMode::CULL_MODE_FRONT,
+        .CullMode = CullMode::CULL_MODE_NONE,
         .LineWidth = 1,
         .DepthTest = true,
         .DepthWrite = true,
@@ -50,40 +50,9 @@ void Start(uint32_t systemId)
 
     buffer = Graphics::CreateGPUBuffer(256);
 
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,5));
-    model = glm::rotate
-    (
-        model,
-        glm::radians(30.0f),
-        glm::vec3(0.5, 1, 0)
-    );
-    glm::mat4 view = glm::mat4(1.0f);
-    glm::mat4 projection = glm::perspective
-    (
-        glm::radians(60.0f),
-        1920 / (float)1080,
-        0.1f,
-        100.0f
-    );
+    //glm::mat4 projView = projection * view;
 
-    glm::mat4 projView = projection * view;
-
-    struct Data
-    {
-        glm::mat4 model;
-        glm::mat4 projecView;   
-        glm::vec4 color;
-    } data;
-
-    data.model = glm::transpose(model);
-    data.projecView = glm::transpose(projView);
-    data.color = glm::vec4(0.25, 1, 0.25, 1.0);
-
-    TransferPass pass{};
-
-    pass.UploadBuffer(&data, buffer, sizeof(data), 0);
-
-    Graphics::AddPass(pass);
+    shaderHandle.SetVector3("color", Vector3(0.5,0.7,0));
 }
 
 void Update(float deltaTime, uint32_t systemId)
@@ -128,46 +97,43 @@ void Update(float deltaTime, uint32_t systemId)
     pass.UseDepthTarget(depthTexture, loadStoreOpDepth);
 
     /*
-    Matrix4x4 model = Matrix4x4::Identity();
-    model.TRS({0,0,3}, Quaternion::Identity(), Vector3{1,1,1});
-
-    Matrix4x4 camera = Matrix4x4::Identity();
-    camera.TRS(Vector3(0,0,0), Quaternion::Identity(), Vector3(1,1,1));
-
-    Matrix4x4 proj = Matrix4x4::Identity();
-    proj.*/
-
     glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,5));
-
     model = glm::rotate
     (
         model,
         glm::radians(30.0f),
         glm::vec3(0.5, 1, 0)
     );
-
     glm::mat4 view = glm::mat4(1.0f);
-
     glm::mat4 projection = glm::perspective
     (
         glm::radians(60.0f),
-        windowSize.x / (float)windowSize.y,
+        1920 / (float)1080,
         0.1f,
         100.0f
-    );
+    );*/
 
-    glm::mat4 mvp = projection * view * model;
+    Quaternion quat = Quaternion::FromEuler(Vector3(elapsedFrames * 0.5f, elapsedFrames * 0.1f, 0.0f));
+
+    Matrix4x4 model = Matrix4x4::TRS(Vector3(0, 0, 5), quat, Vector3(1,1,1));
+    Matrix4x4 view = Matrix4x4::Identity();
+    Matrix4x4 projection = Matrix4x4::Perspective(glm::radians(60.0f), windowSize.x / (float)windowSize.y, 0.1f, 100.0f);
+
+    Matrix4x4 mvp = projection * view * model;
+
+    shaderHandle.SetMatrix4x4("model", model);
+    shaderHandle.SetMatrix4x4("mvp", mvp);
 
     float time = static_cast<float>(elapsedFrames);
     struct PushConstant
     {
-        uint32_t bufferId;
+        uint32_t materialId;
     } pushConstant;
 
-    pushConstant.bufferId = buffer.Id;
+    pushConstant.materialId = shaderHandle.GetMaterialUBOId();
    
     Words32 size = Words32(std::ceil(sizeof(pushConstant) / 4.0f));
-    pass.Draw(36, shaderHandle, &pushConstant, Words32(0), Words32(1));
+    pass.Draw(36, shaderHandle, &pushConstant, Words32(0), Words32(2));
 
     Graphics::AddPass(pass);
 

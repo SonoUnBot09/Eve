@@ -69,6 +69,36 @@ namespace Eve::Math
             return mat;
         }
 
+        static Matrix4x4 Perspective(float fovRadians, float aspect, float zNear, float zFar)
+        {
+            Matrix4x4 res = Zero();
+            float tanHalfFov = std::tan(fovRadians * 0.5f);
+
+            res.m[0]  = 1.0f / (aspect * tanHalfFov);
+            res.m[5]  = 1.0f / tanHalfFov;
+            res.m[10] = zFar / (zFar - zNear);
+            res.m[11] = -(zFar * zNear) / (zFar - zNear);
+            res.m[14] = 1.0f; // W_clip = +1.0 * Z_view
+
+            return res;
+        }
+
+        static Matrix4x4 Ortho(float left, float right, float bottom, float top, float zNear, float zFar)
+        {
+            Matrix4x4 res = Zero();
+
+            res.m[0]  = 2.0f / (right - left);
+            res.m[5]  = 2.0f / (top - bottom);
+            res.m[10] = 1.0f / (zFar - zNear);
+
+            res.m[3]  = -(right + left) / (right - left);
+            res.m[7]  = -(top + bottom) / (top - bottom);
+            res.m[11] = -zNear / (zFar - zNear);
+            res.m[15] = 1.0f;
+
+            return res;
+        }
+
         Vector3 MultiplyPoint(const Vector3& point) const 
         {
             float x = m[0] * point.x + m[1] * point.y + m[2]  * point.z + m[3];
@@ -110,7 +140,69 @@ namespace Eve::Math
             return t;
         }
 
-        
+        Matrix4x4 Inverse() const
+        {
+            Matrix4x4 inv;
+
+            inv.m[0] = m[5]  * m[10] * m[15] - m[5]  * m[11] * m[14] - m[9]  * m[6]  * m[15] + 
+                       m[9]  * m[7]  * m[14] + m[13] * m[6]  * m[11] - m[13] * m[7]  * m[10];
+
+            inv.m[4] = -m[4]  * m[10] * m[15] + m[4]  * m[11] * m[14] + m[8]  * m[6]  * m[15] - 
+                        m[8]  * m[7]  * m[14] - m[12] * m[6]  * m[11] + m[12] * m[7]  * m[10];
+
+            inv.m[8] = m[4]  * m[9]  * m[15] - m[4]  * m[11] * m[13] - m[8]  * m[5]  * m[15] + 
+                       m[8]  * m[7]  * m[13] + m[12] * m[5]  * m[11] - m[12] * m[7]  * m[9];
+
+            inv.m[12] = -m[4]  * m[9]  * m[14] + m[4]  * m[10] * m[13] + m[8]  * m[5]  * m[14] - 
+                         m[8]  * m[6]  * m[13] - m[12] * m[5]  * m[10] + m[12] * m[6]  * m[9];
+
+            inv.m[1] = -m[1]  * m[10] * m[15] + m[1]  * m[11] * m[14] + m[9]  * m[2]  * m[15] - 
+                        m[9]  * m[3]  * m[14] - m[13] * m[2]  * m[11] + m[13] * m[3]  * m[10];
+
+            inv.m[5] = m[0]  * m[10] * m[15] - m[0]  * m[11] * m[14] - m[8]  * m[2]  * m[15] + 
+                       m[8]  * m[3]  * m[14] + m[12] * m[2]  * m[11] - m[12] * m[3]  * m[10];
+
+            inv.m[9] = -m[0]  * m[9]  * m[15] + m[0]  * m[11] * m[13] + m[8]  * m[1]  * m[15] - 
+                        m[8]  * m[3]  * m[13] - m[12] * m[1]  * m[11] + m[12] * m[3]  * m[9];
+
+            inv.m[13] = m[0]  * m[9]  * m[14] - m[0]  * m[10] * m[13] - m[8]  * m[1]  * m[14] + 
+                        m[8]  * m[2]  * m[13] + m[12] * m[1]  * m[10] - m[12] * m[2]  * m[9];
+
+            inv.m[2] = m[1]  * m[6]  * m[15] - m[1]  * m[7]  * m[14] - m[5]  * m[2]  * m[15] + 
+                       m[5]  * m[3]  * m[14] + m[13] * m[2]  * m[7]  - m[13] * m[3]  * m[6];
+
+            inv.m[6] = -m[0]  * m[6]  * m[15] + m[0]  * m[7]  * m[14] + m[4]  * m[2]  * m[15] - 
+                        m[4]  * m[3]  * m[14] - m[12] * m[2]  * m[7]  + m[12] * m[3]  * m[6];
+
+            inv.m[10] = m[0]  * m[5]  * m[15] - m[0]  * m[7]  * m[13] - m[4]  * m[1]  * m[15] + 
+                        m[4]  * m[3]  * m[13] + m[12] * m[1]  * m[7]  - m[12] * m[3]  * m[5];
+
+            inv.m[14] = -m[0]  * m[5]  * m[14] + m[0]  * m[6]  * m[13] + m[4]  * m[1]  * m[14] - 
+                         m[4]  * m[2]  * m[13] - m[12] * m[1]  * m[6]  + m[12] * m[2]  * m[5];
+
+            inv.m[3] = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - 
+                        m[5] * m[3] * m[10] - m[9] * m[2] * m[7]  + m[9] * m[3] * m[6];
+
+            inv.m[7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + 
+                       m[4] * m[3] * m[10] + m[8] * m[2] * m[7]  - m[8] * m[3] * m[6];
+
+            inv.m[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9]  + m[4] * m[1] * m[11] - 
+                         m[4] * m[3] * m[9]  - m[8] * m[1] * m[7]  + m[8] * m[3] * m[5];
+
+            inv.m[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9]  - m[4] * m[1] * m[10] + 
+                        m[4] * m[2] * m[9]  + m[8] * m[1] * m[6]  - m[8] * m[2] * m[5];
+
+            float det = m[0] * inv.m[0] + m[1] * inv.m[4] + m[2] * inv.m[8] + m[3] * inv.m[12];
+
+            if (det == 0.0f) 
+                return Identity();
+
+            float invDet = 1.0f / det;
+            for (int i = 0; i < 16; ++i)
+                inv.m[i] *= invDet;
+
+            return inv;
+        }
 
         Matrix4x4 operator*(const Matrix4x4& rhs) const 
         {

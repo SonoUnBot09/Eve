@@ -53,7 +53,7 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
         isSwapchainRebuildNeeded = false;
     }
 
-    uint32_t frameIndex = elapsedFrames % Eve::Settings::MAX_FRAMES_IN_FLIGHT;
+    frameIndex = elapsedFrames % Eve::Settings::MAX_FRAMES_IN_FLIGHT;
     uint64_t timelineSignalValue = elapsedFrames + 1;
     uint64_t timelineWaitValue = timelineSignalValue - Eve::Settings::MAX_FRAMES_IN_FLIGHT;
 

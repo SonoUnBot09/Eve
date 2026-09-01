@@ -1,6 +1,6 @@
 module triangle;
 
-#include "eve_resources.slangh"
+#include "eve.slangh"
 
 struct V2F
 {
@@ -11,19 +11,14 @@ struct V2F
 
 struct Properties
 {
-    float a;
-}
-
-struct Data
-{
     float4x4 model;
-    float4x4 projecView;
-    float4 color;
-};
+    float3 color;
+    float4x4 mvp;
+}
 
 struct PushConstant
 {
-    uint32_t bufferId;
+    uint32_t materialId;
 };
 
 [push_constant]
@@ -83,9 +78,7 @@ V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
         { 1, 1 }
     };
 
-    Data* dataPtr = GetBuffer<Data>(pushConstant.bufferId);
-
-    Data data = dataPtr[0];
+    Properties properties = GetMaterial<Properties>(pushConstant.materialId);
 
     V2F output;
 
@@ -94,13 +87,11 @@ V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
     float3 vertexPos = vertices[vertexIndex];
     float3 normalLocal = normals[vertexIndex];
 
-    float3 normal = normalize(mul(data.model, float4(normalLocal, 0)).xyz);
+    float3 normal = normalize(mul(properties.model, float4(normalLocal, 0)).xyz);
 
-    float4x4 mvp = mul(data.projecView, data.model);
-
-    output.position = mul(mvp, float4(vertexPos * 0.25f, 1.0));
+    output.position = mul(properties.mvp, float4(vertexPos * 0.25f, 1.0));
     output.normal = normal;
-    output.color = data.color.xyz;
+    output.color = properties.color;
 
     return output;
 }
@@ -108,7 +99,6 @@ V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
 [shader("fragment")]
 float4 fragment(V2F input) : SV_Target
 {
-    // Normalizza di nuovo dopo l'interpolazione del rasterizer
     float3 normal = normalize(input.normal);
 
     // Direzione della luce fissa nel mondo

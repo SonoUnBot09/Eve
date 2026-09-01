@@ -73,7 +73,12 @@ public inline SamplerState GetSampler(uint index)
     return globalSamplers[index];
 }
 
-public inline T* GetBuffer<T>(uint slotIndex)
+public inline T* GetBuffer<T>(uint index)
 {
-    return (T*)globalBufferAddresses[slotIndex];
+    return (T *)globalBufferAddresses[index];
+}
+
+public inline T GetMaterial<T>(uint index)
+{
+    return ((T*)globalBufferAddresses[index])[0];
 }

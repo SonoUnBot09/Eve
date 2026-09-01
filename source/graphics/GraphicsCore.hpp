@@ -24,11 +24,15 @@ namespace Eve::Graphics
             inline static Window Window;
             inline static Context Context;
             inline static Swapchain Swapchain; 
+
+            inline static uint32_t GetFrameIndex() { return frameIndex; }
         
         private:
             inline static bool isSwapchainRebuildNeeded = false;
 
             inline static std::vector<FrameData> framesData;
             inline static VkSemaphore timelineSemaphore;
+
+            inline static uint32_t frameIndex = 0;
     };
 }

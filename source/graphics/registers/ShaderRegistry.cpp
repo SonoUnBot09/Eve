@@ -2,10 +2,13 @@
 #include "ShaderRegistry.hpp"
 #include "MemoryRegistry.hpp"
 #include "eve/graphics/Buffer.hpp"
+#include "eve/graphics/Pass.hpp"
 #include "graphics/builders/PipelineBuilder.hpp"
 #include "graphics/builders/ShaderObject.hpp"
 #include <graphics/registers/ShaderRegistry.hpp>
+#include "graphics/RenderGraph.hpp"
 #include <EveSettings.hpp>
+#include <graphics/GraphicsCore.hpp>
 
 using namespace Eve::Graphics;
 
@@ -55,10 +58,43 @@ void ShaderRegistry::UpdateMaterial(std::string& paramName, void* value, uint32_
 
     memcpy
     (
-        material.MaterialData.data(),
+        static_cast<std::byte*>(material.MaterialData.data()) + offset,
         value,
         paramSize
     );
+
+    material.countdown = Eve::Settings::MAX_FRAMES_IN_FLIGHT;
+}
+ 
+void ShaderRegistry::UploadMaterials()
+{
+    TransferPass pass {};
+    bool upload = false;
+    for (uint32_t i = 0; i < properties.size(); i++)
+    {
+        PropertiesUBOs& material = properties[i];
+
+        if(material.countdown == 0) { continue; }
+
+        BufferHandle dstBuffer = material.UBOs[GraphicsCore::GetFrameIndex()];
+
+        pass.UploadBuffer
+        (
+            material.MaterialData.data(),
+            dstBuffer,
+            1024 * 16,
+            0
+        );
+
+        material.countdown--;
+
+        upload = true;
+    }
+
+    if(upload)
+    {
+        RenderGraph::AddPass(pass, 1);
+    }
 }
 
 void ShaderRegistry::DestroyAllShaders()

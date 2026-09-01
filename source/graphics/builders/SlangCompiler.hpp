@@ -42,9 +42,16 @@ namespace Eve::Graphics
                     throw std::runtime_error("Errore GlobalSession");
                 }
 
+               slang::CompilerOptionEntry entry{};
+                entry.name = slang::CompilerOptionName::DownstreamArgs;
+                entry.value.kind = slang::CompilerOptionValueKind::String;
+                entry.value.stringValue0 = "-fvk-use-scalar-layout";
+
                 slang::TargetDesc targetDesc = {};
                 targetDesc.format = SLANG_SPIRV;
                 targetDesc.profile = globalSession->findProfile("spirv_1_5");
+                targetDesc.compilerOptionEntryCount = 1;
+                targetDesc.compilerOptionEntries = &entry;
 
                 fs::path executablePath = GetExecutableDirectory();
 
@@ -149,16 +156,25 @@ namespace Eve::Graphics
 
                 uint32_t fieldCount = propertiesStruct->getFieldCount();
 
+                uint32_t offset = 0;
                 for(uint32_t i = 0; i < fieldCount; i++)
                 {
                     slang::VariableLayoutReflection* fieldLayout = propertiesStruct->getFieldByIndex(i);
                     slang::VariableReflection* field = fieldLayout->getVariable();
 
-                    size_t offset = fieldLayout->getOffset(SLANG_PARAMETER_CATEGORY_UNIFORM);
-                    const char* name = field->getName();
+                    slang::TypeLayoutReflection* typeLayout = fieldLayout->getTypeLayout();
+                    
+                    uint32_t size = typeLayout->getSize();
+                    uint32_t alignment = CalculateAlignment(typeLayout);
 
+                    offset = std::ceil(offset / alignment) * alignment;
+
+                    const char* name = field->getName();
+            
                     properties.names.push_back(name);
                     properties.offsets.push_back(offset);
+
+                    offset += size;
                 }
 
                 return properties;
@@ -206,6 +222,33 @@ namespace Eve::Graphics
                 if (diagnostics && diagnostics->getBufferSize() > 0) {
                     std::cerr << "Slang Log (" << context << "):\n" 
                             << static_cast<const char*>(diagnostics->getBufferPointer()) << "\n";
+                }
+            }
+
+            inline static uint32_t CalculateAlignment(slang::TypeLayoutReflection* typeLayout)
+            {
+                slang::TypeReflection* type = typeLayout->getType();
+
+                switch (type->getScalarType()) 
+                {
+                    case slang::TypeReflection::ScalarType::Int8 :
+                    case slang::TypeReflection::ScalarType::UInt8 :
+                    case slang::TypeReflection::ScalarType::Bool :
+                        return 1;
+                    case slang::TypeReflection::ScalarType::Int16 :
+                    case slang::TypeReflection::ScalarType::UInt16 :
+                    case slang::TypeReflection::ScalarType::Float16 :
+                        return 2;
+                    case slang::TypeReflection::ScalarType::Int32 :
+                    case slang::TypeReflection::ScalarType::UInt32 :
+                    case slang::TypeReflection::ScalarType::Float32 :
+                        return 4;
+                    case slang::TypeReflection::ScalarType::Int64 :
+                    case slang::TypeReflection::ScalarType::UInt64 :
+                    case slang::TypeReflection::ScalarType::Float64 :
+                        return 8;
+                    default:
+                        return 4;
                 }
             }
 

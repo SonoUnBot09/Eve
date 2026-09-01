@@ -645,6 +645,7 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
 bool RenderGraph::CompileGraph(uint32_t frameIndex)
 {
     MeshRegistry::UploadMeshes();
+    ShaderRegistry::UploadMaterials();
 
     TransientResourcePool::UpdateTexturesPool(frameIndex);
     TransientResourcePool::UpdateBuffersPool(frameIndex);
