@@ -21,17 +21,6 @@ namespace Eve::Graphics
     {
         uint32_t Id;
 
-        void SetUInt(std::string paramName, uint32_t value);
-        void SetInt(std::string paramName, int32_t value);
-        void SetFloat(std::string paramName, float value);
-        void SetVector2(std::string paramName, Vector2 value);
-        void SetVector2Int(std::string paramName, Vector2Int);
-        void SetVector3(std::string paramName, Vector3 value);
-        void SetVector3Int(std::string paramName, Vector3Int value);
-        void SetVector4(std::string paramName, Vector4 value);
-        void SetVector4Int(std::string paramName, Vector4Int value);
-        void SetMatrix4x4(std::string paramName, Matrix4x4 value);
-
         uint32_t GetMaterialUBOId();
     };
 

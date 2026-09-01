@@ -24,7 +24,7 @@ using namespace Eve::Graphics;
 using namespace Eve::Math;
 using namespace Eve::Input;
 
-static ShaderHandle shaderHandle;
+static MaterialHandle material;
 static BufferHandle buffer;
 static uint64_t elapsedFrames = 0;
 static uint32_t elementsCount = 20 * 20;
@@ -46,13 +46,15 @@ void Start(uint32_t systemId)
         .DepthFormat = Format::FORMAT_D32_SFLOAT
     };
 
-    shaderHandle = Graphics::CreateGraphicsShader(shaderInfo);
+    ShaderHandle shaderHandle = Graphics::CreateGraphicsShader(shaderInfo);
+
+    material = Graphics::CreateMaterial(shaderHandle);
 
     buffer = Graphics::CreateGPUBuffer(256);
 
     //glm::mat4 projView = projection * view;
 
-    shaderHandle.SetVector3("color", Vector3(0.5,0.7,0));
+    material.SetVector3("color", Vector3(0.5,0.7,0));
 }
 
 void Update(float deltaTime, uint32_t systemId)
@@ -121,8 +123,8 @@ void Update(float deltaTime, uint32_t systemId)
 
     Matrix4x4 mvp = projection * view * model;
 
-    shaderHandle.SetMatrix4x4("model", model);
-    shaderHandle.SetMatrix4x4("mvp", mvp);
+    material.SetMatrix4x4("model", model);
+    material.SetMatrix4x4("mvp", mvp);
 
     float time = static_cast<float>(elapsedFrames);
     struct PushConstant
@@ -130,10 +132,10 @@ void Update(float deltaTime, uint32_t systemId)
         uint32_t materialId;
     } pushConstant;
 
-    pushConstant.materialId = shaderHandle.GetMaterialUBOId();
+    pushConstant.materialId = material.GetPropertiesUBOId();
    
     Words32 size = Words32(std::ceil(sizeof(pushConstant) / 4.0f));
-    pass.Draw(36, shaderHandle, &pushConstant, Words32(0), Words32(2));
+    pass.Draw(36, material, &pushConstant, Words32(0), Words32(2));
 
     Graphics::AddPass(pass);
 

@@ -2,14 +2,14 @@
 #include <graphics/registers/MemoryRegistry.hpp>
 #include "Resources.hpp"
 #include <eve/graphics/details/Usage.hpp>
+#include "eve/graphics/MaterialHandle.hpp"
 #include "registers/MemoryRegistry.hpp"
-#include "registers/ShaderRegistry.hpp"
 
 using namespace Eve::Graphics;
 
 #pragma region Graphics Pass
 
-void GraphicsPass::Draw(uint32_t vertexShaderInvocations, ShaderHandle shader, const void* pushConstant, Words32 offset, Words32 size)
+void GraphicsPass::Draw(uint32_t vertexShaderInvocations, MaterialHandle material, const void* pushConstant, Words32 offset, Words32 size)
 {
     static constexpr uint32_t maxPushCostantSize = 128;
 
@@ -32,10 +32,10 @@ void GraphicsPass::Draw(uint32_t vertexShaderInvocations, ShaderHandle shader, c
 
     memcpy(pushConstantData.data() + offsetBytes, (std::byte*)pushConstant, sizeBytes);
     
-    drawCalls.emplace_back(vertexShaderInvocations, 1, shader, pushConstantData, offset, size);
+    drawCalls.emplace_back(vertexShaderInvocations, 1, material, pushConstantData, offset, size);
 }
 
-void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, ShaderHandle shader, uint32_t instanceCount, const void* pushConstant, Words32 offset, Words32 size)
+void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, MaterialHandle material, uint32_t instanceCount, const void* pushConstant, Words32 offset, Words32 size)
 {
     static constexpr uint32_t maxPushCostantSize = 128;
 
@@ -58,7 +58,7 @@ void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, ShaderHandle 
 
     memcpy(pushConstantData.data() + offsetBytes, (std::byte*)pushConstant, sizeBytes);
     
-    drawCalls.emplace_back(vertexShaderInvocations, instanceCount, shader, pushConstantData, offset, size);
+    drawCalls.emplace_back(vertexShaderInvocations, instanceCount, material, pushConstantData, offset, size);
 }
 
 void GraphicsPass::UseTextureVertex(TransientTextureHandle texture)

@@ -1,4 +1,5 @@
 #include "GraphicsCore.hpp"
+#include "registers/MaterialRegistry.hpp"
 #include <eve/graphics/Graphics.hpp>
 #include <graphics/registers/MemoryRegistry.hpp>
 #include <graphics/registers/MeshRegistry.hpp>
@@ -69,10 +70,15 @@ GraphicsMesh& Graphics::GetGraphicsMesh(MeshHandle handle)
     return MeshRegistry::GetGraphicsMesh(handle);
 }
 
-// --- Meshes ---
+// --- Shaders & Materials ---
 ShaderHandle Graphics::CreateGraphicsShader(ShaderInfo shaderInfo)
 {
     return ShaderRegistry::CreateGraphicsShader(shaderInfo);
+}
+
+MaterialHandle Graphics::CreateMaterial(ShaderHandle handle)
+{
+    return MaterialRegistry::CreateMaterial(handle);
 }
 
 TransientTextureHandle Graphics::RequestTransientTexture1D(TransientTextureInfo1D textureInfo)

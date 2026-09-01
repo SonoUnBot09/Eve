@@ -35,8 +35,9 @@ namespace Eve::Graphics
             static CPUMesh& GetCPUMesh(MeshHandle handle);
             static GraphicsMesh& GetGraphicsMesh(MeshHandle handle);
 
-            // --- Meshes ---
+            // --- Shaders & Materials ---
             static ShaderHandle CreateGraphicsShader(ShaderInfo shaderInfo);
+            static MaterialHandle CreateMaterial(ShaderHandle handle);
 
             // --- Render Graph ---
             static TransientTextureHandle RequestTransientTexture1D(TransientTextureInfo1D textureInfo);

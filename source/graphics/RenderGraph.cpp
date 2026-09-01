@@ -10,6 +10,7 @@
 #include "graphics/helpers/VulkanMapping.hpp"
 #include "graphics/registers/MemoryRegistry.hpp"
 #include "helpers/VulkanMapping.hpp"
+#include "registers/MaterialRegistry.hpp"
 #include "registers/ResourceTracker.hpp"
 #include <graphics/registers/MeshRegistry.hpp>
 #include <graphics/registers/TransientResourcePool.hpp>
@@ -645,7 +646,7 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
 bool RenderGraph::CompileGraph(uint32_t frameIndex)
 {
     MeshRegistry::UploadMeshes();
-    ShaderRegistry::UploadMaterials();
+    MaterialRegistry::UploadMaterials();
 
     TransientResourcePool::UpdateTexturesPool(frameIndex);
     TransientResourcePool::UpdateBuffersPool(frameIndex);
@@ -2451,7 +2452,8 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
 
             uint32_t pushConstantSize = drawCall.Size.ToBytes();
             uint32_t pushConstantOffset = drawCall.Offset.ToBytes();
-            GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(drawCall.ShaderHandle);
+            ShaderHandle shaderHandle = drawCall.MaterialHandle.GetShader();
+            GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(shaderHandle);
 
             vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.Pipeline);
 

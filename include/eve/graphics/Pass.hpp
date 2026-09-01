@@ -1,5 +1,6 @@
 #pragma once
 
+#include "eve/graphics/MaterialHandle.hpp"
 #include "eve/math/Matrix4x4.hpp"
 #include <eve/math/Vector2Int.hpp>
 #include <eve/math/Vector3Int.hpp>
@@ -49,7 +50,7 @@ namespace Eve::Graphics
     {
         uint32_t VertexShaderInvocations;
         uint32_t InstanceCount;
-        ShaderHandle ShaderHandle;
+        MaterialHandle MaterialHandle;
         std::array<std::byte, 128> PushCostant;
         Words32 Offset;
         Words32 Size;
@@ -150,8 +151,8 @@ namespace Eve::Graphics
             void UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
             void UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
 
-            void Draw(uint32_t vertexShaderInvocations, ShaderHandle shader, const void* pushConstant, Words32 offset, Words32 size);
-            void DrawInstanced(uint32_t vertexShaderInvocations, ShaderHandle shader, uint32_t instanceCount, const void* pushConstant, Words32 offset, Words32 size);
+            void Draw(uint32_t vertexShaderInvocations, MaterialHandle material, const void* pushConstant, Words32 offset, Words32 size);
+            void DrawInstanced(uint32_t vertexShaderInvocations, MaterialHandle material, uint32_t instanceCount, const void* pushConstant, Words32 offset, Words32 size);
 
         private:
 
