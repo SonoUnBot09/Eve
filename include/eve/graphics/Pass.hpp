@@ -5,7 +5,6 @@
 #include <eve/math/Vector2Int.hpp>
 #include <eve/math/Vector3Int.hpp>
 #include <eve/math/Vector4Int.hpp>
-#include <array>
 #include <vector>
 #include <utility>
 #include <eve/graphics/Texture.hpp>
@@ -13,6 +12,8 @@
 #include <eve/graphics/Mesh.hpp>
 #include <eve/graphics/ShaderHandle.hpp>
 #include <eve/graphics/details/Usage.hpp>
+#include <eve/components/Transform.hpp>
+#include <eve/graphics/RenderViewHandle.hpp>
 
 using namespace Eve::Math;;
 
@@ -34,10 +35,10 @@ namespace Eve::Graphics
         DISCARD
     };
 
-    struct PushConstant
+    struct DrawInfo
     {
+        explicit DrawInfo (void* data, uint32_t sizeBytes) :  Data(data), SizeBytes(sizeBytes) {};
         void* Data;
-        uint32_t OffsetBytes;
         uint32_t SizeBytes;
     };
 
@@ -50,10 +51,17 @@ namespace Eve::Graphics
         // Material
         MaterialHandle MaterialHandle;
 
-        // Push Constant
-        std::array<std::byte, 128> PushConstantData;
-        uint32_t OffsetBytes;
-        uint32_t SizeBytes;
+        // Draw Info Params
+        std::vector<std::byte> DrawInfoData;
+
+        // Render View
+        RenderViewHandle RenderView;
+    };
+
+    struct InstanceParams
+    {
+        Matrix4x4 ObjectToWorld;
+        Matrix4x4 WorldToObject;
     };
 
     struct LoadStoreOp
@@ -151,8 +159,8 @@ namespace Eve::Graphics
             void UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
             void UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
 
-            void Draw(uint32_t vertexShaderInvocations, MaterialHandle material, PushConstant* pushConstant);
-            void DrawInstanced(uint32_t vertexShaderInvocations, MaterialHandle material, uint32_t instanceCount, PushConstant* pushConstant);
+            void Draw(uint32_t vertexShaderInvocations, Transform& transform, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo);
+            void DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, Transform& transforms, MaterialHandle material, RenderViewHandle renderView,  DrawInfo* drawInfo);
 
         private:
 
@@ -164,6 +172,9 @@ namespace Eve::Graphics
             inline std::vector<std::pair<TransientTextureHandle, LoadStoreOp>>& GetLoadStoreOperations() { return loadStoreOps; }
 
             inline std::vector<DrawCall>& GetDrawCalls() { return drawCalls; }
+            inline std::vector<InstanceParams>& GetInstanceParams() { return instanceParams; }
+
+            void Clear();
 
             std::vector<std::pair<TransientTextureHandle, Usage>> transientTextures;
             std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;
@@ -174,6 +185,7 @@ namespace Eve::Graphics
             std::vector<std::pair<TransientTextureHandle, LoadStoreOp>> loadStoreOps;
 
             std::vector<DrawCall> drawCalls;
+            std::vector<InstanceParams> instanceParams;
 
             friend class RenderGraph;
     };
@@ -261,6 +273,8 @@ namespace Eve::Graphics
             inline std::vector<BufferUpload>& GetPersistentBufferUploads() { return persistentBufferUploads; }
             inline std::vector<TextureUpload>& GetPersistentTextureUploads() { return persistentTextureUploads; }
 
+            void Clear();
+
             std::vector<std::pair<TransientTextureHandle, Usage>> transientTextures;
             std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;
             std::vector<std::pair<TextureHandle, Usage>> persistentTextures;
@@ -308,6 +322,8 @@ namespace Eve::Graphics
             std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }
             std::vector<std::pair<TextureHandle, Usage>>& GetPersistentTextures() { return persistentTextures; }
             std::vector<std::pair<BufferHandle, Usage>>& GetPersistentBuffers() { return persistentBuffers; }
+
+            void Clear();
 
             std::vector<std::pair<TransientTextureHandle, Usage>> transientTextures;
             std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;

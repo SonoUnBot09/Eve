@@ -278,7 +278,7 @@ uint32_t TransientResourcePool::FindBufferPoolIndex(const BufferInfo& bufferInfo
 
     std::vector<uint32_t> memoryTypeIndicies = FindBestMemoryTypeIndicies(memoryRequirements);
 
-    uint32_t bucketIndex = GetTexturesBucketIndex(memoryTypeIndicies, passesCount);
+    uint32_t bucketIndex = GetBuffersBucketIndex(memoryTypeIndicies, passesCount);
 
     MemoryInfo memoryInfo
     {

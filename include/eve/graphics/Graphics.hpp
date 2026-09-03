@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RenderViewHandle.hpp"
 #include <eve/graphics/Buffer.hpp>
 #include <eve/graphics/Sampler.hpp>
 #include <eve/graphics/Texture.hpp>
@@ -39,6 +40,9 @@ namespace Eve::Graphics
             static ShaderHandle CreateGraphicsShader(ShaderInfo shaderInfo);
             static MaterialHandle CreateMaterial(ShaderHandle handle);
 
+            static RenderViewHandle CreateRenderView();
+            static void DestroyRenderView(RenderViewHandle handle);
+
             // --- Render Graph ---
             static TransientTextureHandle RequestTransientTexture1D(TransientTextureInfo1D textureInfo);
             static TransientTextureHandle RequestTransientTexture2D(TransientTextureInfo2D textureInfo);
@@ -52,7 +56,7 @@ namespace Eve::Graphics
             static void AddPass(TransferPass& pass, uint32_t index);
             static void AddPass(ComputePass& pass, uint32_t index);
 
-            static void SetPresentTexture(TransientTextureHandle handle);
+            static void SetPresentTexture2D(TransientTextureHandle handle);
 
             static Vector2Int GetWindowSize();
 

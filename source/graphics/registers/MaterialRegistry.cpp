@@ -56,8 +56,8 @@ void MaterialRegistry::UpdateMaterial(std::string& paramName, void* value, uint3
 
 void MaterialRegistry::UploadMaterials()
 {
-    TransferPass pass {};
-    bool upload = false;
+    TransferPass& universalTransferPass = RenderGraph::GetUniversalTransferPass();
+
     for (uint32_t i = 0; i < materials.size(); i++)
     {
         MaterialObject& material = materials[i];
@@ -66,7 +66,7 @@ void MaterialRegistry::UploadMaterials()
 
         BufferHandle dstBuffer = material.UBOs[GraphicsCore::GetFrameIndex()];
 
-        pass.UploadBuffer
+        universalTransferPass.UploadBuffer
         (
             material.MaterialData.data(),
             dstBuffer,
@@ -75,12 +75,5 @@ void MaterialRegistry::UploadMaterials()
         );
 
         material.Countdown--;
-
-        upload = true;
-    }
-
-    if(upload)
-    {
-        RenderGraph::AddPass(pass, 1);
     }
 }

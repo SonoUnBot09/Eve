@@ -22,8 +22,6 @@ namespace Eve::Graphics
             static void SetTangents(MeshHandle meshHandle, std::vector<Vector4>& tangents);
 
             static void ApplyMeshToGPU(MeshHandle meshHandle);
-
-            static void UploadMeshes();
         private:
 
             struct MeshBufferInfo
@@ -40,8 +38,6 @@ namespace Eve::Graphics
             static inline std::vector<GraphicsMesh> graphicsMeshes;         static inline std::vector<MeshBufferInfo> meshBuffersInfo; 
 
             static inline std::vector<uint32_t> freeSlots;
-
-            inline static TransferPass transferPass;
 
     };
 }

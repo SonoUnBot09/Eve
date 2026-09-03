@@ -3,82 +3,88 @@
 #include "Resources.hpp"
 #include <eve/graphics/details/Usage.hpp>
 #include "eve/graphics/MaterialHandle.hpp"
+#include "eve/graphics/RenderViewHandle.hpp"
+#include "eve/math/Matrix4x4.hpp"
 #include "registers/MemoryRegistry.hpp"
 
 using namespace Eve::Graphics;
 
 #pragma region Graphics Pass
 
-void GraphicsPass::Draw(uint32_t vertexShaderInvocations, MaterialHandle material, PushConstant* pushConstant)
+void GraphicsPass::Draw(uint32_t vertexShaderInvocations, Transform& transform, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
 {
-    static constexpr uint32_t maxPushCostantSize = 128;
+    static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
 
-    uint32_t offsetBytes;
     uint32_t sizeBytes;
-    if(pushConstant == nullptr)
+    if(drawInfo == nullptr)
     {
-        offsetBytes = 0;
         sizeBytes = 0;
     }
     else 
     {
-        offsetBytes = std::ceil((float)pushConstant->OffsetBytes / 4.0f) * 4;
-        sizeBytes = std::ceil((float)pushConstant->SizeBytes / 4.0f) * 4;
+        sizeBytes = std::ceil((float)drawInfo->SizeBytes / 8.0f) * 8;
     }
 
-    if(offsetBytes > maxPushCostantSize)
+    if(sizeBytes > maxDrawInfoSize)
     {
-        offsetBytes = maxPushCostantSize;
+        sizeBytes = maxDrawInfoSize;
     }
 
-    uint32_t availableSpace = maxPushCostantSize - offsetBytes;
+    std::vector<std::byte> drawInfoData;
+    drawInfoData.resize(sizeBytes);
 
-    if(sizeBytes > availableSpace)
+    if(drawInfo != nullptr)
     {
-        sizeBytes = availableSpace;
+        memcpy(drawInfoData.data(), drawInfo->Data, sizeBytes);
     }
 
-    std::array<std::byte, maxPushCostantSize> pushConstantData;
+    drawCalls.emplace_back(vertexShaderInvocations, 1, material, drawInfoData, renderView);
 
-    memcpy(pushConstantData.data() + offsetBytes, pushConstant->Data, sizeBytes);
-    
-    drawCalls.emplace_back(vertexShaderInvocations, 1, material, pushConstantData, offsetBytes, sizeBytes);
+    Matrix4x4 objectToWorld = Matrix4x4::TRS(transform.Position, transform.Rotation, transform.Scale);
+    Matrix4x4 worldToObject = objectToWorld.Inverse();
+
+    instanceParams.push_back({objectToWorld, worldToObject});
 }
 
-void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, MaterialHandle material, uint32_t instanceCount, PushConstant* pushConstant)
+void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, Transform& transforms, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
 {
-    static constexpr uint32_t maxPushCostantSize = 128;
+    static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
 
-    uint32_t offsetBytes;
     uint32_t sizeBytes;
-    if(pushConstant == nullptr)
+    if(drawInfo == nullptr)
     {
-        offsetBytes = 0;
         sizeBytes = 0;
     }
     else 
     {
-        offsetBytes = std::ceil(pushConstant->OffsetBytes / 4) * 4;
-        sizeBytes = std::ceil(pushConstant->SizeBytes / 4) * 4;
+        sizeBytes = std::ceil((float)drawInfo->SizeBytes / 8.0f) * 8;
     }
 
-    if(offsetBytes > maxPushCostantSize)
+
+    if(sizeBytes > maxDrawInfoSize)
     {
-        offsetBytes = maxPushCostantSize;
+        sizeBytes = maxDrawInfoSize;
     }
 
-    uint32_t availableSpace = maxPushCostantSize - offsetBytes;
+    std::vector<std::byte> drawInfoData;
+    drawInfoData.resize(sizeBytes);
 
-    if(sizeBytes > availableSpace)
+    if(drawInfo != nullptr)
     {
-        sizeBytes = availableSpace;
+        memcpy(drawInfoData.data(), drawInfo->Data, sizeBytes);
     }
 
-    std::array<std::byte, maxPushCostantSize> pushConstantData;
+    drawCalls.emplace_back(vertexShaderInvocations, instanceCount, material, drawInfoData, renderView);
 
-    memcpy(pushConstantData.data() + offsetBytes, pushConstant->Data, sizeBytes);
-    
-    drawCalls.emplace_back(vertexShaderInvocations, instanceCount, material, pushConstantData, offsetBytes, sizeBytes);
+    for (uint32_t i = 0; i < instanceCount; i++)
+    {
+        Transform& transform = *(static_cast<Transform*>(&transforms) + i);
+
+        Matrix4x4 objectToWorld = Matrix4x4::TRS(transform.Position, transform.Rotation, transform.Scale);
+        Matrix4x4 worldToObject = objectToWorld.Inverse();
+
+        instanceParams.push_back({objectToWorld, worldToObject});
+    }
 }
 
 void GraphicsPass::UseTextureVertex(TransientTextureHandle texture)
@@ -171,13 +177,18 @@ void GraphicsPass::UseStencilTarget(TransientTextureHandle texture, LoadStoreOp 
     loadStoreOps.push_back(std::pair{texture,loadStoreOp});
 }
 
-void ComputePass::UseTransientTexture(TransientTextureHandle texture, Usage accessType)
+void GraphicsPass::Clear()
 {
-    transientTextures.push_back(std::pair{texture, accessType});
-}
-void ComputePass::UseTransientBuffer(TransientBufferHandle buffer, Usage accessType)
-{
-    transientBuffers.push_back(std::pair{buffer, accessType});
+    transientTextures.clear();
+    transientBuffers.clear();
+
+    persistentTextures.clear();
+    persistentBuffers.clear();
+
+    loadStoreOps.clear();
+
+    drawCalls.clear();
+    instanceParams.clear();
 }
 #pragma endregion
 
@@ -313,10 +324,10 @@ void TransferPass::UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, 
     };
 
     BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);
-    BufferObject dstBuffer = MemoryRegistry::GetBuffer(stagingBufferHandle);
+    BufferObject srcBuffer = MemoryRegistry::GetBuffer(stagingBufferHandle);
 
     // --- Data copy into the staging buffer ---
-    memcpy(dstBuffer.AllocationInfo.pMappedData, SrcData, Size);
+    memcpy(srcBuffer.AllocationInfo.pMappedData, SrcData, Size);
 
     // --- Record the upload command to execute ---
     transientBufferUploads.emplace_back(stagingBufferHandle.Id, DstBuffer.Id, Size, DstOffset);
@@ -333,10 +344,10 @@ void TransferPass::UploadBuffer(void* SrcData, BufferHandle DstBuffer, uint64_t 
     };
 
     BufferHandle stagingBufferHandle = MemoryRegistry::CreateCPUBuffer(stagingBufferInfo);
-    BufferObject dstBuffer = MemoryRegistry::GetBuffer(stagingBufferHandle);
+    BufferObject srcBuffer = MemoryRegistry::GetBuffer(stagingBufferHandle);
 
     // --- Data copy into the staging buffer ---
-    memcpy(dstBuffer.AllocationInfo.pMappedData, SrcData, Size);
+    memcpy(srcBuffer.AllocationInfo.pMappedData, SrcData, Size);
     
     // --- Record the upload command to execute ---
     persistentBufferUploads.emplace_back(stagingBufferHandle.Id, DstBuffer.Id, Size, DstOffset);
@@ -381,6 +392,60 @@ void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TextureHandle Ds
 
     persistentTextureUploads.emplace_back(stagingBufferHandle.Id, DstTexture.Id, DstOffset, Extent, BufferRowLength, BufferHeightLength);
     persistentTextures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
+}
+
+void TransferPass::Clear()
+{
+    transientTextures.clear();
+    transientBuffers.clear();
+    persistentTextures.clear();
+    persistentBuffers.clear();
+
+    transientBufferCopies.clear();
+    transientTextureCopies.clear();
+    transientBufferToTextureCopies.clear();
+    transientTextureToBufferCopies.clear();
+
+    persistentBufferCopies.clear();
+    persistentTextureCopies.clear();
+    persistentBufferToTextureCopies.clear();
+    persistentTextureToBufferCopies.clear();
+
+    transientPersistentBufferCopies.clear();
+    persistentTransientBufferCopies.clear();
+    transientPersistentTextureCopies.clear();
+    persistentTransientTextureCopies.clear();
+
+    transientPersistentBufferToTextureCopies.clear();
+    persistentTransientBufferToTextureCopies.clear();
+    transientPersistentTextureToBufferCopies.clear();
+    persistentTransientTextureToBufferCopies.clear();
+
+    transientBufferUploads.clear();
+    transientTextureUploads.clear();
+    persistentBufferUploads.clear();
+    persistentTextureUploads.clear();
+}
+
+#pragma endregion
+
+#pragma region Compute Pass
+
+void ComputePass::UseTransientTexture(TransientTextureHandle texture, Usage accessType)
+{
+    transientTextures.push_back(std::pair{texture, accessType});
+}
+void ComputePass::UseTransientBuffer(TransientBufferHandle buffer, Usage accessType)
+{
+    transientBuffers.push_back(std::pair{buffer, accessType});
+}
+
+void ComputePass::Clear()
+{
+    transientTextures.clear();
+    transientBuffers.clear();
+    persistentTextures.clear();
+    persistentBuffers.clear();
 }
 
 #pragma endregion

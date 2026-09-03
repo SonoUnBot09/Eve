@@ -1,13 +1,10 @@
 #include "eve/graphics/Buffer.hpp"
 #include "eve/graphics/Pass.hpp"
+#include "eve/graphics/RenderViewHandle.hpp"
 #include "eve/graphics/ShaderHandle.hpp"
 #include "eve/graphics/Texture.hpp"
-#include "eve/math/Matrix4x4.hpp"
 #include "eve/math/Quaternion.hpp"
 #include "eve/math/Vector3.hpp"
-#include "glm/ext/matrix_clip_space.hpp"
-#include "glm/ext/matrix_transform.hpp"
-#include "glm/matrix.hpp"
 #include <eve/components/Camera.hpp>
 #include <eve/entities/SystemRegistrar.hpp>
 #include <eve/debug/Debug.hpp>
@@ -25,6 +22,7 @@ using namespace Eve::Math;
 using namespace Eve::Input;
 
 static MaterialHandle material;
+static RenderViewHandle renderView;
 static BufferHandle buffer;
 static uint64_t elapsedFrames = 0;
 static uint32_t elementsCount = 20 * 20;
@@ -53,6 +51,12 @@ void Start(uint32_t systemId)
     buffer = Graphics::CreateGPUBuffer(256);
 
     material.SetVector3("color", Vector3(0.5,0.7,0));
+
+    renderView = Graphics::CreateRenderView();
+
+    Quaternion quat = Quaternion::Identity();
+    Transform renderViewTRS = Transform{{0,0,0}, quat, {1, 1, 1} };
+    renderView.SetTRS(renderViewTRS);
 }
 
 void Update(float deltaTime, uint32_t systemId)
@@ -96,48 +100,33 @@ void Update(float deltaTime, uint32_t systemId)
     pass.UseColorTarget(colorTexture, loadStoreOpColor);
     pass.UseDepthTarget(depthTexture, loadStoreOpDepth);
 
-    /*
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,5));
-    model = glm::rotate
-    (
-        model,
-        glm::radians(30.0f),
-        glm::vec3(0.5, 1, 0)
-    );
-    glm::mat4 view = glm::mat4(1.0f);
-    glm::mat4 projection = glm::perspective
-    (
-        glm::radians(60.0f),
-        1920 / (float)1080,
-        0.1f,
-        100.0f
-    );*/
-
-    Quaternion quat = Quaternion::FromEuler(Vector3(elapsedFrames * 0.5f, elapsedFrames * 0.1f, 0.0f));
-
-    Matrix4x4 model = Matrix4x4::TRS(Vector3(0, 0, 5), quat, Vector3(1,1,1));
-    Matrix4x4 view = Matrix4x4::Identity();
-    Matrix4x4 projection = Matrix4x4::Perspective(glm::radians(60.0f), windowSize.x / (float)windowSize.y, 0.1f, 100.0f);
-
-    Matrix4x4 mvp = projection * view * model;
-
-    material.SetMatrix4x4("model", model);
-    material.SetMatrix4x4("mvp", mvp);
+    renderView.SetPerspective(1.22173f, windowSize.x / (float)windowSize.y, 0.1f, 100.0f);
 
     float time = static_cast<float>(elapsedFrames);
-
-    uint32_t materialId = material.GetPropertiesUBOId();
-
-    PushConstant pushConstant{};
-    pushConstant.Data = &materialId;
-    pushConstant.SizeBytes = 4;
-    pushConstant.OffsetBytes = 0;
     
-    pass.Draw(36, material, &pushConstant);
+    Transform objectTransform1 = 
+    {
+        {0, 0, 5},
+        Quaternion::Identity(),
+        {1, 1, 1}
+    };
+
+    Transform objectTransform2 = 
+    {
+        {0, 3, 5},
+        Quaternion::Identity(),
+        {1, 1, 1}
+    };
+
+    std::vector<Transform> transforms {objectTransform1, objectTransform2};
+
+    pass.DrawInstanced(36, 2, *transforms.data(), material, renderView, nullptr);
+    //pass.Draw(36, objectTransform1, material, renderView, nullptr);
+    //pass.Draw(36, objectTransform2, material, renderView, nullptr);
 
     Graphics::AddPass(pass);
 
-    Graphics::SetPresentTexture(colorTexture);
+    Graphics::SetPresentTexture2D(colorTexture);
 
     elapsedFrames++;
 }

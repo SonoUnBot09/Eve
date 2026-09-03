@@ -1,11 +1,13 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <eve/math/Vector3.hpp>
+#include <eve/math/Quaternion.hpp>
 
 struct Transform
 {
     public:
-        glm::vec3 Position;
-        glm::vec3 Rotation;
-        glm::vec3 Scale;
+        Eve::Math::Vector3 Position;
+        Eve::Math::Quaternion Rotation;
+        Eve::Math::Vector3 Scale;
 };

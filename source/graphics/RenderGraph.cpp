@@ -5,12 +5,16 @@
 #include "builders/PipelineBuilder.hpp"
 #include "builders/ShaderObject.hpp"
 #include "builders/Swapchain.hpp"
+#include "eve/graphics/Buffer.hpp"
+#include "eve/graphics/Pass.hpp"
+#include "eve/graphics/details/Usage.hpp"
 #include "graphics/ResourceMapper.hpp"
 #include "graphics/builders/ContextBuilder.hpp"
 #include "graphics/helpers/VulkanMapping.hpp"
 #include "graphics/registers/MemoryRegistry.hpp"
 #include "helpers/VulkanMapping.hpp"
 #include "registers/MaterialRegistry.hpp"
+#include "registers/RenderViewRegistry.hpp"
 #include "registers/ResourceTracker.hpp"
 #include <graphics/registers/MeshRegistry.hpp>
 #include <graphics/registers/TransientResourcePool.hpp>
@@ -451,7 +455,7 @@ namespace
         {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .size = bufferInfo.Size,
-            .usage = bufferInfo.Usage,
+            .usage = bufferInfo.Usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
         };
 
@@ -645,8 +649,11 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
 
 bool RenderGraph::CompileGraph(uint32_t frameIndex)
 {
-    MeshRegistry::UploadMeshes();
     MaterialRegistry::UploadMaterials();
+    UploadInstanceAnDrawInfoParams();
+    UploadRenderViews();
+
+    RenderGraph::AddPass(universalTransferPass);
 
     TransientResourcePool::UpdateTexturesPool(frameIndex);
     TransientResourcePool::UpdateBuffersPool(frameIndex);
@@ -654,6 +661,25 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
     uint32_t transientTexturesCount = transientRequestedTextures.size();
     uint32_t transientBuffersCount = transientRequestedBuffers.size();
     uint32_t passesCount = passes.size();
+
+    for(uint32_t passIndex = 0 ; passIndex < passesCount; passIndex++)
+    {
+        Pass& pass = passes[passIndex];
+
+        if(pass.passType == Pass::PassType::GRAPHICS)
+        {
+            pass.transientBuffers.push_back(std::pair{instanceParamsBuffer, Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE});
+            pass.transientBuffers.push_back(std::pair{drawInfoParamsBuffer, Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE});
+            pass.transientBuffers.push_back(std::pair{renderViewsBuffer, Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE});
+            
+        }
+        else if (pass.passType == Pass::PassType::COMPUTE)
+        {
+            pass.transientBuffers.push_back(std::pair{instanceParamsBuffer, Usage::COMPUTE_READ_BUFFER_STORAGE});
+            pass.transientBuffers.push_back(std::pair{drawInfoParamsBuffer, Usage::COMPUTE_READ_BUFFER_STORAGE});
+            pass.transientBuffers.push_back(std::pair{renderViewsBuffer, Usage::COMPUTE_READ_BUFFER_STORAGE});
+        }
+    } 
 
     for(uint32_t bucketIndex = 0; bucketIndex < texturesBucketPasses.size(); bucketIndex++)
     {
@@ -670,6 +696,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
     uint32_t texturesBarriersOffset = 0;
     int32_t lastValidTextureIndex = -1;
     barriersOffsetPerTexture.push_back(texturesBarriersOffset);
+
     for(uint32_t textureId = 0; textureId < transientTexturesCount; textureId++)
     {
         uint32_t barriersCount = 0;
@@ -765,6 +792,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
         lastValidTextureIndex = textureId;
     }
+    
     uint32_t buffersBarriersOffset = 0;
     int32_t lastValidBufferIndex = -1;
     barriersOffsetPerBuffer.push_back(buffersBarriersOffset);
@@ -1426,45 +1454,53 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
         textureMemoryBarriers.clear();
         bufferMemoryBarriers.clear();
 
-        // --- Transient resource copies ---
-        RecordTransientBufferCopy(cmdBuffer, pass, frameIndex);
-        RecordTransientTextureCopy(cmdBuffer, pass, frameIndex);
-        RecordTransientBufferToTextureCopy(cmdBuffer, pass, frameIndex);
-        RecordTransientTextureToBufferCopy(cmdBuffer, pass, frameIndex);
+        if(pass.passType == Pass::PassType::TRANSFER)
+        {
+            // --- Transient resource copies ---
+            RecordTransientBufferCopy(cmdBuffer, pass, frameIndex);
+            RecordTransientTextureCopy(cmdBuffer, pass, frameIndex);
+            RecordTransientBufferToTextureCopy(cmdBuffer, pass, frameIndex);
+            RecordTransientTextureToBufferCopy(cmdBuffer, pass, frameIndex);
 
-        // --- Transient resouce uploads ---
-        RecordTransientBufferUpload(cmdBuffer, pass, frameIndex);
-        RecordTransientTextureUpload(cmdBuffer, pass, frameIndex);
+            // --- Transient resouce uploads ---
+            RecordTransientBufferUpload(cmdBuffer, pass, frameIndex);
+            RecordTransientTextureUpload(cmdBuffer, pass, frameIndex);
 
-        // --- Persistent resource copies ---
-        RecordPersistentBufferCopy(cmdBuffer, pass, frameIndex);
-        RecordPersistentTextureCopy(cmdBuffer, pass, frameIndex);
-        RecordPersistentBufferToTextureCopy(cmdBuffer, pass, frameIndex);
-        RecordPersistentTextureToBufferCopy(cmdBuffer, pass, frameIndex);
+            // --- Persistent resource copies ---
+            RecordPersistentBufferCopy(cmdBuffer, pass, frameIndex);
+            RecordPersistentTextureCopy(cmdBuffer, pass, frameIndex);
+            RecordPersistentBufferToTextureCopy(cmdBuffer, pass, frameIndex);
+            RecordPersistentTextureToBufferCopy(cmdBuffer, pass, frameIndex);
 
-        // --- Persistent resource uploads ---
-        RecordPersistentBufferUpload(cmdBuffer, pass, frameIndex);
-        RecordPersistentTextureUpload(cmdBuffer, pass, frameIndex);
+            // --- Persistent resource uploads ---
+            RecordPersistentBufferUpload(cmdBuffer, pass, frameIndex);
+            RecordPersistentTextureUpload(cmdBuffer, pass, frameIndex);
 
-        // --- Buffer copies mix ---
-        RecordTransientPersistentBufferCopy(cmdBuffer, pass, frameIndex);
-        RecordPersistentTransientBufferCopy(cmdBuffer, pass, frameIndex);
+            // --- Buffer copies mix ---
+            RecordTransientPersistentBufferCopy(cmdBuffer, pass, frameIndex);
+            RecordPersistentTransientBufferCopy(cmdBuffer, pass, frameIndex);
 
-        // --- Texture copies mix ---
-        RecordTransientPersistentTextureCopy(cmdBuffer, pass, frameIndex);
-        RecordPersistentTransientTextureCopy(cmdBuffer, pass, frameIndex);
+            // --- Texture copies mix ---
+            RecordTransientPersistentTextureCopy(cmdBuffer, pass, frameIndex);
+            RecordPersistentTransientTextureCopy(cmdBuffer, pass, frameIndex);
 
-        // --- Buffer To Texture copies mix ---
-        RecordTransientPersistentBufferToTextureCopy(cmdBuffer, pass, frameIndex);
-        RecordPersistentTransientBufferToTextureCopy(cmdBuffer, pass, frameIndex);
+            // --- Buffer To Texture copies mix ---
+            RecordTransientPersistentBufferToTextureCopy(cmdBuffer, pass, frameIndex);
+            RecordPersistentTransientBufferToTextureCopy(cmdBuffer, pass, frameIndex);
 
-        // --- Texture To Buffer copies mix ---
-        RecordTransientPersistentTextureToBufferCopy(cmdBuffer, pass, frameIndex);
-        RecordPersistentTransientTextureToBufferCopy(cmdBuffer, pass, frameIndex);
-
-        RecordDrawCalls(cmdBuffer, pass, frameIndex);
+            // --- Texture To Buffer copies mix ---
+            RecordTransientPersistentTextureToBufferCopy(cmdBuffer, pass, frameIndex);
+            RecordPersistentTransientTextureToBufferCopy(cmdBuffer, pass, frameIndex);
+        }
+        else if (pass.passType == Pass::PassType::GRAPHICS)
+        {
+            RecordDrawCalls(cmdBuffer, pass, frameIndex);
+        }
+        else 
+        {
+            // TODO: Implement compute shaders
+        }
     }
-
     RecordSwapchainDrawingPass(cmdBuffer, frameIndex, swapchainImageIndex);
 
     return true;
@@ -1494,6 +1530,10 @@ void RenderGraph::Clear()
 
     presentTexture.Id = UINT32_MAX;
     isPresentTextureValid = false;
+
+    universalTransferPass.Clear();
+    GlobalInstanceOffsetID = 0;
+    GlobalDrawInfoParamsOffset = 0;
 }
 
 void RenderGraph::RecordTransientBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
@@ -1504,8 +1544,11 @@ void RenderGraph::RecordTransientBufferCopy(VkCommandBuffer cmdBuffer, Pass& pas
     {
         BufferCopy copyInfo = copies[i];
 
-        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(copyInfo.SrcBuffer, frameIndex).Buffer;
-        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(copyInfo.DstBuffer, frameIndex).Buffer;
+        uint32_t srcBufferId = transientBufferHandleToIndex[copyInfo.SrcBuffer];
+        uint32_t dstBufferId = transientBufferHandleToIndex[copyInfo.DstBuffer];
+
+        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(srcBufferId, frameIndex).Buffer;
+        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(dstBufferId, frameIndex).Buffer;
 
         VkBufferCopy bufferCopy
         {
@@ -1548,8 +1591,11 @@ void RenderGraph::RecordTransientTextureCopy(VkCommandBuffer cmdBuffer, Pass& pa
     {
         TextureCopy copyInfo = copies[i];
 
-        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
-        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(copyInfo.DstTexture, frameIndex);
+        uint32_t srcTextureId = transientTextureHandleToIndex[copyInfo.SrcTexture];
+        uint32_t dstTextureId = transientTextureHandleToIndex[copyInfo.DstTexture];
+
+        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(srcTextureId, frameIndex);
+        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(dstTextureId, frameIndex);
 
         VkImage srcImage = srcTexture.Image;
         VkImage dstImage = dstTexture.Image;
@@ -1654,8 +1700,11 @@ void RenderGraph::RecordTransientBufferToTextureCopy(VkCommandBuffer cmdBuffer, 
     {
         BufferToTextureCopy copyInfo = copies[i];
 
-        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(copyInfo.DstTexture, frameIndex);
-        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(copyInfo.SrcBuffer, frameIndex).Buffer;
+        uint32_t srcBufferId = transientBufferHandleToIndex[copyInfo.SrcBuffer];
+        uint32_t dstTextureId = transientTextureHandleToIndex[copyInfo.DstTexture];
+
+        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(dstTextureId, frameIndex);
+        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(srcBufferId, frameIndex).Buffer;
         VkImage dstImage = dstTexture.Image;
         VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Format);
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
@@ -1730,9 +1779,12 @@ void RenderGraph::RecordTransientTextureToBufferCopy(VkCommandBuffer cmdBuffer, 
     {
         TextureToBufferCopy copyInfo = copies[i];
 
-        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
+        uint32_t srcTextureId = transientTextureHandleToIndex[copyInfo.SrcTexture];
+        uint32_t dstBufferId = transientBufferHandleToIndex[copyInfo.DstBuffer];
+
+        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(srcTextureId, frameIndex);
         VkImage srcImage = srcTexture.Image;
-        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(copyInfo.DstBuffer, frameIndex).Buffer;
+        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(dstBufferId, frameIndex).Buffer;
         VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Format);
         VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
 
@@ -1806,7 +1858,9 @@ void RenderGraph::RecordTransientPersistentBufferCopy(VkCommandBuffer cmdBuffer,
     {
         BufferCopy copyInfo = copies[i];
 
-        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(copyInfo.SrcBuffer, frameIndex).Buffer;
+        uint32_t srcBufferId = transientBufferHandleToIndex[copyInfo.SrcBuffer];
+
+        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(srcBufferId, frameIndex).Buffer;
         VkBuffer dstBuffer = MemoryRegistry::GetBuffer(copyInfo.DstBuffer).Buffer;
 
         VkBufferCopy bufferCopy
@@ -1828,8 +1882,10 @@ void RenderGraph::RecordPersistentTransientBufferCopy(VkCommandBuffer cmdBuffer,
     {
         BufferCopy copyInfo = copies[i];
 
+        uint32_t dstBufferId = transientBufferHandleToIndex[copyInfo.DstBuffer];
+
         VkBuffer srcBuffer = MemoryRegistry::GetBuffer(copyInfo.SrcBuffer).Buffer;
-        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(copyInfo.DstBuffer, frameIndex).Buffer;
+        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(dstBufferId, frameIndex).Buffer;
 
         VkBufferCopy bufferCopy
         {
@@ -1850,7 +1906,9 @@ void RenderGraph::RecordTransientPersistentTextureCopy(VkCommandBuffer cmdBuffer
     {
         TextureCopy copyInfo = copies[i];
 
-        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
+        uint32_t srcTextureId = transientTextureHandleToIndex[copyInfo.SrcTexture];
+
+        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(srcTextureId, frameIndex);
         TextureInfo& textureInfo = MemoryRegistry::GetTextureInfo(copyInfo.DstTexture);
 
         VkImage srcImage = srcTexture.Image;
@@ -1859,7 +1917,6 @@ void RenderGraph::RecordTransientPersistentTextureCopy(VkCommandBuffer cmdBuffer
         VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Format);
         VkFormat dstFormat = GetVkImageFormat(textureInfo.Format);
 
-        // CORRETTO: typo srcAspcetMask -> srcAspectMask
         VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
 
@@ -1904,8 +1961,10 @@ void RenderGraph::RecordPersistentTransientTextureCopy(VkCommandBuffer cmdBuffer
     {
         TextureCopy copyInfo = copies[i];
 
+        uint32_t dstTextureId = transientTextureHandleToIndex[copyInfo.DstTexture];
+
         TextureInfo& textureInfo = MemoryRegistry::GetTextureInfo(copyInfo.SrcTexture);
-        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(copyInfo.DstTexture, frameIndex);
+        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(dstTextureId, frameIndex);
 
         VkImage srcImage = MemoryRegistry::GetTexture(copyInfo.SrcTexture).Image;
         VkImage dstImage = dstTexture.Image;
@@ -1957,8 +2016,10 @@ void RenderGraph::RecordTransientPersistentBufferToTextureCopy(VkCommandBuffer c
     {
         BufferToTextureCopy copyInfo = copies[i];
 
+        uint32_t srcBufferId = transientBufferHandleToIndex[copyInfo.SrcBuffer];
+
         TextureInfo& textureInfo = MemoryRegistry::GetTextureInfo(copyInfo.DstTexture);
-        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(copyInfo.SrcBuffer, frameIndex).Buffer;
+        VkBuffer srcBuffer = TransientResourcePool::GetBufferObject(srcBufferId, frameIndex).Buffer;
         VkImage dstImage = MemoryRegistry::GetTexture(copyInfo.DstTexture).Image;
         VkFormat dstFormat = GetVkImageFormat(textureInfo.Format);
         VkImageAspectFlags dstAspectMask = GetVkImageAspectMaskBasedOnFormat(dstFormat);
@@ -1995,7 +2056,9 @@ void RenderGraph::RecordPersistentTransientBufferToTextureCopy(VkCommandBuffer c
     {
         BufferToTextureCopy copyInfo = copies[i];
 
-        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(copyInfo.DstTexture, frameIndex);
+        uint32_t dstTextureId = transientTextureHandleToIndex[copyInfo.DstTexture];
+
+        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(dstTextureId, frameIndex);
         VkBuffer srcBuffer = MemoryRegistry::GetBuffer(copyInfo.SrcBuffer).Buffer;
         VkImage dstImage = dstTexture.Image;
         VkFormat dstFormat = GetVkImageFormat(dstTexture.TextureInfo.Format);
@@ -2033,7 +2096,9 @@ void RenderGraph::RecordTransientPersistentTextureToBufferCopy(VkCommandBuffer c
     {
         TextureToBufferCopy copyInfo = copies[i];
 
-        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(copyInfo.SrcTexture, frameIndex);
+        uint32_t srcTextureId = transientTextureHandleToIndex[copyInfo.SrcTexture];
+
+        TextureResource& srcTexture = TransientResourcePool::GetTextureObject(srcTextureId, frameIndex);
         VkImage srcImage = srcTexture.Image;
         VkBuffer dstBuffer = MemoryRegistry::GetBuffer(copyInfo.DstBuffer).Buffer;
         VkFormat srcFormat = GetVkImageFormat(srcTexture.TextureInfo.Format);
@@ -2071,9 +2136,11 @@ void RenderGraph::RecordPersistentTransientTextureToBufferCopy(VkCommandBuffer c
     {
         TextureToBufferCopy copyInfo = copies[i];
 
+        uint32_t dstBufferId = transientBufferHandleToIndex[copyInfo.DstBuffer];
+
         TextureInfo& textureInfo = MemoryRegistry::GetTextureInfo(copyInfo.SrcTexture);
         VkImage srcImage = MemoryRegistry::GetTexture(copyInfo.SrcTexture).Image;
-        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(copyInfo.DstBuffer, frameIndex).Buffer;
+        VkBuffer dstBuffer = TransientResourcePool::GetBufferObject(dstBufferId, frameIndex).Buffer;
         VkFormat srcFormat = GetVkImageFormat(textureInfo.Format);
         VkImageAspectFlags srcAspectMask = GetVkImageAspectMaskBasedOnFormat(srcFormat);
 
@@ -2104,13 +2171,14 @@ void RenderGraph::RecordPersistentTransientTextureToBufferCopy(VkCommandBuffer c
 void RenderGraph::RecordTransientBufferUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
 {
     std::vector<BufferUpload>& uploads = pass.transientBufferUploads;
-
     for(uint32_t i = 0; i < uploads.size(); i++)
     {
         BufferUpload uploadInfo = uploads[i];
 
+        uint32_t dstBufferId = transientBufferHandleToIndex[uploadInfo.DstBuffer];
+
         BufferObject& srcBuffer = MemoryRegistry::GetBuffer(uploadInfo.SrcBufferId);
-        BufferObject& dstBuffer = MemoryRegistry::GetBuffer(uploadInfo.DstBuffer);
+        BufferResource& dstBuffer = TransientResourcePool::GetBufferObject(dstBufferId, frameIndex);
 
         VkBufferCopy bufferCopy
         {
@@ -2157,10 +2225,12 @@ void RenderGraph::RecordTransientTextureUpload(VkCommandBuffer cmdBuffer, Pass& 
     {
         TextureUpload uploadInfo = uploads[i];
 
-        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(uploadInfo.DstTexture, frameIndex);
+        uint32_t dstTextureId = transientTextureHandleToIndex[uploadInfo.DstTexture];
+
+        TextureResource& dstTexture = TransientResourcePool::GetTextureObject(dstTextureId, frameIndex);
 
         VkBuffer srcBuffer = MemoryRegistry::GetBuffer(uploadInfo.SrcBufferId).Buffer;
-        VkImage dstImage = MemoryRegistry::GetTexture(uploadInfo.DstTexture).Image;
+        VkImage dstImage = dstTexture.Image;
 
         VkFormat format = GetVkImageFormat(dstTexture.TextureInfo.Format);
 
@@ -2241,7 +2311,8 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
     std::vector<std::pair<TransientTextureHandle, LoadStoreOp>>& loadStoreOps = pass.loadStoreOps;
     std::vector<DrawCall>& drawCalls = pass.drawCalls;
 
-    std::array<std::byte, 128> currentPushConstantData {};
+    PushConstant currentPushConstantData {};
+    uint32_t pushConstantSize = sizeof(PushConstant);
     bool isFirstDrawCall = true;
     
     // No draw calls
@@ -2427,7 +2498,6 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
 
     vkCmdBeginRenderingKHR(cmdBuffer, &renderInfo);
     {
-
         VkViewport viewport
         {
             .x = 0, .y = static_cast<float>(height),
@@ -2450,18 +2520,24 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
         {
             DrawCall drawCall = drawCalls[i];
 
-            uint32_t pushConstantSize = drawCall.SizeBytes;
-            uint32_t pushConstantOffset = drawCall.OffsetBytes;
             ShaderHandle shaderHandle = drawCall.MaterialHandle.GetShader();
             GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(shaderHandle);
 
             vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.Pipeline);
 
             // --- Push Constant ---
-            std::byte* currentData = currentPushConstantData.data() + pushConstantOffset;
-            std::byte* newData = drawCall.PushConstantData.data() + pushConstantOffset;
+            PushConstant newPushConstantData
+            {
+                .DrawInfoParamsBufferOffset = GlobalDrawInfoParamsOffset,
+                .GlobalInstanceOffsetID = GlobalInstanceOffsetID,
+                .MaterialBufferID = drawCall.MaterialHandle.GetPropertiesUBOId(),
+                .InstanceParamsBufferID = instanceParamsBuffer.Id,
+                .DrawCallInfoParamsBufferID = drawInfoParamsBuffer.Id,
+                .RenderViewBufferID = renderViewsBuffer.Id,
+                .RenderViewID = drawCall.RenderView.Id
+            };
 
-            bool dataChanged = std::memcmp(currentData, newData, pushConstantSize) != 0;
+            bool dataChanged = !(newPushConstantData == currentPushConstantData);
 
             if(dataChanged || isFirstDrawCall)
             {
@@ -2469,22 +2545,21 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
                     cmdBuffer, 
                     PipelineBuilder::GetGraphicsPipelineLayout(), 
                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 
-                    pushConstantOffset,
+                    0,
                     pushConstantSize,
-                    newData
+                    &newPushConstantData
                 );
 
-                std::memcpy(
-                    currentData,
-                    newData,
-                    pushConstantSize
-                );
+                currentPushConstantData = newPushConstantData;
 
                 isFirstDrawCall = false;
             }
 
             // --- Draw ---
             vkCmdDraw(cmdBuffer, drawCall.VertexShaderInvocations, drawCall.InstanceCount, 0, 0);
+
+            GlobalInstanceOffsetID += drawCall.InstanceCount;
+            GlobalDrawInfoParamsOffset += drawCall.DrawInfoData.size();
         }
     }
     vkCmdEndRenderingKHR(cmdBuffer);
@@ -2681,6 +2756,87 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
     };
 
     vkCmdPipelineBarrier2KHR(cmdBuffer, &presentDep);
+}
+
+void RenderGraph::UploadInstanceAnDrawInfoParams()
+{
+    uint32_t passCount = passes.size();
+
+    uint32_t numInstances = 0;
+    uint64_t drawCallInfoBufferSize = 0;
+    for (uint32_t passIndex = 0; passIndex < passCount; passIndex++)
+    {
+        Pass& pass = passes[passIndex];
+
+        uint32_t instanceCount = pass.instanceParams.size();
+        uint32_t drawCallCount = pass.drawCalls.size();
+
+        // Instances
+        for (uint32_t i = 0; i < instanceCount; i++)
+        {
+            InstanceParams& param = pass.instanceParams[i];
+
+            instanceParams.push_back(param);
+
+            numInstances += instanceCount;
+        }
+
+        // Draw Call
+        for (uint32_t i = 0; i < drawCallCount; i++)
+        {
+            DrawCall& drawCall = pass.drawCalls[i];
+
+            uint64_t drawCallInfoSize = drawCall.DrawInfoData.size();
+
+            drawCallInfoParams.resize(drawCallInfoBufferSize + drawCallInfoSize);
+            
+            std::memcpy
+            (
+                static_cast<std::byte*>(drawCallInfoParams.data()) + drawCallInfoBufferSize,
+                drawCall.DrawInfoData.data(),
+                drawCallInfoSize
+            );
+
+            drawCallInfoBufferSize += drawCallInfoSize;
+        }
+    }
+
+    uint64_t instaceBufferSize = sizeof(InstanceParams) * numInstances;
+
+    if(instaceBufferSize != 0)
+    {
+        instanceParamsBuffer = RenderGraph::RequestTransientBuffer(instaceBufferSize);
+        universalTransferPass.UploadBuffer(instanceParams.data(), instanceParamsBuffer, instaceBufferSize, 0);
+
+        instanceParams.clear();
+    }
+
+    if(drawCallInfoBufferSize != 0)
+    {
+        drawInfoParamsBuffer = RenderGraph::RequestTransientBuffer(drawCallInfoBufferSize);
+
+        universalTransferPass.UploadBuffer(drawCallInfoParams.data(), drawInfoParamsBuffer, drawCallInfoBufferSize, 0);
+
+        drawCallInfoParams.clear();
+    }
+}
+
+void RenderGraph::UploadRenderViews()
+{
+    uint32_t renderViewCount = RenderViewRegistry::GetRenderViewsCount();
+
+    uint32_t renderViewSize = sizeof(RenderViewObject);
+
+    uint64_t totalSize = renderViewCount * renderViewSize;
+
+    if(totalSize != 0)
+    {
+        renderViewsBuffer = RenderGraph::RequestTransientBuffer(totalSize);
+
+        void* renderViewData = RenderViewRegistry::GetRenderViewsPtr();
+
+        universalTransferPass.UploadBuffer(renderViewData, renderViewsBuffer, totalSize, 0);
+    }
 }
 
 RenderGraph::TextureBarrierInfo RenderGraph::GetFirstTextureBarrierInfo(const uint32_t newAllocIndex, const uint64_t newAllocOffset, const uint64_t newAllocSize)
@@ -3004,6 +3160,7 @@ void RenderGraph::AddPass(GraphicsPass& pass)
 {
     Pass data
     {
+        .passType = Pass::PassType::GRAPHICS,
         .transientBuffers = pass.GetTransientBuffers(),
         .transientTextures = pass.GetTransientTextures(),
 
@@ -3011,7 +3168,8 @@ void RenderGraph::AddPass(GraphicsPass& pass)
         .persistentTextures = pass.GetPersistentTextures(),
 
         .loadStoreOps = pass.GetLoadStoreOperations(),
-        .drawCalls = pass.GetDrawCalls()
+        .drawCalls = pass.GetDrawCalls(),
+        .instanceParams = pass.GetInstanceParams()
     };
 
     passes.push_back(data);
@@ -3021,6 +3179,7 @@ void RenderGraph::AddPass(TransferPass& pass)
 {
     Pass data
     {
+        .passType = Pass::PassType::TRANSFER,
         .transientBuffers = pass.GetTransientBuffers(),
         .transientTextures = pass.GetTransientTextures(),
 
@@ -3060,6 +3219,7 @@ void RenderGraph::AddPass(ComputePass& pass)
 {
     Pass data
     {
+        .passType = Pass::PassType::COMPUTE,
         .transientBuffers = pass.GetTransientBuffers(),
         .transientTextures = pass.GetTransientTextures(),
         
@@ -3075,6 +3235,7 @@ void RenderGraph::AddPass(GraphicsPass& pass, uint32_t index)
 {
     Pass data
     {
+        .passType = Pass::PassType::GRAPHICS,
         .transientBuffers = pass.GetTransientBuffers(),
         .transientTextures = pass.GetTransientTextures(),
 
@@ -3082,7 +3243,8 @@ void RenderGraph::AddPass(GraphicsPass& pass, uint32_t index)
         .persistentTextures = pass.GetPersistentTextures(),
 
         .loadStoreOps = pass.GetLoadStoreOperations(),
-        .drawCalls = pass.GetDrawCalls()
+        .drawCalls = pass.GetDrawCalls(),
+        .instanceParams = pass.GetInstanceParams()
     };
 
     passes.insert(passes.cbegin() + index, data);
@@ -3092,6 +3254,7 @@ void RenderGraph::AddPass(TransferPass& pass, uint32_t index)
 {
     Pass data
     {
+        .passType = Pass::PassType::TRANSFER,
         .transientBuffers = pass.GetTransientBuffers(),
         .transientTextures = pass.GetTransientTextures(),
 
@@ -3131,6 +3294,7 @@ void RenderGraph::AddPass(ComputePass& pass, uint32_t index)
 {
     Pass data
     {
+        .passType = Pass::PassType::COMPUTE,
         .transientBuffers = pass.GetTransientBuffers(),
         .transientTextures = pass.GetTransientTextures(),
         
@@ -3143,7 +3307,7 @@ void RenderGraph::AddPass(ComputePass& pass, uint32_t index)
     passes.insert(passes.cbegin() + index, data);
 }
 
-void RenderGraph::SetPresentTexture(TransientTextureHandle handle)
+void RenderGraph::SetPresentTexture2D(TransientTextureHandle handle)
 {
     presentTexture = handle;
 }

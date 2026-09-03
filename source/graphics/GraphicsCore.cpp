@@ -52,7 +52,7 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
         MemoryBin::DestroyAllPendingResources();
         isSwapchainRebuildNeeded = false;
     }
-    
+
     uint64_t timelineSignalValue = elapsedFrames + 1;
     uint64_t timelineWaitValue = timelineSignalValue - Eve::Settings::MAX_FRAMES_IN_FLIGHT;
 
@@ -87,7 +87,7 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
     {
         VK_CHECK(result);
     }
-
+    
     // Compile Graph, Update Descriptor Set, Record Commands
     RenderGraph::Execute(frameData.CmdBuffer, frameIndex, swaphchainImageIndex);
 

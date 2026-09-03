@@ -106,6 +106,8 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
     GraphicsMesh& graphicsMesh = graphicsMeshes[handle.Id];
     MeshBufferInfo& bufferInfo = meshBuffersInfo[handle.Id];
 
+    TransferPass& universalTransferPass = RenderGraph::GetUniversalTransferPass();
+
     // --- Verticies ---
     if(!cpuMesh.Vertices.empty())
     {
@@ -124,7 +126,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
             bufferInfo.Vertex = true;
         }
 
-        MeshRegistry::transferPass.UploadBuffer(cpuMesh.Vertices.data(), graphicsMesh.VertexBuffer, cpuMesh.Vertices.size() * sizeof(Vector3), 0);
+        universalTransferPass.UploadBuffer(cpuMesh.Vertices.data(), graphicsMesh.VertexBuffer, cpuMesh.Vertices.size() * sizeof(Vector3), 0);
         graphicsMesh.VerticiesCount = cpuMesh.Vertices.size();
     }
 
@@ -146,7 +148,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
             bufferInfo.Index = true;
         }
 
-        MeshRegistry::transferPass.UploadBuffer(cpuMesh.Indicies.data(), graphicsMesh.IndexBuffer, cpuMesh.Indicies.size() * sizeof(Vector3), 0);
+        universalTransferPass.UploadBuffer(cpuMesh.Indicies.data(), graphicsMesh.IndexBuffer, cpuMesh.Indicies.size() * sizeof(Vector3), 0);
         graphicsMesh.IndiciesCount = cpuMesh.Indicies.size();
     }
 
@@ -168,7 +170,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
             bufferInfo.Normal = true;
         }
 
-        MeshRegistry::transferPass.UploadBuffer(cpuMesh.Normals.data(), graphicsMesh.NormalBuffer, cpuMesh.Normals.size() * sizeof(Vector3), 0);
+        universalTransferPass.UploadBuffer(cpuMesh.Normals.data(), graphicsMesh.NormalBuffer, cpuMesh.Normals.size() * sizeof(Vector3), 0);
         graphicsMesh.NormalsCount = cpuMesh.Normals.size();
     }
 
@@ -190,7 +192,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
             bufferInfo.Color = true;
         }
 
-        MeshRegistry::transferPass.UploadBuffer(cpuMesh.Colors.data(), graphicsMesh.ColorBuffer, cpuMesh.Colors.size() * sizeof(Vector3), 0);
+        universalTransferPass.UploadBuffer(cpuMesh.Colors.data(), graphicsMesh.ColorBuffer, cpuMesh.Colors.size() * sizeof(Vector3), 0);
         graphicsMesh.ColorsCount = cpuMesh.Colors.size();
     }
 
@@ -212,7 +214,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
             bufferInfo.UV = true;
         }
 
-        MeshRegistry::transferPass.UploadBuffer(cpuMesh.UVs.data(), graphicsMesh.UVBuffer, cpuMesh.UVs.size() * sizeof(Vector2), 0);
+        universalTransferPass.UploadBuffer(cpuMesh.UVs.data(), graphicsMesh.UVBuffer, cpuMesh.UVs.size() * sizeof(Vector2), 0);
 
         graphicsMesh.UVsCount = cpuMesh.UVs.size();
     }
@@ -235,7 +237,7 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
             bufferInfo.Tangent = true;
         }
 
-        MeshRegistry::transferPass.UploadBuffer(cpuMesh.Tangents.data(), graphicsMesh.TangentBuffer, cpuMesh.Tangents.size() * sizeof(Vector4), 0);
+        universalTransferPass.UploadBuffer(cpuMesh.Tangents.data(), graphicsMesh.TangentBuffer, cpuMesh.Tangents.size() * sizeof(Vector4), 0);
         graphicsMesh.TangentsCount = cpuMesh.Tangents.size();
     }
 }
@@ -263,10 +265,4 @@ void MeshRegistry::SetUVs(MeshHandle meshHandle, std::vector<Vector2>& uvs)
 void MeshRegistry::SetTangents(MeshHandle meshHandle, std::vector<Vector4>& tangents)
 {
     cpuMeshes[meshHandle.Id].Tangents = tangents;
-}
-
-void MeshRegistry::UploadMeshes()
-{
-    RenderGraph::AddPass(transferPass, 0);
-    transferPass.GetPersistentBufferUploads().clear();
 }

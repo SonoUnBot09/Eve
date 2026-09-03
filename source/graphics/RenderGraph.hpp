@@ -1,5 +1,6 @@
 #pragma once
 
+#include "eve/graphics/Buffer.hpp"
 #include <vector>
 #include <cstdint>
 
@@ -29,9 +30,11 @@ namespace Eve::Graphics
             static void AddPass(TransferPass& pass, uint32_t index);
             static void AddPass(ComputePass& pass, uint32_t index);
 
-            static void SetPresentTexture(TransientTextureHandle handle);
+            static void SetPresentTexture2D(TransientTextureHandle handle);
 
             static bool Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex);
+
+            inline static TransferPass& GetUniversalTransferPass() { return universalTransferPass; }
 
             struct TextureBarrierInfo
             {
@@ -82,6 +85,16 @@ namespace Eve::Graphics
 
             struct Pass
             {
+
+                enum class PassType : uint32_t
+                {
+                    GRAPHICS,
+                    TRANSFER,
+                    COMPUTE
+                };
+
+                PassType passType;
+
                 std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;
                 std::vector<std::pair<TransientTextureHandle, Usage>> transientTextures;
 
@@ -92,6 +105,7 @@ namespace Eve::Graphics
 
                 // --- Graphics ---
                 std::vector<DrawCall> drawCalls;
+                std::vector<InstanceParams> instanceParams;
 
                 // --- Transfer ---
                 std::vector<BufferCopy> transientBufferCopies;
@@ -141,6 +155,29 @@ namespace Eve::Graphics
                 std::vector<uint32_t> BuffersToDestroy;
             };
 
+            struct PushConstant
+            {
+                uint64_t DrawInfoParamsBufferOffset;
+                uint32_t GlobalInstanceOffsetID;
+                uint32_t MaterialBufferID;
+                uint32_t InstanceParamsBufferID;
+                uint32_t DrawCallInfoParamsBufferID;
+                uint32_t RenderViewBufferID;
+                uint32_t RenderViewID;
+
+                bool operator== (PushConstant& other)
+                {
+                    return
+                        DrawInfoParamsBufferOffset == other.DrawInfoParamsBufferOffset &&
+                        GlobalInstanceOffsetID == other.GlobalInstanceOffsetID &&
+                        MaterialBufferID == other.MaterialBufferID &&
+                        InstanceParamsBufferID == other.InstanceParamsBufferID &&
+                        DrawCallInfoParamsBufferID == other.DrawCallInfoParamsBufferID &&
+                        RenderViewBufferID == other.RenderViewBufferID &&
+                        RenderViewID == other.RenderViewID;
+                };
+            };
+
             struct MemorySlot
             {
                 uint64_t Start;
@@ -188,6 +225,9 @@ namespace Eve::Graphics
             static void RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
             static void RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex);
 
+            static void UploadInstanceAnDrawInfoParams();
+            static void UploadRenderViews();
+
             // Input
             inline static std::vector<TextureInfo> transientRequestedTextures;
             inline static std::vector<TransientTextureHandle> transientRequestedTextureHandles;
@@ -205,6 +245,15 @@ namespace Eve::Graphics
             
             inline static TransientTextureHandle presentTexture = {UINT32_MAX};
             inline static bool isPresentTextureValid = false;
+
+            inline static TransferPass universalTransferPass;
+            inline static std::vector<InstanceParams> instanceParams;
+            inline static std::vector<std::byte> drawCallInfoParams;
+            inline static TransientBufferHandle instanceParamsBuffer;
+            inline static TransientBufferHandle drawInfoParamsBuffer;
+            inline static TransientBufferHandle renderViewsBuffer;
+            inline static uint32_t GlobalInstanceOffsetID;
+            inline static uint64_t GlobalDrawInfoParamsOffset;
 
             inline static std::vector<uint32_t> barriersOffsetPerTexture;
             inline static std::vector<std::pair<TextureBarrierInfo, uint32_t>> texturesBarriersInfo; // The second element in the pair is the sync point index

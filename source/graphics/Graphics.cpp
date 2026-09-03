@@ -1,5 +1,6 @@
 #include "GraphicsCore.hpp"
 #include "registers/MaterialRegistry.hpp"
+#include "registers/RenderViewRegistry.hpp"
 #include <eve/graphics/Graphics.hpp>
 #include <graphics/registers/MemoryRegistry.hpp>
 #include <graphics/registers/MeshRegistry.hpp>
@@ -76,6 +77,15 @@ ShaderHandle Graphics::CreateGraphicsShader(ShaderInfo shaderInfo)
     return ShaderRegistry::CreateGraphicsShader(shaderInfo);
 }
 
+RenderViewHandle Graphics::CreateRenderView()
+{
+    return RenderViewRegistry::CreateRenderView();
+}
+void Graphics::DestroyRenderView(RenderViewHandle handle)
+{
+    RenderViewRegistry::DestroyRenderView(handle);
+}
+
 MaterialHandle Graphics::CreateMaterial(ShaderHandle handle)
 {
     return MaterialRegistry::CreateMaterial(handle);
@@ -127,9 +137,9 @@ void Graphics::AddPass(ComputePass& pass, uint32_t index)
     RenderGraph::AddPass(pass, index);
 }
 
-void Graphics::SetPresentTexture(TransientTextureHandle handle)
+void Graphics::SetPresentTexture2D(TransientTextureHandle handle)
 {
-    RenderGraph::SetPresentTexture(handle);
+    RenderGraph::SetPresentTexture2D(handle);
 }
 
 Vector2Int Graphics::GetWindowSize()

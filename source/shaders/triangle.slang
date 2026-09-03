@@ -11,18 +11,8 @@ struct V2F
 
 struct Properties
 {
-    float4x4 model;
     float3 color;
-    float4x4 mvp;
 }
-
-struct PushConstant
-{
-    uint32_t materialId;
-};
-
-[push_constant]
-PushConstant pushConstant;
 
 
 [shader("vertex")]
@@ -78,7 +68,11 @@ V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
         { 1, 1 }
     };
 
-    Properties properties = GetMaterial<Properties>(pushConstant.materialId);
+    uint32_t globalInstanceID = Eve.GetGlobalInstanceID(instanceID);
+
+    float4x4 model = Eve.GetObjectToWorldMatrix(globalInstanceID);
+
+    Properties properties = Eve.GetMaterialProperties<Properties>();
 
     V2F output;
 
@@ -87,9 +81,11 @@ V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
     float3 vertexPos = vertices[vertexIndex];
     float3 normalLocal = normals[vertexIndex];
 
-    float3 normal = normalize(mul(properties.model, float4(normalLocal, 0)).xyz);
+    float3 normal = normalize(mul(model, float4(normalLocal, 0)).xyz);
 
-    output.position = mul(properties.mvp, float4(vertexPos * 0.25f, 1.0));
+    float4x4 mvp = mul(Eve.GetVPMatrix(), model);
+
+    output.position = mul(mvp, float4(vertexPos * 0.25f, 1.0));
     output.normal = normal;
     output.color = properties.color;
 
