@@ -141,6 +141,9 @@ void InputManager::ResetKeys()
     mouseDown.fill(false);
     mouseUp.fill(false);
     mouse.fill(false);
+
+    windowGainedFocus = false;
+    windowLostFocus = false;
 }
 
 

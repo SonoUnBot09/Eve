@@ -1,5 +1,6 @@
 #include <graphics/GraphicsCore.hpp>
 #include "EveSettings.hpp"
+#include "SDL3/SDL_events.h"
 #include "SDL3/SDL_mouse.h"
 #include "input/InputManager.hpp"
 #include <Core.hpp>
@@ -140,6 +141,10 @@ void Core::Run()
             else if(event.type == SDL_EVENT_MOUSE_BUTTON_UP)
             {
                 InputManager::UpdateMouseUp(event);
+            }
+            else if(event.type == SDL_EVENT_WINDOW_FOCUS_GAINED)
+            {
+                
             }
         
             /*
