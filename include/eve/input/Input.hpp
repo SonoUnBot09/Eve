@@ -26,7 +26,6 @@ namespace Eve::Input
 
             static void LockMouseAtCenter(bool value);
 
-            static bool WindowGainedFocus();
-            static bool WindowLostFocus();
+            static bool IsWindowInFocus();
     };
 }

@@ -66,12 +66,7 @@ void Input::LockMouseAtCenter(bool value)
     SDL_SetWindowRelativeMouseMode(GraphicsCore::Window.Window, value);
 }
 
-bool Input::WindowGainedFocus()
+bool Input::IsWindowInFocus()
 {
-    return InputManager::WindowGainedFocus();
-}
-
-bool WindowLostFocus()
-{
-    return InputManager::WindowLostFocus();
+    return InputManager::IsWindowInFocus();
 }

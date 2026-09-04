@@ -29,8 +29,7 @@ namespace Eve::Input
             static bool IsAnyMouseUp(MouseKey* key);
             inline static MouseState GetMouseState() { return mouseState; }
 
-            inline static bool WindowGainedFocus() { return windowGainedFocus; }
-            inline static bool WindowLostFocus() { return windowLostFocus; }
+            inline static bool IsWindowInFocus () { return windowFocus; }
 
             // --- Setters ---
             static void ResetKeys();
@@ -44,8 +43,8 @@ namespace Eve::Input
             static void UpdateMouse(uint32_t mouseState);
             inline static void SetMouseState(MouseState state) { mouseState = state; }
 
-            inline static void SetWindowGainedFocus() { windowGainedFocus = true; }
-            inline static void SetWindowLostFocus() { windowLostFocus = true; }
+            inline static void SetWindowGainedFocus() { windowFocus = true; }
+            inline static void SetWindowLostFocus() { windowFocus = false; }
 
         private:
 
@@ -64,8 +63,7 @@ namespace Eve::Input
             inline static std::array<bool, MOUSE_NUMBER> mouseUp;
             inline static std::array<bool, MOUSE_NUMBER> mouse;
 
-            inline static bool windowGainedFocus = false;
-            inline static bool windowLostFocus = false;
+            inline static bool windowFocus = false;
 
             inline static MouseState mouseState;
     };

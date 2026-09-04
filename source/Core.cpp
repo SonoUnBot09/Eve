@@ -144,7 +144,11 @@ void Core::Run()
             }
             else if(event.type == SDL_EVENT_WINDOW_FOCUS_GAINED)
             {
-                
+                InputManager::SetWindowGainedFocus();
+            }
+            else if(event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
+            {
+                InputManager::SetWindowLostFocus();
             }
         
             /*

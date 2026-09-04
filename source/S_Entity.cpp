@@ -1,5 +1,6 @@
 #include "eve/entities/ComponentsRegistry.hpp"
 #include "eve/input/KeyboardKey.hpp"
+#include "eve/input/MouseKey.hpp"
 #include <eve/entities/EntityCommandInfo.hpp>
 #include <cstdint>
 #include <glm/gtc/quaternion.hpp>
@@ -110,7 +111,14 @@ namespace
         Camera& camera = table.GetComponent<Camera>(0, cameraComponentType);
 
         MouseState mouseState = Input::GetMouseState();
-        Input::LockMouseAtCenter(true);
+        if(Input::IsMouseDown(MouseKey::BUTTON_LEFT))
+        {
+            Input::LockMouseAtCenter(true);
+        }
+        else if (Input::IsKeyDown(KeyboardKey::KEY_ESCAPE)) 
+        {
+            Input::LockMouseAtCenter(false);
+        }
 
         glm::vec2 mouseDelta = mouseState.MousePos - previusMousePos;
         //UpdateCameraMouseInput(camera, mouseDelta.x, -mouseDelta.y);
