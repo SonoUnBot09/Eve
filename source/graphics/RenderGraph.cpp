@@ -6,6 +6,7 @@
 #include "builders/ShaderObject.hpp"
 #include "builders/Swapchain.hpp"
 #include "eve/graphics/Buffer.hpp"
+#include "eve/graphics/MaterialHandle.hpp"
 #include "eve/graphics/Pass.hpp"
 #include "eve/graphics/details/Usage.hpp"
 #include "graphics/ResourceMapper.hpp"
@@ -2530,7 +2531,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             {
                 .DrawInfoParamsBufferOffset = GlobalDrawInfoParamsOffset,
                 .GlobalInstanceOffsetID = GlobalInstanceOffsetID,
-                .MaterialBufferID = drawCall.MaterialHandle.GetPropertiesUBOId(),
+                .MaterialBufferID = MaterialRegistry::GetPropertiesUBOId(drawCall.MaterialHandle),
                 .InstanceParamsBufferID = instanceParamsBuffer.Id,
                 .DrawCallInfoParamsBufferID = drawInfoParamsBuffer.Id,
                 .RenderViewBufferID = renderViewsBuffer.Id,

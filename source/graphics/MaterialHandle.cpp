@@ -40,11 +40,6 @@ void MaterialHandle::SetVector4Int(std::string paramName, glm::ivec4 value)
     MaterialRegistry::UpdateMaterial(paramName, &value, 16, *this);
 }
 
-uint32_t MaterialHandle::GetPropertiesUBOId()
-{
-    return MaterialRegistry::GetPropertiesUBOId(*this);
-}
-
 ShaderHandle MaterialHandle::GetShader()
 {
     return MaterialRegistry::GetShader(*this);

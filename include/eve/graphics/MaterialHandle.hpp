@@ -25,8 +25,5 @@ namespace Eve::Graphics
         void SetVector3Int(std::string paramName, glm::ivec3 value);
         void SetVector4(std::string paramName, glm::vec4 value);
         void SetVector4Int(std::string paramName, glm::ivec4 value);
-
-        uint32_t GetPropertiesUBOId();
-
     };
 }
