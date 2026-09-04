@@ -2778,9 +2778,9 @@ void RenderGraph::UploadInstanceAnDrawInfoParams()
             InstanceParams& param = pass.instanceParams[i];
 
             instanceParams.push_back(param);
-
-            numInstances += instanceCount;
         }
+
+        numInstances += instanceCount;
 
         // Draw Call
         for (uint32_t i = 0; i < drawCallCount; i++)
@@ -2807,6 +2807,7 @@ void RenderGraph::UploadInstanceAnDrawInfoParams()
     if(instaceBufferSize != 0)
     {
         instanceParamsBuffer = RenderGraph::RequestTransientBuffer(instaceBufferSize);
+        
         universalTransferPass.UploadBuffer(instanceParams.data(), instanceParamsBuffer, instaceBufferSize, 0);
 
         instanceParams.clear();
@@ -2836,7 +2837,9 @@ void RenderGraph::UploadRenderViews()
 
         void* renderViewData = RenderViewRegistry::GetRenderViewsPtr();
 
+        std::cout << "Render Views Upload" << std::endl;
         universalTransferPass.UploadBuffer(renderViewData, renderViewsBuffer, totalSize, 0);
+        std::cout << "Render Views Uploaded" << std::endl;
     }
 }
 

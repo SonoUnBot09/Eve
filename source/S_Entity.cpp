@@ -16,7 +16,7 @@ using namespace Eve::Input;
 
 namespace 
 {
-    static constexpr uint32_t entitiesCount = 10;
+    static constexpr uint32_t entitiesCount = 4;
     static glm::vec2 previusMousePos = glm::vec2(0,0);
 
     void Start(uint32_t systemId)
@@ -63,11 +63,6 @@ namespace
         EntityManager::ScheduleCreationCommand(&entityCommandInfo, systemId);
     }
 
-    constexpr float ToRadians(float degrees) 
-    {
-        return degrees * (3.14159265359f / 180.0f);
-    }
-
     void UpdateCameraMouseInput(Camera& camera, float mouseDeltaX, float mouseDeltaY, const glm::vec3& worldUp = glm::vec3(0, 1, 0))
     {
         camera.yaw   += mouseDeltaX * camera.sensitivity;
@@ -76,13 +71,13 @@ namespace
         if (camera.pitch > 89.0f)  camera.pitch = 89.0f;
         if (camera.pitch < -89.0f) camera.pitch = -89.0f;
 
-        float yawRad   = ToRadians(camera.yaw);
-        float pitchRad = ToRadians(camera.pitch);
+        float yawRad   = glm::radians(camera.yaw);
+        float pitchRad = glm::radians(camera.pitch);
 
         glm::vec3 newForward;
-        newForward.x = std::cos(yawRad) * std::cos(pitchRad);
+        newForward.x = std::sin(yawRad) * std::cos(pitchRad);
         newForward.y = std::sin(pitchRad);
-        newForward.z = std::sin(yawRad) * std::cos(pitchRad);
+        newForward.z = std::cos(yawRad) * std::cos(pitchRad);
 
         camera.forward = glm::normalize(newForward);
 
@@ -111,6 +106,8 @@ namespace
         Camera& camera = table.GetComponent<Camera>(0, cameraComponentType);
 
         MouseState mouseState = Input::GetMouseState();
+
+        
         if(Input::IsMouseDown(MouseKey::BUTTON_LEFT))
         {
             Input::LockMouseAtCenter(true);
@@ -121,21 +118,18 @@ namespace
         }
 
         glm::vec2 mouseDelta = mouseState.MousePos - previusMousePos;
-        //UpdateCameraMouseInput(camera, mouseDelta.x, -mouseDelta.y);
+        UpdateCameraMouseInput(camera, mouseDelta.x, -mouseDelta.y);
 
-        //transform.Rotation = glm::quat(glm::radians(glm::vec3(camera.pitch, camera.yaw, 0.0f)));
+        transform.Rotation = glm::quat(glm::radians(glm::vec3(camera.pitch, camera.yaw, 0.0f)));
 
         glm::vec3 moveDir(0.0f, 0.0f, 0.0f);
 
-        // Avanti / Indietro
         if (Input::IsKey(KeyboardKey::KEY_W)) moveDir += camera.forward;
         if (Input::IsKey(KeyboardKey::KEY_S)) moveDir -= camera.forward;
 
-        // Destra / Sinistra
         if (Input::IsKey(KeyboardKey::KEY_D)) moveDir += camera.right;
         if (Input::IsKey(KeyboardKey::KEY_A)) moveDir -= camera.right;
 
-        // Su / Giù (Lungo l'asse globale Y)
         if (Input::IsKey(KeyboardKey::KEY_E))  moveDir += glm::vec3(0,1,0);
         if (Input::IsKey(KeyboardKey::KEY_Q)) moveDir -= glm::vec3(0,1,0);
 

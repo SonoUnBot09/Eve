@@ -1,3 +1,4 @@
+#include "eve/entities/QueryInfo.hpp"
 #include "eve/graphics/Buffer.hpp"
 #include "eve/graphics/Pass.hpp"
 #include "eve/graphics/RenderViewHandle.hpp"
@@ -105,14 +106,34 @@ namespace
 
         QueryResult& queryResult = EntityManager::GetTables(queryInfo);
 
-        Table& table = queryResult.GetTable(0);
+        Table& cameraTable = queryResult.GetTable(0);
 
-        Camera& camera = table.GetComponent<Camera>(0, cameraComponentType);
+        Camera& camera = cameraTable.GetComponent<Camera>(0, cameraComponentType);
 
         camera.renderView.SetPerspective(1.22173f, windowSize.x / (float)windowSize.y, 0.1f, 100.0f);
 
         float time = static_cast<float>(elapsedFrames);
+
+        QueryInfo objectQueryInfo
+        {
+            transformComponentType,
+            true
+        };
         
+        QueryResult& tables = EntityManager::GetTables(objectQueryInfo);
+
+        Table& table = tables.GetTable(0);
+
+        uint32_t entitiesCount = table.GetEntitiesCount();
+
+        for(uint32_t i = 0; i < entitiesCount; i++)
+        {
+            Transform& transform = table.GetComponent<Transform>(i, transformComponentType);
+
+            pass.Draw(36, transform, material, camera.renderView, nullptr);
+        }
+        
+        /*
         Transform objectTransform1 = 
         {
             {0, 0, 5},
@@ -129,7 +150,7 @@ namespace
 
         std::vector<Transform> transforms {objectTransform1, objectTransform2};
 
-        pass.DrawInstanced(36, 2, *transforms.data(), material, camera.renderView, nullptr);
+        pass.DrawInstanced(36, 2, *transforms.data(), material, camera.renderView, nullptr);*/
         //pass.Draw(36, objectTransform1, material, renderView, nullptr);
         //pass.Draw(36, objectTransform2, material, renderView, nullptr);
 

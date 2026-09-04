@@ -39,15 +39,16 @@ void RenderViewRegistry::SetTRS(RenderViewHandle handle, Transform& transform)
 {
     RenderViewObject& renderView = renderViews[handle.Id];
 
-    glm::mat4 viewMatrix = 
-        glm::translate(glm::mat4(1.0f),transform.Position) *
+    glm::mat4 worldMatrix = 
+        glm::translate(glm::mat4(1.0f), transform.Position) *
         glm::mat4_cast(transform.Rotation) * 
         glm::scale(glm::mat4(1.0f), transform.Scale);
-    glm::mat4 invViewMatrix = glm::inverse(viewMatrix);
+
+    glm::mat4 viewMatrix = glm::inverse(worldMatrix);
 
     renderView.ViewMatrix = viewMatrix;
-    renderView.InvViewMatrix = invViewMatrix;
-    renderView.WorldPos = glm::vec4(transform.Position.x, transform.Position.y, transform.Position.z, 1.0f);
+    renderView.InvViewMatrix = worldMatrix;
+    renderView.WorldPos = glm::vec4(transform.Position, 1.0f);
 
     renderView.VPMatrix = renderView.ProjectionMatrix * renderView.ViewMatrix;
     renderView.InvVPMatrix = glm::inverse(renderView.VPMatrix);
@@ -60,7 +61,7 @@ void RenderViewRegistry::SetPerspective(RenderViewHandle handle, float fovRadian
     glm::mat4 invProjectionMatrix = glm::inverse(projectionMatrix);
 
     renderView.ProjectionMatrix = projectionMatrix;
-    renderView.InvViewMatrix = invProjectionMatrix;
+    renderView.InvProjectionMatrix = invProjectionMatrix;
 
     renderView.NearPlane = zNear;
     renderView.FarPlane = zFar;
@@ -76,7 +77,7 @@ void RenderViewRegistry::SetOrtho(RenderViewHandle handle, float left, float rig
     glm::mat4 invProjectionMatrix = glm::inverse(projectionMatrix);
 
     renderView.ProjectionMatrix = projectionMatrix;
-    renderView.InvViewMatrix = invProjectionMatrix;
+    renderView.InvProjectionMatrix = invProjectionMatrix;
 
     renderView.NearPlane = zNear;
     renderView.FarPlane = zFar;
