@@ -3,132 +3,142 @@
 #include "eve/graphics/RenderViewHandle.hpp"
 #include "eve/graphics/ShaderHandle.hpp"
 #include "eve/graphics/Texture.hpp"
-#include "eve/math/Quaternion.hpp"
-#include "eve/math/Vector3.hpp"
 #include <eve/components/Camera.hpp>
 #include <eve/entities/SystemRegistrar.hpp>
 #include <eve/debug/Debug.hpp>
 #include <eve/entities/EntityManager.hpp>
 #include <eve/components/Transform.hpp>
 #include <eve/graphics/Graphics.hpp>
-#include <eve/math/Vector2.hpp>
 #include <eve/input/Input.hpp>
 #include <glm/glm.hpp>
 #include <glm/common.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 using namespace Eve::Entities;
 using namespace Eve::Graphics;
-using namespace Eve::Math;
 using namespace Eve::Input;
 
-static MaterialHandle material;
-static RenderViewHandle renderView;
-static BufferHandle buffer;
-static uint64_t elapsedFrames = 0;
-static uint32_t elementsCount = 20 * 20;
-
-void Start(uint32_t systemId)
-{    
-    ShaderInfo shaderInfo
-    {
-        .ShaderModule = "triangle",
-        .Topology = Topology::TOPOLOGY_TRIANGLE_LIST,
-        .PolygonMode = PolygonMode::POLYGON_MODE_FILL,
-        .CullMode = CullMode::CULL_MODE_NONE,
-        .LineWidth = 1,
-        .DepthTest = true,
-        .DepthWrite = true,
-        .StencilTest = false,
-        .CompareOp = DepthTest::DEPTH_COMPARE_LESS,
-        .ColorFormat = Format::FORMAT_R8G8B8A8_SRGB,
-        .DepthFormat = Format::FORMAT_D32_SFLOAT
-    };
-
-    ShaderHandle shaderHandle = Graphics::CreateGraphicsShader(shaderInfo);
-
-    material = Graphics::CreateMaterial(shaderHandle);
-
-    buffer = Graphics::CreateGPUBuffer(256);
-
-    material.SetVector3("color", Vector3(0.5,0.7,0));
-
-    renderView = Graphics::CreateRenderView();
-
-    Quaternion quat = Quaternion::Identity();
-    Transform renderViewTRS = Transform{{0,0,0}, quat, {1, 1, 1} };
-    renderView.SetTRS(renderViewTRS);
-}
-
-void Update(float deltaTime, uint32_t systemId)
+namespace
 {
-    Vector2Int windowSize = Graphics::GetWindowSize();
+    static MaterialHandle material;
+    static BufferHandle buffer;
+    static uint64_t elapsedFrames = 0;
+    static uint32_t elementsCount = 20 * 20;
 
-    TransientTextureInfo2D colorInfo
+    void Start(uint32_t systemId)
+    {    
+        ShaderInfo shaderInfo
+        {
+            .ShaderModule = "triangle",
+            .Topology = Topology::TOPOLOGY_TRIANGLE_LIST,
+            .PolygonMode = PolygonMode::POLYGON_MODE_FILL,
+            .CullMode = CullMode::CULL_MODE_NONE,
+            .LineWidth = 1,
+            .DepthTest = true,
+            .DepthWrite = true,
+            .StencilTest = false,
+            .CompareOp = DepthTest::DEPTH_COMPARE_LESS,
+            .ColorFormat = Format::FORMAT_R8G8B8A8_SRGB,
+            .DepthFormat = Format::FORMAT_D32_SFLOAT
+        };
+
+        ShaderHandle shaderHandle = Graphics::CreateGraphicsShader(shaderInfo);
+
+        material = Graphics::CreateMaterial(shaderHandle);
+
+        buffer = Graphics::CreateGPUBuffer(256);
+
+        material.SetVector3("color", glm::vec3(0.5,0.7,0));
+    }
+
+    void Update(float deltaTime, uint32_t systemId)
     {
-        .Width = static_cast<uint32_t>(windowSize.x),
-        .Height = static_cast<uint32_t>(windowSize.y),
-        .Format = Format::FORMAT_R8G8B8A8_SRGB
-    };
+        glm::ivec2 windowSize = Graphics::GetWindowSize();
 
-    TransientTextureInfo2D depthInfo
-    {
-        .Width = static_cast<uint32_t>(windowSize.x),
-        .Height = static_cast<uint32_t>(windowSize.y),
-        .Format = Format::FORMAT_D32_SFLOAT
-    };
+        TransientTextureInfo2D colorInfo
+        {
+            .Width = static_cast<uint32_t>(windowSize.x),
+            .Height = static_cast<uint32_t>(windowSize.y),
+            .Format = Format::FORMAT_R8G8B8A8_SRGB
+        };
 
-    TransientTextureHandle colorTexture = Graphics::RequestTransientTexture2D(colorInfo);
-    TransientTextureHandle depthTexture = Graphics::RequestTransientTexture2D(depthInfo);
+        TransientTextureInfo2D depthInfo
+        {
+            .Width = static_cast<uint32_t>(windowSize.x),
+            .Height = static_cast<uint32_t>(windowSize.y),
+            .Format = Format::FORMAT_D32_SFLOAT
+        };
 
-    GraphicsPass pass {};
-    
-    LoadStoreOp loadStoreOpColor
-    {
-        .loadOp = LoadOperation::CLEAR,
-        .storeOp = StoreOperation::STORE,
-        .clearColor {0,0,0}
-    };
+        TransientTextureHandle colorTexture = Graphics::RequestTransientTexture2D(colorInfo);
+        TransientTextureHandle depthTexture = Graphics::RequestTransientTexture2D(depthInfo);
 
-    LoadStoreOp loadStoreOpDepth
-    {
-        .loadOp = LoadOperation::CLEAR,
-        .storeOp = StoreOperation::DISCARD,
-        .clearDepth = 1.0
-    };
+        GraphicsPass pass {};
+        
+        LoadStoreOp loadStoreOpColor
+        {
+            .loadOp = LoadOperation::CLEAR,
+            .storeOp = StoreOperation::STORE,
+            .clearColor {0,0,0}
+        };
 
-    pass.UseBufferReadOnlyVertex(buffer);
-    pass.UseColorTarget(colorTexture, loadStoreOpColor);
-    pass.UseDepthTarget(depthTexture, loadStoreOpDepth);
+        LoadStoreOp loadStoreOpDepth
+        {
+            .loadOp = LoadOperation::CLEAR,
+            .storeOp = StoreOperation::DISCARD,
+            .clearDepth = 1.0
+        };
 
-    renderView.SetPerspective(1.22173f, windowSize.x / (float)windowSize.y, 0.1f, 100.0f);
+        pass.UseBufferReadOnlyVertex(buffer);
+        pass.UseColorTarget(colorTexture, loadStoreOpColor);
+        pass.UseDepthTarget(depthTexture, loadStoreOpDepth);
 
-    float time = static_cast<float>(elapsedFrames);
-    
-    Transform objectTransform1 = 
-    {
-        {0, 0, 5},
-        Quaternion::Identity(),
-        {1, 1, 1}
-    };
+        Type cameraComponentType = ComponentsRegistry::GetComponentBit<Camera>();
+        Type transformComponentType = ComponentsRegistry::GetComponentBit<Transform>();
 
-    Transform objectTransform2 = 
-    {
-        {0, 3, 5},
-        Quaternion::Identity(),
-        {1, 1, 1}
-    };
+        Type componentsRequired = cameraComponentType | transformComponentType;
 
-    std::vector<Transform> transforms {objectTransform1, objectTransform2};
+        QueryInfo queryInfo 
+        {
+            componentsRequired,
+            true
+        };
 
-    pass.DrawInstanced(36, 2, *transforms.data(), material, renderView, nullptr);
-    //pass.Draw(36, objectTransform1, material, renderView, nullptr);
-    //pass.Draw(36, objectTransform2, material, renderView, nullptr);
+        QueryResult& queryResult = EntityManager::GetTables(queryInfo);
 
-    Graphics::AddPass(pass);
+        Table& table = queryResult.GetTable(0);
 
-    Graphics::SetPresentTexture2D(colorTexture);
+        Camera& camera = table.GetComponent<Camera>(0, cameraComponentType);
 
-    elapsedFrames++;
+        camera.renderView.SetPerspective(1.22173f, windowSize.x / (float)windowSize.y, 0.1f, 100.0f);
+
+        float time = static_cast<float>(elapsedFrames);
+        
+        Transform objectTransform1 = 
+        {
+            {0, 0, 5},
+            glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+            {1, 1, 1}
+        };
+
+        Transform objectTransform2 = 
+        {
+            {0, 3, 5},
+            glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+            {1, 1, 1}
+        };
+
+        std::vector<Transform> transforms {objectTransform1, objectTransform2};
+
+        pass.DrawInstanced(36, 2, *transforms.data(), material, camera.renderView, nullptr);
+        //pass.Draw(36, objectTransform1, material, renderView, nullptr);
+        //pass.Draw(36, objectTransform2, material, renderView, nullptr);
+
+        Graphics::AddPass(pass);
+
+        Graphics::SetPresentTexture2D(colorTexture);
+
+        elapsedFrames++;
+    }
 }
 
 static SystemRegistrar start(Start, SystemStage::Start);

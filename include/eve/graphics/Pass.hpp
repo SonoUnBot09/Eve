@@ -1,10 +1,6 @@
 #pragma once
 
 #include "eve/graphics/MaterialHandle.hpp"
-#include "eve/math/Matrix4x4.hpp"
-#include <eve/math/Vector2Int.hpp>
-#include <eve/math/Vector3Int.hpp>
-#include <eve/math/Vector4Int.hpp>
 #include <vector>
 #include <utility>
 #include <eve/graphics/Texture.hpp>
@@ -14,8 +10,6 @@
 #include <eve/graphics/details/Usage.hpp>
 #include <eve/components/Transform.hpp>
 #include <eve/graphics/RenderViewHandle.hpp>
-
-using namespace Eve::Math;;
 
 namespace Eve::Graphics
 {
@@ -60,15 +54,15 @@ namespace Eve::Graphics
 
     struct InstanceParams
     {
-        Matrix4x4 ObjectToWorld;
-        Matrix4x4 WorldToObject;
+        glm::mat4 ObjectToWorld;
+        glm::mat4 WorldToObject;
     };
 
     struct LoadStoreOp
     {
         LoadOperation loadOp;
         StoreOperation storeOp;
-        Vector3 clearColor;
+        glm::vec3 clearColor;
         float clearDepth;
         uint8_t clearStencil;
     };
@@ -86,9 +80,9 @@ namespace Eve::Graphics
     {
         uint32_t SrcTexture;
         uint32_t DstTexture;
-        Vector3Int Extent;
-        Vector3Int SrcOffset;
-        Vector3Int DstOffset;
+        glm::ivec3 Extent;
+        glm::ivec3 SrcOffset;
+        glm::ivec3 DstOffset;
     };
 
     struct BufferToTextureCopy
@@ -98,16 +92,16 @@ namespace Eve::Graphics
         uint64_t SrcOffset;
         uint32_t BufferRowLength;
         uint32_t BufferHeightLength;
-        Vector3Int DstOffset;
-        Vector3Int Extent;
+        glm::ivec3 DstOffset;
+        glm::ivec3 Extent;
     };
 
     struct TextureToBufferCopy
     {
         uint32_t SrcTexture; 
         uint32_t DstBuffer; 
-        Vector3Int SrcOffset;
-        Vector3Int Extent;
+        glm::ivec3 SrcOffset;
+        glm::ivec3 Extent;
         uint64_t DstOffset;
         uint32_t BufferRowLength;
         uint32_t BufferHeightLength;
@@ -125,8 +119,8 @@ namespace Eve::Graphics
     {
         uint32_t SrcBufferId; 
         uint32_t DstTexture; 
-        Vector3Int DstOffset;
-        Vector3Int Extent;
+        glm::ivec3 DstOffset;
+        glm::ivec3 Extent;
         uint32_t BufferRowLength;
         uint32_t BufferHeightLength;
     };
@@ -196,18 +190,18 @@ namespace Eve::Graphics
 
             // Transient
             void CopyBuffer(TransientBufferHandle SrcBuffer, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset = 0, uint64_t DstOffset = 0);
-            void CopyTexture(TransientTextureHandle SrcTexture, TransientTextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset = {0,0,0}, Vector3Int DstOffset = {0,0,0});
-            void CopyBufferToTexture(TransientBufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
+            void CopyTexture(TransientTextureHandle SrcTexture, TransientTextureHandle DstTexture, glm::ivec3 Extent, glm::ivec3 SrcOffset = {0,0,0}, glm::ivec3 DstOffset = {0,0,0});
+            void CopyBufferToTexture(TransientBufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, glm::ivec3 DstOffset, glm::ivec3 Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
-            void CopyTextureToBuffer(TransientTextureHandle SrcTexture, TransientBufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset, 
+            void CopyTextureToBuffer(TransientTextureHandle SrcTexture, TransientBufferHandle DstBuffer, glm::ivec3 SrcOffset, glm::ivec3 Extent, uint64_t DstOffset, 
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
 
             // Persistent
             void CopyBuffer(BufferHandle SrcBuffer, BufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset = 0, uint64_t DstOffset = 0);
-            void CopyTexture(TextureHandle SrcTexture, TextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset = {0,0,0}, Vector3Int DstOffset = {0,0,0});
-            void CopyBufferToTexture(BufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
+            void CopyTexture(TextureHandle SrcTexture, TextureHandle DstTexture, glm::ivec3 Extent, glm::ivec3 SrcOffset = {0,0,0}, glm::ivec3 DstOffset = {0,0,0});
+            void CopyBufferToTexture(BufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, glm::ivec3 DstOffset, glm::ivec3 Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
-            void CopyTextureToBuffer(TextureHandle SrcTexture, BufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset, 
+            void CopyTextureToBuffer(TextureHandle SrcTexture, BufferHandle DstBuffer, glm::ivec3 SrcOffset, glm::ivec3 Extent, uint64_t DstOffset, 
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLenght = 0);
 
             // Buffer Mix
@@ -215,29 +209,29 @@ namespace Eve::Graphics
             void CopyBuffer(BufferHandle SrcBuffer, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t SrcOffset = 0, uint64_t DstOffset = 0);
 
             // Texture Mix
-            void CopyTexture(TransientTextureHandle SrcTexture, TextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset = {0,0,0}, Vector3Int DstOffset = {0,0,0});
-            void CopyTexture(TextureHandle SrcTexture, TransientTextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset = {0,0,0}, Vector3Int DstOffset = {0,0,0});
+            void CopyTexture(TransientTextureHandle SrcTexture, TextureHandle DstTexture, glm::ivec3 Extent, glm::ivec3 SrcOffset = {0,0,0}, glm::ivec3 DstOffset = {0,0,0});
+            void CopyTexture(TextureHandle SrcTexture, TransientTextureHandle DstTexture, glm::ivec3 Extent, glm::ivec3 SrcOffset = {0,0,0}, glm::ivec3 DstOffset = {0,0,0});
 
             // Buffer To Texture Mix
-            void CopyBufferToTexture(TransientBufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
+            void CopyBufferToTexture(TransientBufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, glm::ivec3 DstOffset, glm::ivec3 Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
-                void CopyBufferToTexture(BufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
+                void CopyBufferToTexture(BufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, glm::ivec3 DstOffset, glm::ivec3 Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
 
             // Texture To Buffer Mix
-            void CopyTextureToBuffer(TransientTextureHandle SrcTexture, BufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset, 
+            void CopyTextureToBuffer(TransientTextureHandle SrcTexture, BufferHandle DstBuffer, glm::ivec3 SrcOffset, glm::ivec3 Extent, uint64_t DstOffset, 
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
-            void CopyTextureToBuffer(TextureHandle SrcTexture, TransientBufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset, 
+            void CopyTextureToBuffer(TextureHandle SrcTexture, TransientBufferHandle DstBuffer, glm::ivec3 SrcOffset, glm::ivec3 Extent, uint64_t DstOffset, 
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
 
             // Transient
             void UploadBuffer(void* SrcData, TransientBufferHandle DstBuffer, uint64_t Size, uint64_t DstOffset = 0);
-            void UploadTexture(void* SrcData, uint64_t Size, TransientTextureHandle DstTexture, Vector3Int DstOffset, Vector3Int Extent,
+            void UploadTexture(void* SrcData, uint64_t Size, TransientTextureHandle DstTexture, glm::ivec3 DstOffset, glm::ivec3 Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
 
             // Persistent
             void UploadBuffer(void* SrcData, BufferHandle DstBuffer, uint64_t Size, uint64_t DstOffset = 0);
-            void UploadTexture(void* SrcData, uint64_t Size, TextureHandle DstTexture, Vector3Int DstOffset, Vector3Int Extent,
+            void UploadTexture(void* SrcData, uint64_t Size, TextureHandle DstTexture, glm::ivec3 DstOffset, glm::ivec3 Extent,
                 uint32_t BufferRowLength = 0, uint32_t BufferHeightLength = 0);
             
         private:

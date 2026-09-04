@@ -76,7 +76,7 @@ namespace Eve::Graphics
                 sessionDesc.targetCount = 1;
                 sessionDesc.searchPaths = searchPathPtrs.data();
                 sessionDesc.searchPathCount = static_cast<uint32_t>(searchPathPtrs.size());
-                sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_ROW_MAJOR; 
+                sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR; 
 
                 if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) 
                 {

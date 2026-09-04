@@ -58,7 +58,7 @@ namespace Eve::Graphics
 
             static void SetPresentTexture2D(TransientTextureHandle handle);
 
-            static Vector2Int GetWindowSize();
+            static glm::ivec2 GetWindowSize();
 
 
 

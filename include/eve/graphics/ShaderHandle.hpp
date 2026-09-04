@@ -5,16 +5,6 @@
 #include <eve/graphics/Texture.hpp>
 #include <string>
 
-#include <eve/math/Vector2.hpp>
-#include <eve/math/Vector2Int.hpp>
-#include <eve/math/Vector3.hpp>
-#include <eve/math/Vector3Int.hpp>
-#include <eve/math/Vector4.hpp>
-#include <eve/math/Vector4Int.hpp>
-#include <eve/math/Matrix4x4.hpp>
-
-using namespace Eve::Math;
-
 namespace Eve::Graphics
 {
     struct ShaderHandle

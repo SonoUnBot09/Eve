@@ -4,7 +4,8 @@
 #include <eve/graphics/details/Usage.hpp>
 #include "eve/graphics/MaterialHandle.hpp"
 #include "eve/graphics/RenderViewHandle.hpp"
-#include "eve/math/Matrix4x4.hpp"
+#include "glm/ext/matrix_transform.hpp"
+#include "glm/gtc/quaternion.hpp"
 #include "registers/MemoryRegistry.hpp"
 
 using namespace Eve::Graphics;
@@ -40,8 +41,11 @@ void GraphicsPass::Draw(uint32_t vertexShaderInvocations, Transform& transform, 
 
     drawCalls.emplace_back(vertexShaderInvocations, 1, material, drawInfoData, renderView);
 
-    Matrix4x4 objectToWorld = Matrix4x4::TRS(transform.Position, transform.Rotation, transform.Scale);
-    Matrix4x4 worldToObject = objectToWorld.Inverse();
+    glm::mat4 objectToWorld = 
+        glm::translate(glm::mat4(1.0f), transform.Position) * 
+        glm::mat4_cast(transform.Rotation) *
+        glm::scale(glm::mat4(1.0f), transform.Scale);
+    glm::mat4 worldToObject = glm::inverse(objectToWorld);
 
     instanceParams.push_back({objectToWorld, worldToObject});
 }
@@ -80,8 +84,12 @@ void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, uint32_t inst
     {
         Transform& transform = *(static_cast<Transform*>(&transforms) + i);
 
-        Matrix4x4 objectToWorld = Matrix4x4::TRS(transform.Position, transform.Rotation, transform.Scale);
-        Matrix4x4 worldToObject = objectToWorld.Inverse();
+        glm::mat4 objectToWorld = 
+            glm::translate(glm::mat4(1.0f), transform.Position) * 
+            glm::mat4_cast(transform.Rotation) *
+            glm::scale(glm::mat4(1.0f), transform.Scale);
+        glm::mat4 worldToObject = glm::inverse(objectToWorld);
+
 
         instanceParams.push_back({objectToWorld, worldToObject});
     }
@@ -208,21 +216,21 @@ void TransferPass::CopyBuffer(BufferHandle SrcBuffer, BufferHandle DstBuffer, ui
     persistentBuffers.emplace_back(DstBuffer, Usage::COPY_DESTINATION);
 }
 
-void TransferPass::CopyTexture(TransientTextureHandle SrcTexture, TransientTextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset, Vector3Int DstOffset)
+void TransferPass::CopyTexture(TransientTextureHandle SrcTexture, TransientTextureHandle DstTexture, glm::ivec3 Extent, glm::ivec3 SrcOffset, glm::ivec3 DstOffset)
 {
     transientTextureCopies.emplace_back(SrcTexture.Id, DstTexture.Id, Extent, SrcOffset, DstOffset);
     transientTextures.emplace_back(SrcTexture, Usage::COPY_SOURCE);
     transientTextures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
 }
 
-void TransferPass::CopyTexture(TextureHandle SrcTexture, TextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset, Vector3Int DstOffset)
+void TransferPass::CopyTexture(TextureHandle SrcTexture, TextureHandle DstTexture, glm::ivec3 Extent, glm::ivec3 SrcOffset, glm::ivec3 DstOffset)
 {
     persistentTextureCopies.emplace_back(SrcTexture.Id, DstTexture.Id, Extent, SrcOffset, DstOffset);
     persistentTextures.emplace_back(SrcTexture, Usage::COPY_SOURCE);
     persistentTextures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
 }
 
-void TransferPass::CopyBufferToTexture(TransientBufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
+void TransferPass::CopyBufferToTexture(TransientBufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, glm::ivec3 DstOffset, glm::ivec3 Extent,
     uint32_t BufferRowLength, uint32_t BufferHeightLength)
 {
     transientBufferToTextureCopies.emplace_back(SrcBuffer.Id, DstTexture.Id, SrcOffset, BufferRowLength, BufferHeightLength, DstOffset, Extent);
@@ -230,7 +238,7 @@ void TransferPass::CopyBufferToTexture(TransientBufferHandle SrcBuffer, Transien
     transientTextures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
 }
 
-void TransferPass::CopyBufferToTexture(BufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
+void TransferPass::CopyBufferToTexture(BufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, glm::ivec3 DstOffset, glm::ivec3 Extent,
     uint32_t BufferRowLength, uint32_t BufferHeightLength)
 {
     persistentBufferToTextureCopies.emplace_back(SrcBuffer.Id, DstTexture.Id, SrcOffset, BufferRowLength, BufferHeightLength, DstOffset, Extent);
@@ -238,7 +246,7 @@ void TransferPass::CopyBufferToTexture(BufferHandle SrcBuffer, TextureHandle Dst
     persistentTextures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
 }
 
-void TransferPass::CopyTextureToBuffer(TransientTextureHandle SrcTexture, TransientBufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset,
+void TransferPass::CopyTextureToBuffer(TransientTextureHandle SrcTexture, TransientBufferHandle DstBuffer, glm::ivec3 SrcOffset, glm::ivec3 Extent, uint64_t DstOffset,
      uint32_t BufferRowLength, uint32_t BufferHeightLength)
 {
     transientTextureToBufferCopies.emplace_back(SrcTexture.Id, DstBuffer.Id, SrcOffset, Extent, DstOffset, BufferRowLength, BufferHeightLength);
@@ -246,7 +254,7 @@ void TransferPass::CopyTextureToBuffer(TransientTextureHandle SrcTexture, Transi
     transientBuffers.emplace_back(DstBuffer, Usage::COPY_DESTINATION);
 }
 
-void TransferPass::CopyTextureToBuffer(TextureHandle SrcTexture, BufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset,
+void TransferPass::CopyTextureToBuffer(TextureHandle SrcTexture, BufferHandle DstBuffer, glm::ivec3 SrcOffset, glm::ivec3 Extent, uint64_t DstOffset,
      uint32_t BufferRowLength, uint32_t BufferHeightLength)
 {
     persistentTextureToBufferCopies.emplace_back(SrcTexture.Id, DstBuffer.Id, SrcOffset, Extent, DstOffset, BufferRowLength, BufferHeightLength);
@@ -269,13 +277,13 @@ void TransferPass::CopyBuffer(BufferHandle SrcBuffer, TransientBufferHandle DstB
 }
 
 // Texture Mix
-void TransferPass::CopyTexture(TransientTextureHandle SrcTexture, TextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset, Vector3Int DstOffset)
+void TransferPass::CopyTexture(TransientTextureHandle SrcTexture, TextureHandle DstTexture, glm::ivec3 Extent, glm::ivec3 SrcOffset, glm::ivec3 DstOffset)
 {
     transientPersistentTextureCopies.emplace_back(SrcTexture.Id, DstTexture.Id, Extent, SrcOffset, DstOffset);
     transientTextures.emplace_back(SrcTexture, Usage::COPY_SOURCE);
     persistentTextures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
 }
-void TransferPass::CopyTexture(TextureHandle SrcTexture, TransientTextureHandle DstTexture, Vector3Int Extent, Vector3Int SrcOffset, Vector3Int DstOffset)
+void TransferPass::CopyTexture(TextureHandle SrcTexture, TransientTextureHandle DstTexture, glm::ivec3 Extent, glm::ivec3 SrcOffset, glm::ivec3 DstOffset)
 {
     persistentTransientTextureCopies.emplace_back(SrcTexture.Id, DstTexture.Id, Extent, SrcOffset, DstOffset);
     persistentTextures.emplace_back(SrcTexture, Usage::COPY_SOURCE);
@@ -283,14 +291,14 @@ void TransferPass::CopyTexture(TextureHandle SrcTexture, TransientTextureHandle 
 }
 
 // Buffer To Texture Mix
-void TransferPass::CopyBufferToTexture(TransientBufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
+void TransferPass::CopyBufferToTexture(TransientBufferHandle SrcBuffer, TextureHandle DstTexture, uint64_t SrcOffset, glm::ivec3 DstOffset, glm::ivec3 Extent,
     uint32_t BufferRowLength, uint32_t BufferHeightLength)
 {
     transientPersistentBufferToTextureCopies.emplace_back(SrcBuffer.Id, DstTexture.Id, SrcOffset, BufferRowLength, BufferHeightLength, DstOffset, Extent);
     transientBuffers.emplace_back(SrcBuffer, Usage::COPY_SOURCE);
     persistentTextures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
 }
-void TransferPass::CopyBufferToTexture(BufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, Vector3Int DstOffset, Vector3Int Extent,
+void TransferPass::CopyBufferToTexture(BufferHandle SrcBuffer, TransientTextureHandle DstTexture, uint64_t SrcOffset, glm::ivec3 DstOffset, glm::ivec3 Extent,
     uint32_t BufferRowLength, uint32_t BufferHeightLength)
 {
     persistentTransientBufferToTextureCopies.emplace_back(SrcBuffer.Id, DstTexture.Id, SrcOffset, BufferRowLength, BufferHeightLength, DstOffset, Extent);
@@ -299,14 +307,14 @@ void TransferPass::CopyBufferToTexture(BufferHandle SrcBuffer, TransientTextureH
 }
 
 // Texture To Buffer Mix
-void TransferPass::CopyTextureToBuffer(TransientTextureHandle SrcTexture, BufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset, 
+void TransferPass::CopyTextureToBuffer(TransientTextureHandle SrcTexture, BufferHandle DstBuffer, glm::ivec3 SrcOffset, glm::ivec3 Extent, uint64_t DstOffset, 
     uint32_t BufferRowLength, uint32_t BufferHeightLength)
 {
     transientPersistentTextureToBufferCopies.emplace_back(SrcTexture.Id, DstBuffer.Id, SrcOffset, Extent, DstOffset, BufferRowLength, BufferHeightLength);
     transientTextures.emplace_back(SrcTexture, Usage::COPY_SOURCE);
     persistentBuffers.emplace_back(DstBuffer, Usage::COPY_DESTINATION);
 }
-void TransferPass::CopyTextureToBuffer(TextureHandle SrcTexture, TransientBufferHandle DstBuffer, Vector3Int SrcOffset, Vector3Int Extent, uint64_t DstOffset, 
+void TransferPass::CopyTextureToBuffer(TextureHandle SrcTexture, TransientBufferHandle DstBuffer, glm::ivec3 SrcOffset, glm::ivec3 Extent, uint64_t DstOffset, 
     uint32_t BufferRowLength, uint32_t BufferHeightLength)
 {
     persistentTransientTextureToBufferCopies.emplace_back(SrcTexture.Id, DstBuffer.Id, SrcOffset, Extent, DstOffset, BufferRowLength, BufferHeightLength);
@@ -354,7 +362,7 @@ void TransferPass::UploadBuffer(void* SrcData, BufferHandle DstBuffer, uint64_t 
     persistentBuffers.emplace_back(DstBuffer, Usage::COPY_DESTINATION);
 }
 
-void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TransientTextureHandle DstTexture, Vector3Int DstOffset, Vector3Int Extent,
+void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TransientTextureHandle DstTexture, glm::ivec3 DstOffset, glm::ivec3 Extent,
     uint32_t BufferRowLength, uint32_t BufferHeightLength)
 {
     // --- Staging buffer creation ---
@@ -374,7 +382,7 @@ void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TransientTexture
     transientTextures.emplace_back(DstTexture, Usage::COPY_DESTINATION);
 }
 
-void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TextureHandle DstTexture, Vector3Int DstOffset, Vector3Int Extent,
+void TransferPass::UploadTexture(void* SrcData, uint64_t Size,  TextureHandle DstTexture, glm::ivec3 DstOffset, glm::ivec3 Extent,
     uint32_t BufferRowLength, uint32_t BufferHeightLength)
 {
     // --- Staging buffer creation ---

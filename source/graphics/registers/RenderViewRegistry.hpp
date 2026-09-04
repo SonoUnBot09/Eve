@@ -1,23 +1,19 @@
 #pragma once
 
-#include <eve/math/Matrix4x4.hpp>
-#include <eve/math/Vector2Int.hpp>
 #include <eve/graphics/RenderViewHandle.hpp>
 #include <eve/components/Transform.hpp>
-
-using namespace Eve::Math;
 
 namespace Eve::Graphics 
 {
     struct RenderViewObject
     {
-        Matrix4x4 ViewMatrix = Matrix4x4::Identity();
-        Matrix4x4 InvViewMatrix = Matrix4x4::Identity();
-        Matrix4x4 ProjectionMatrix = Matrix4x4::Identity();
-        Matrix4x4 InvProjectionMatrix = Matrix4x4::Identity();
-        Matrix4x4 VPMatrix = Matrix4x4::Identity();
-        Matrix4x4 InvVPMatrix = Matrix4x4::Identity();
-        Vector4 WorldPos;
+        glm::mat4 ViewMatrix = glm::mat4(1.0f);
+        glm::mat4 InvViewMatrix = glm::mat4(1.0f);
+        glm::mat4 ProjectionMatrix = glm::mat4(1.0f);
+        glm::mat4 InvProjectionMatrix =glm::mat4(1.0f);
+        glm::mat4 VPMatrix = glm::mat4(1.0f);
+        glm::mat4 InvVPMatrix =glm::mat4(1.0f);
+        glm::vec4 WorldPos;
         float NearPlane;
         float FarPlane;
     };

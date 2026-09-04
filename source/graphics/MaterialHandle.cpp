@@ -15,33 +15,29 @@ void MaterialHandle::SetFloat(std::string paramName, float value)
 {
     MaterialRegistry::UpdateMaterial(paramName, &value, 4, *this);
 }
-void MaterialHandle::SetVector2(std::string paramName, Vector2 value)
+void MaterialHandle::SetVector2(std::string paramName, glm::vec2 value)
 {
     MaterialRegistry::UpdateMaterial(paramName, &value, 8, *this);
 }
-void MaterialHandle::SetVector2Int(std::string paramName, Vector2Int value)
+void MaterialHandle::SetVector2Int(std::string paramName, glm::ivec2 value)
 {
     MaterialRegistry::UpdateMaterial(paramName, &value, 8, *this);
 }
-void MaterialHandle::SetVector3(std::string paramName, Vector3 value)
+void MaterialHandle::SetVector3(std::string paramName, glm::vec3 value)
 {
     MaterialRegistry::UpdateMaterial(paramName, &value, 12, *this);
 }
-void MaterialHandle::SetVector3Int(std::string paramName, Vector3Int value)
+void MaterialHandle::SetVector3Int(std::string paramName, glm::ivec3 value)
 {
     MaterialRegistry::UpdateMaterial(paramName, &value, 12, *this);
 }
-void MaterialHandle::SetVector4(std::string paramName, Vector4 value)
+void MaterialHandle::SetVector4(std::string paramName, glm::vec4 value)
 {
     MaterialRegistry::UpdateMaterial(paramName, &value, 16, *this);
 }
-void MaterialHandle::SetVector4Int(std::string paramName, Vector4Int value)
+void MaterialHandle::SetVector4Int(std::string paramName, glm::ivec4 value)
 {
     MaterialRegistry::UpdateMaterial(paramName, &value, 16, *this);
-}
-void MaterialHandle::SetMatrix4x4(std::string paramName, Matrix4x4 value)
-{
-    MaterialRegistry::UpdateMaterial(paramName, &value, 64, *this);
 }
 
 uint32_t MaterialHandle::GetPropertiesUBOId()

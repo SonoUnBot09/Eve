@@ -23,5 +23,7 @@ namespace Eve::Input
             static bool IsAnyMouseUp(MouseKey* key);
 
             static MouseState GetMouseState();
+
+            static void LockMouseAtCenter(bool value);
     };
 }

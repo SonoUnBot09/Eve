@@ -1,12 +1,12 @@
 #pragma once
 
-#include <eve/math/Vector2.hpp>
+#include <glm/glm.hpp>
 
 namespace Eve::Input
 {
     struct MouseState
     {
-        Eve::Math::Vector2 MousePos;
-        Eve::Math::Vector2 MouseDir;
+        glm::vec2 MousePos;
+        glm::vec2 MouseDir;
     };
 }

@@ -1,7 +1,10 @@
 #include <eve/input/Input.hpp>
 #include "InputManager.hpp"
+#include <SDL3/SDL.h>
+#include <graphics/GraphicsCore.hpp>
 
 using namespace Eve::Input;
+using namespace Eve::Graphics;
 
 bool Input::IsKeyDown(KeyboardKey key)
 {
@@ -56,4 +59,9 @@ bool Input::IsAnyMouseUp(MouseKey* key)
 MouseState Input::GetMouseState()
 {
     return InputManager::GetMouseState();
+}
+
+void Input::LockMouseAtCenter(bool value)
+{
+    SDL_SetWindowRelativeMouseMode(GraphicsCore::Window.Window, value);
 }
