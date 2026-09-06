@@ -1,4 +1,5 @@
 #include "ResourceRegistry.hpp"
+#include "EveSettings.hpp"
 #include "ResourceTracker.hpp"
 
 using namespace Eve::Graphics;
@@ -157,55 +158,133 @@ TransientBufferHandle ResourceRegistry::RequestTransientBufferSlot()
     return handle;
 }
 
+void ResourceRegistry::DestroyPendingResources()
+{
+    for(int32_t i = static_cast<int32_t>(transientTexturePendingDestruction.size()) - 1; i >= 0; i--)
+    {
+        std::pair<uint32_t, uint32_t>& pair = transientTexturePendingDestruction[i];
+
+        if(pair.second == 0)
+        {
+            textureFreeSlots.push_back(pair.first);
+            transientTexturePendingDestruction.erase(transientTexturePendingDestruction.begin() + i);
+        }
+        else 
+        {
+            pair.second--;
+        }
+    }
+
+    for(int32_t i = static_cast<int32_t>(persistentTexturePendingDestruction.size()) - 1; i >= 0; i--)
+    {
+        std::pair<uint32_t, uint32_t>& pair = persistentTexturePendingDestruction[i];
+
+        if(pair.second == 0)
+        {
+            textureFreeSlots.push_back(pair.first);
+            persistentTexturePendingDestruction.erase(persistentTexturePendingDestruction.begin() + i);
+        }
+        else 
+        {
+            pair.second--;
+        }
+    }
+
+    for(int32_t i = static_cast<int32_t>(persistentSamplerPendingDestruction.size()) - 1; i >= 0; i--)
+    {
+        std::pair<uint32_t, uint32_t>& pair = persistentSamplerPendingDestruction[i];
+
+        if(pair.second == 0)
+        {
+            samplerFreeSlots.push_back(pair.first);
+            persistentSamplerPendingDestruction.erase(persistentSamplerPendingDestruction.begin() + i);
+        }
+        else 
+        {
+            pair.second--;
+        }
+    }
+
+    for(int32_t i = static_cast<int32_t>(transientBufferPendingDestruction.size()) - 1; i >= 0; i--)
+    {
+        std::pair<uint32_t, uint32_t>& pair = transientBufferPendingDestruction[i];
+
+        if(pair.second == 0)
+        {
+            bufferFreeSlots.push_back(pair.first);
+            transientBufferPendingDestruction.erase(transientBufferPendingDestruction.begin() + i);
+        }
+        else 
+        {
+            pair.second--;
+        }
+    }
+
+    for(int32_t i = static_cast<int32_t>(persistentBufferPendingDestruction.size()) - 1; i >= 0; i--)
+    {
+        std::pair<uint32_t, uint32_t>& pair = persistentBufferPendingDestruction[i];
+
+        if(pair.second == 0)
+        {
+            bufferFreeSlots.push_back(pair.first);
+            persistentBufferPendingDestruction.erase(persistentBufferPendingDestruction.begin() + i);
+        }
+        else 
+        {
+            pair.second--;
+        }
+    }
+}
+
 void ResourceRegistry::FreePersistentTextureSlot(TextureHandle handle)
 {
-    textureFreeSlots.push_back(handle.Id);
     persistentTextures[handle.Id] = false;
+    persistentTexturePendingDestruction.emplace_back(handle.Id, Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 }
 void ResourceRegistry::FreeTransientTextureSlot(TransientTextureHandle handle)
 {
-    textureFreeSlots.push_back(handle.Id);
     transientTextures[handle.Id] = false;
+    transientTexturePendingDestruction.emplace_back(handle.Id, Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 }
 void ResourceRegistry::FreePersistentTextureSlot(uint32_t id)
 {
-    textureFreeSlots.push_back(id);
     persistentTextures[id] = false;
+    persistentTexturePendingDestruction.emplace_back(id, Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 }
 void ResourceRegistry::FreeTransientTextureSlot(uint32_t id)
 {
-    textureFreeSlots.push_back(id);
     transientTextures[id] = false;
+    transientTexturePendingDestruction.emplace_back(id, Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 }
 
 void ResourceRegistry::FreeSamplerSlot(SamplerHandle handle)
 {
-    samplerFreeSlots.push_back(handle.Id);
     persistentSamplers[handle.Id] = false;
+    persistentSamplerPendingDestruction.emplace_back(handle.Id, Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 }
 void ResourceRegistry::FreeSamplerSlot(uint32_t id)
 {
-    samplerFreeSlots.push_back(id);
     persistentSamplers[id] = false;
+    persistentSamplerPendingDestruction.emplace_back(id, Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 }
 
 void ResourceRegistry::FreePersistentBufferSlot(BufferHandle handle)
 {
-    bufferFreeSlots.push_back(handle.Id);
     persistentBuffers[handle.Id] = false;
+    persistentBufferPendingDestruction.emplace_back(handle.Id, Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 }
 void ResourceRegistry::FreeTransientBufferSlot(TransientBufferHandle handle)
 {
-    bufferFreeSlots.push_back(handle.Id);
     transientBuffers[handle.Id] = false;
+    transientBufferPendingDestruction.emplace_back(handle.Id, Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 }
 void ResourceRegistry::FreePersistentBufferSlot(uint32_t id)
 {
-    bufferFreeSlots.push_back(id);
     persistentBuffers[id] = false;
+    persistentBufferPendingDestruction.emplace_back(id, Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 }
 void ResourceRegistry::FreeTransientBufferSlot(uint32_t id)
 {
-    bufferFreeSlots.push_back(id);
     transientBuffers[id] = false;
+    transientBufferPendingDestruction.emplace_back(id, Eve::Settings::MAX_FRAMES_IN_FLIGHT);
 }

@@ -18,6 +18,8 @@ namespace Eve::Graphics
             static TransientTextureHandle RequestTransientTextureSlot();
             static TransientBufferHandle RequestTransientBufferSlot();
 
+            static void DestroyPendingResources();
+
             static void FreePersistentTextureSlot(TextureHandle handle);
             static void FreeTransientTextureSlot(TransientTextureHandle handle);
             static void FreePersistentTextureSlot(uint32_t id);
@@ -49,6 +51,12 @@ namespace Eve::Graphics
             inline static std::vector<uint32_t> bufferGenerations;
 
             // --- Free Slots ---
+            inline static std::vector<std::pair<uint32_t, uint32_t>> transientTexturePendingDestruction;
+            inline static std::vector<std::pair<uint32_t, uint32_t>> persistentTexturePendingDestruction;
+            inline static std::vector<std::pair<uint32_t, uint32_t>> persistentSamplerPendingDestruction;
+            inline static std::vector<std::pair<uint32_t, uint32_t>> transientBufferPendingDestruction;
+            inline static std::vector<std::pair<uint32_t, uint32_t>> persistentBufferPendingDestruction;
+
             inline static std::vector<uint32_t> textureFreeSlots;
             inline static std::vector<uint32_t> samplerFreeSlots;
             inline static std::vector<uint32_t> bufferFreeSlots;

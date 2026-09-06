@@ -1502,7 +1502,11 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
             // TODO: Implement compute shaders
         }
     }
-    RecordSwapchainDrawingPass(cmdBuffer, frameIndex, swapchainImageIndex);
+
+    if(GraphicsCore::CanRenderOnSwapchain())
+    {
+        RecordSwapchainDrawingPass(cmdBuffer, frameIndex, swapchainImageIndex);
+    }
 
     return true;
 }
@@ -2313,6 +2317,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
     std::vector<DrawCall>& drawCalls = pass.drawCalls;
 
     PushConstant currentPushConstantData {};
+    ShaderHandle currentShaderHandle;
     uint32_t pushConstantSize = sizeof(PushConstant);
     bool isFirstDrawCall = true;
     
@@ -2522,9 +2527,17 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             DrawCall drawCall = drawCalls[i];
 
             ShaderHandle shaderHandle = drawCall.MaterialHandle.GetShader();
-            GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(shaderHandle);
 
-            vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.Pipeline);
+            bool shaderChanged = !(shaderHandle.Id == currentShaderHandle.Id);
+
+            if(shaderChanged || isFirstDrawCall)
+            {
+                GraphicsShaderObject shader = ShaderRegistry::GetShaderObject(shaderHandle);
+
+                vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.Pipeline);
+
+                currentShaderHandle = shaderHandle;
+            }
 
             // --- Push Constant ---
             PushConstant newPushConstantData
@@ -2837,9 +2850,7 @@ void RenderGraph::UploadRenderViews()
 
         void* renderViewData = RenderViewRegistry::GetRenderViewsPtr();
 
-        std::cout << "Render Views Upload" << std::endl;
         universalTransferPass.UploadBuffer(renderViewData, renderViewsBuffer, totalSize, 0);
-        std::cout << "Render Views Uploaded" << std::endl;
     }
 }
 

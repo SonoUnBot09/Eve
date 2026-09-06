@@ -5,6 +5,7 @@
 #include "builders/Context.hpp"
 #include "builders/FrameData.hpp"
 #include "graphics/builders/PipelineBuilder.hpp"
+#include "registers/ResourceRegistry.hpp"
 #include "registers/ShaderRegistry.hpp"
 #include <graphics/RenderGraph.hpp>
 #include <cstdint>
@@ -43,17 +44,27 @@ bool GraphicsCore::Initialize(std::vector<std::string>& searchShaderPaths)
     return true;
 }
 
-bool GraphicsCore::Render(uint64_t elapsedFrames)
+bool GraphicsCore::Render()
 {
     if(isSwapchainRebuildNeeded)
     {
         VK_CHECK(vkDeviceWaitIdle(Context.Device));
-        SwapchainBuilder::Rebuild(Swapchain);
+        bool success = SwapchainBuilder::Rebuild(Swapchain);
         MemoryBin::DestroyAllPendingResources();
-        isSwapchainRebuildNeeded = false;
-    }
 
-    uint64_t timelineSignalValue = elapsedFrames + 1;
+        if(success)
+        {
+            canRenderOnSwapchain = true;
+            isSwapchainRebuildNeeded = false;
+        }
+        else 
+        {
+            canRenderOnSwapchain = false;
+        }
+    }
+    
+    frameIndex = elapsedGraphicsFrames % Eve::Settings::MAX_FRAMES_IN_FLIGHT;
+    uint64_t timelineSignalValue = elapsedGraphicsFrames + 1;
     uint64_t timelineWaitValue = timelineSignalValue - Eve::Settings::MAX_FRAMES_IN_FLIGHT;
 
     VkSemaphoreWaitInfo timelineWaitInfo
@@ -71,21 +82,24 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
     VK_CHECK(vkResetCommandPool(Context.Device, frameData.CmdPool, 0));
 
     uint32_t swaphchainImageIndex = 0;
-    VkResult result = vkAcquireNextImageKHR(Context.Device, Swapchain.Swapchain, UINT64_MAX, 
-        frameData.AcquiredImageSemaphore, nullptr, &swaphchainImageIndex);
+    if(canRenderOnSwapchain)
+    {
+        VkResult result = vkAcquireNextImageKHR(Context.Device, Swapchain.Swapchain, UINT64_MAX, 
+            frameData.AcquiredImageSemaphore, nullptr, &swaphchainImageIndex);
 
-    if(result == VK_ERROR_OUT_OF_DATE_KHR)
-    {
-        isSwapchainRebuildNeeded = true;
-        return true;
-    }
-    else if(result == VK_SUBOPTIMAL_KHR)
-    {
-        isSwapchainRebuildNeeded = true;
-    }
-    else 
-    {
-        VK_CHECK(result);
+        if(result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            isSwapchainRebuildNeeded = true;
+            return true;
+        }
+        else if(result == VK_SUBOPTIMAL_KHR)
+        {
+            isSwapchainRebuildNeeded = true;
+        }
+        else 
+        {
+            VK_CHECK(result);
+        }
     }
     
     // Compile Graph, Update Descriptor Set, Record Commands
@@ -100,15 +114,9 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
             .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
         }
     };
-
+    
     std::vector<VkSemaphoreSubmitInfo> signalSemaphores
     {
-        VkSemaphoreSubmitInfo
-        {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-            .semaphore = frameData.RenderCompletedSemaphore,
-            .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
-        },
         VkSemaphoreSubmitInfo
         {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
@@ -117,6 +125,17 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
             .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT
         }
     };
+
+    if(canRenderOnSwapchain)
+    {
+        signalSemaphores.push_back(
+    {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+            .pNext = nullptr,
+            .semaphore = frameData.RenderCompletedSemaphore,
+            .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
+        });
+    }
 
     VkCommandBufferSubmitInfo cmdBufferSubmitInfo
     {
@@ -128,8 +147,8 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
     {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR,
 
-        .waitSemaphoreInfoCount = static_cast<uint32_t>(waitSemaphores.size()),
-        .pWaitSemaphoreInfos = waitSemaphores.data(),
+        .waitSemaphoreInfoCount = canRenderOnSwapchain ? static_cast<uint32_t>(waitSemaphores.size()) : 0,
+        .pWaitSemaphoreInfos = canRenderOnSwapchain ? waitSemaphores.data() : nullptr,
 
         .commandBufferInfoCount = 1,
         .pCommandBufferInfos = &cmdBufferSubmitInfo,
@@ -150,10 +169,17 @@ bool GraphicsCore::Render(uint64_t elapsedFrames)
         .pImageIndices = &swaphchainImageIndex
     };
 
-    VK_CHECK(vkQueuePresentKHR(Context.GraphicsQueue, &presentInfo));
+    if(canRenderOnSwapchain)
+    {
+        VK_CHECK(vkQueuePresentKHR(Context.GraphicsQueue, &presentInfo));
+    }
 
     MemoryBin::DestroyPendingResources();
+    
+    ResourceRegistry::DestroyPendingResources();
 
+    elapsedGraphicsFrames++;
+    
     return true;
 }
 

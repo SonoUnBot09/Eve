@@ -1,5 +1,4 @@
 #include <graphics/GraphicsCore.hpp>
-#include "EveSettings.hpp"
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_mouse.h"
 #include "input/InputManager.hpp"
@@ -60,7 +59,7 @@ namespace
         MouseState state
         {
             .MousePos {x, y},
-            .MouseDir {xRel, yRel}
+            .MouseDelta {xRel, yRel}
         };
 
         InputManager::SetMouseState(state);
@@ -99,9 +98,6 @@ void Core::Run()
     uint64_t currentTick = 0;
     while(isAppRunning)
     {
-        uint32_t frameIndex = elapsedFrames % Eve::Settings::MAX_FRAMES_IN_FLIGHT;
-        GraphicsCore::SetFrameIndex(frameIndex);
-
         currentTick = SDL_GetTicksNS();
 
         uint64_t elapsedNS = currentTick - lastTick;
@@ -109,7 +105,7 @@ void Core::Run()
         const float deltaTime = (double)elapsedNS / SDL_NS_PER_SECOND;
 
         lastTick = currentTick;
-
+        
         InputManager::ResetKeys();
 
         SDL_Event event;
@@ -193,9 +189,9 @@ void Core::Run()
 
         EntityManager::ExecuteAllCommandPools();
 
-        GraphicsCore::Render(elapsedFrames);
+        GraphicsCore::Render();
         
-        elapsedFrames++;
+        //elapsedFrames++;
     }
 }
 

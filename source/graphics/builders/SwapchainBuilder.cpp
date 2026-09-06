@@ -104,7 +104,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = surfaceCaps.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = VK_PRESENT_MODE_FIFO_KHR
+        .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR
     };
 
     VK_CHECK(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain));
@@ -168,9 +168,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
 }
 
 bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
-{    
-    Destroy(swapchain);
-
+{
     VkSurfaceCapabilitiesKHR surfaceCaps;
     VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GraphicsCore::Context.PhysicalDevice, GraphicsCore::Context.Surface, &surfaceCaps));
 
@@ -197,8 +195,15 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
             surfaceCaps.minImageExtent.height,
             surfaceCaps.maxImageExtent.height
         );
-        
     }
+
+    std::cout << swapchain.Width << "  " << swapchain.Height << std::endl;
+    if(swapchain.Width == 0 || swapchain.Height == 0)
+    {
+        return false;
+    }
+
+    Destroy(swapchain);
 
     uint32_t swapchainImagesCount = 3; 
 
@@ -220,7 +225,7 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
         &supportedFormatsCount, supportedFormats.data()));
 
     bool isRequiredFormatSupported = false;
-    // Fallback for any format supported
+
     if(supportedFormats[0].format == VK_FORMAT_UNDEFINED)
     {
         isRequiredFormatSupported = true;
@@ -260,7 +265,7 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = surfaceCaps.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = VK_PRESENT_MODE_FIFO_KHR
+        .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR
     };
 
     VK_CHECK(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain));
@@ -292,6 +297,8 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
 
         VK_CHECK(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchain.swapchainImageViews[i]));
     }
+
+    std::cout << "Swapchain Recreated" << std::endl;
 
     return true;
 }

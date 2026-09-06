@@ -7,6 +7,6 @@ namespace Eve::Input
     struct MouseState
     {
         glm::vec2 MousePos;
-        glm::vec2 MouseDir;
+        glm::vec2 MouseDelta;
     };
 }

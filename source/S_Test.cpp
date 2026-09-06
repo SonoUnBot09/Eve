@@ -33,7 +33,7 @@ namespace
             .ShaderModule = "triangle",
             .Topology = Topology::TOPOLOGY_TRIANGLE_LIST,
             .PolygonMode = PolygonMode::POLYGON_MODE_FILL,
-            .CullMode = CullMode::CULL_MODE_NONE,
+            .CullMode = CullMode::CULL_MODE_FRONT,
             .LineWidth = 1,
             .DepthTest = true,
             .DepthWrite = true,
@@ -71,6 +71,7 @@ namespace
         };
 
         TransientTextureHandle colorTexture = Graphics::RequestTransientTexture2D(colorInfo);
+        
         TransientTextureHandle depthTexture = Graphics::RequestTransientTexture2D(depthInfo);
 
         GraphicsPass pass {};

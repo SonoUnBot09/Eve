@@ -16,8 +16,8 @@ using namespace Eve::Input;
 
 namespace 
 {
-    static constexpr uint32_t entitiesCount = 4;
-    static glm::vec2 previusMousePos = glm::vec2(0,0);
+    static constexpr uint32_t entitiesCount = 10;
+    static bool isFocus = false;
 
     void Start(uint32_t systemId)
     {
@@ -107,20 +107,23 @@ namespace
 
         MouseState mouseState = Input::GetMouseState();
 
-        
         if(Input::IsMouseDown(MouseKey::BUTTON_LEFT))
         {
             Input::LockMouseAtCenter(true);
+            isFocus = true;
         }
         else if (Input::IsKeyDown(KeyboardKey::KEY_ESCAPE)) 
         {
             Input::LockMouseAtCenter(false);
+            isFocus = false;
         }
 
-        glm::vec2 mouseDelta = mouseState.MousePos - previusMousePos;
-        UpdateCameraMouseInput(camera, mouseDelta.x, -mouseDelta.y);
+        if(isFocus)
+        {
+            UpdateCameraMouseInput(camera, mouseState.MouseDelta.x, mouseState.MouseDelta.y);
+        }
 
-        transform.Rotation = glm::quat(glm::radians(glm::vec3(camera.pitch, camera.yaw, 0.0f)));
+        transform.Rotation = glm::quat_cast(glm::mat3(camera.right, camera.up, camera.forward));
 
         glm::vec3 moveDir(0.0f, 0.0f, 0.0f);
 
@@ -133,7 +136,6 @@ namespace
         if (Input::IsKey(KeyboardKey::KEY_E))  moveDir += glm::vec3(0,1,0);
         if (Input::IsKey(KeyboardKey::KEY_Q)) moveDir -= glm::vec3(0,1,0);
 
-        // Boost di velocità con CTRL
         float currentSpeed = camera.speed;
         if (Input::IsKey(KeyboardKey::KEY_LSHIFT)) 
         {
@@ -143,8 +145,6 @@ namespace
         transform.Position += moveDir * currentSpeed * deltaTime;
 
         camera.renderView.SetTRS(transform);
-
-        previusMousePos = mouseState.MousePos;
     }
 }
 

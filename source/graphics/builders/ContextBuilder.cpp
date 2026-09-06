@@ -93,7 +93,10 @@ bool ContextBuilder::CreateInstance(Context& context)
         .pfnUserCallback = PrintVulkanMessages
     };
 
-    VkValidationFeatureEnableEXT enabledFeatures[] = { VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT };
+    VkValidationFeatureEnableEXT enabledFeatures[] = 
+    { 
+        VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT
+    };
 
     VkValidationFeaturesEXT validationFeatures{};
     validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
