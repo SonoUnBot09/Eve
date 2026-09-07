@@ -17,7 +17,5 @@ namespace Eve
         private:
 
             inline static bool isAppRunning = true;
-            //inline static uint64_t elapsedFrames = Eve::Settings::MAX_FRAMES_IN_FLIGHT;
-
     };
 }

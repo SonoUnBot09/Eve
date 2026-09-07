@@ -1,3 +1,4 @@
+#include <chrono>
 #include <graphics/GraphicsCore.hpp>
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_mouse.h"
@@ -98,6 +99,7 @@ void Core::Run()
     uint64_t currentTick = 0;
     while(isAppRunning)
     {
+        auto start = std::chrono::high_resolution_clock::now();
         currentTick = SDL_GetTicksNS();
 
         uint64_t elapsedNS = currentTick - lastTick;
@@ -190,8 +192,6 @@ void Core::Run()
         EntityManager::ExecuteAllCommandPools();
 
         GraphicsCore::Render();
-        
-        //elapsedFrames++;
     }
 }
 

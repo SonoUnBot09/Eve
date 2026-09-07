@@ -6,40 +6,33 @@
 #include "eve/graphics/RenderViewHandle.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
+#include "glm/matrix.hpp"
 #include "registers/MemoryRegistry.hpp"
+#include <execution>
+#include <algorithm>
 
 using namespace Eve::Graphics;
 
 #pragma region Graphics Pass
 
-void GraphicsPass::Draw(uint32_t vertexShaderInvocations, Transform& transform, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
+void GraphicsPass::Draw(uint32_t vertexShaderInvocations, const Transform& transform, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
 {
-    static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
-
-    uint32_t sizeBytes;
-    if(drawInfo == nullptr)
-    {
-        sizeBytes = 0;
-    }
-    else 
-    {
-        sizeBytes = std::ceil((float)drawInfo->SizeBytes / 8.0f) * 8;
-    }
-
-    if(sizeBytes > maxDrawInfoSize)
-    {
-        sizeBytes = maxDrawInfoSize;
-    }
-
-    std::vector<std::byte> drawInfoData;
-    drawInfoData.resize(sizeBytes);
+    uint64_t drawParamsOffset = 0;
+    uint32_t drawParamsSizeBytes = 0;
 
     if(drawInfo != nullptr)
     {
-        memcpy(drawInfoData.data(), drawInfo->Data, sizeBytes);
+        static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
+        drawParamsSizeBytes = std::min((drawInfo->SizeBytes + 7u) & ~7u, maxDrawInfoSize);
+
+        drawParamsOffset = drawCallParams.size();
+
+        drawCallParams.resize(drawParamsOffset + drawParamsSizeBytes);
+
+        memcpy(drawCallParams.data() + drawParamsOffset, drawInfo->Data, drawParamsSizeBytes);
     }
 
-    drawCalls.emplace_back(vertexShaderInvocations, 1, material, drawInfoData, renderView);
+    drawCalls.emplace_back(vertexShaderInvocations, 1, material, drawParamsSizeBytes, renderView);
 
     glm::mat4 objectToWorld = 
         glm::translate(glm::mat4(1.0f), transform.Position) * 
@@ -50,49 +43,107 @@ void GraphicsPass::Draw(uint32_t vertexShaderInvocations, Transform& transform, 
     instanceParams.push_back({objectToWorld, worldToObject});
 }
 
-void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, Transform& transforms, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
+void GraphicsPass::Draw(uint32_t vertexShaderInvocations, const glm::mat4& objectMatrix, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
 {
-    static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
-
-    uint32_t sizeBytes;
-    if(drawInfo == nullptr)
-    {
-        sizeBytes = 0;
-    }
-    else 
-    {
-        sizeBytes = std::ceil((float)drawInfo->SizeBytes / 8.0f) * 8;
-    }
-
-
-    if(sizeBytes > maxDrawInfoSize)
-    {
-        sizeBytes = maxDrawInfoSize;
-    }
-
-    std::vector<std::byte> drawInfoData;
-    drawInfoData.resize(sizeBytes);
+    uint64_t drawParamsOffset = 0;
+    uint32_t drawParamsSizeBytes = 0;
 
     if(drawInfo != nullptr)
     {
-        memcpy(drawInfoData.data(), drawInfo->Data, sizeBytes);
+        static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
+        drawParamsSizeBytes = std::min((drawInfo->SizeBytes + 7u) & ~7u, maxDrawInfoSize);
+
+        drawParamsOffset = drawCallParams.size();
+
+        drawCallParams.resize(drawParamsOffset + drawParamsSizeBytes);
+
+        memcpy(drawCallParams.data() + drawParamsOffset, drawInfo->Data, drawParamsSizeBytes);
     }
 
-    drawCalls.emplace_back(vertexShaderInvocations, instanceCount, material, drawInfoData, renderView);
+    drawCalls.emplace_back(vertexShaderInvocations, 1, material, drawParamsSizeBytes, renderView);
 
-    for (uint32_t i = 0; i < instanceCount; i++)
+    glm::mat4 worldToObject = glm::inverse(objectMatrix);
+
+    instanceParams.push_back({objectMatrix, worldToObject});
+}
+
+void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, const Transform* transforms, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
+{
+    uint64_t drawParamsOffset = 0;
+    uint32_t drawParamsSizeBytes = 0;
+
+    if(drawInfo != nullptr)
     {
-        Transform& transform = *(static_cast<Transform*>(&transforms) + i);
+        static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
+        drawParamsSizeBytes = std::min((drawInfo->SizeBytes + 7u) & ~7u, maxDrawInfoSize);
 
-        glm::mat4 objectToWorld = 
-            glm::translate(glm::mat4(1.0f), transform.Position) * 
-            glm::mat4_cast(transform.Rotation) *
-            glm::scale(glm::mat4(1.0f), transform.Scale);
-        glm::mat4 worldToObject = glm::inverse(objectToWorld);
+        drawParamsOffset = drawCallParams.size();
 
+        drawCallParams.resize(drawParamsOffset + drawParamsSizeBytes);
 
-        instanceParams.push_back({objectToWorld, worldToObject});
+        memcpy(drawCallParams.data() + drawParamsOffset, drawInfo->Data, drawParamsSizeBytes);
     }
+
+    drawCalls.emplace_back(vertexShaderInvocations, instanceCount, material, drawParamsSizeBytes, renderView);
+
+    size_t startOffset = instanceParams.size();
+    instanceParams.resize(startOffset + instanceCount);
+
+    std::transform
+    (
+        std::execution::par_unseq,
+        transforms,               
+        transforms + instanceCount,
+        instanceParams.begin() + startOffset,
+        [](const Transform& transform) 
+        {
+            glm::mat3 rot = glm::mat3_cast(transform.Rotation);
+            glm::vec3 invScale = 1.0f / transform.Scale;
+
+            glm::mat4 objectToWorld(1.0f);
+            objectToWorld[0] = glm::vec4(rot[0] * transform.Scale.x, 0.0f);
+            objectToWorld[1] = glm::vec4(rot[1] * transform.Scale.y, 0.0f);
+            objectToWorld[2] = glm::vec4(rot[2] * transform.Scale.z, 0.0f);
+            objectToWorld[3] = glm::vec4(transform.Position, 1.0f);
+
+            return InstanceParams{objectToWorld, glm::inverse(objectToWorld)}; 
+        }
+    );
+}
+
+void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, const glm::mat4* objectMatrices, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
+{
+    uint64_t drawParamsOffset = 0;
+    uint32_t drawParamsSizeBytes = 0;
+
+    if(drawInfo != nullptr)
+    {
+        static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
+        drawParamsSizeBytes = std::min((drawInfo->SizeBytes + 7u) & ~7u, maxDrawInfoSize);
+
+        drawParamsOffset = drawCallParams.size();
+
+        drawCallParams.resize(drawParamsOffset + drawParamsSizeBytes);
+
+        memcpy(drawCallParams.data() + drawParamsOffset, drawInfo->Data, drawParamsSizeBytes);
+    }
+
+    drawCalls.emplace_back(vertexShaderInvocations, instanceCount, material, drawParamsSizeBytes, renderView);
+
+    size_t startOffset = instanceParams.size();
+    instanceParams.resize(startOffset + instanceCount);
+
+    std::transform
+    (
+        std::execution::par_unseq,
+        objectMatrices,               
+        objectMatrices + instanceCount,
+        instanceParams.begin() + startOffset,
+        [](const glm::mat4& model) 
+        {
+            return InstanceParams{model, glm::inverse(model)}; 
+        }
+    );
 }
 
 void GraphicsPass::UseTextureVertex(TransientTextureHandle texture)
@@ -146,7 +197,6 @@ void GraphicsPass::UseBufferReadOnlyVertexFragment(TransientBufferHandle buffer)
 {
     transientBuffers.emplace_back(buffer, Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE);
 }
-
 
 void GraphicsPass::UseTransientTexture(TransientTextureHandle texture, Usage accessType)
 {

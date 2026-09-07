@@ -26,8 +26,12 @@ namespace
     static uint64_t elapsedFrames = 0;
     static uint32_t elementsCount = 20 * 20;
 
+    inline static std::vector<Transform> transforms;
+    inline static bool getTransforms = true;
+
     void Start(uint32_t systemId)
     {    
+        transforms.reserve(100000);
         ShaderInfo shaderInfo
         {
             .ShaderModule = "triangle",
@@ -74,7 +78,7 @@ namespace
         
         TransientTextureHandle depthTexture = Graphics::RequestTransientTexture2D(depthInfo);
 
-        GraphicsPass pass {};
+        GraphicsPass pass {1, 100000};
         
         LoadStoreOp loadStoreOpColor
         {
@@ -111,7 +115,7 @@ namespace
 
         Camera& camera = cameraTable.GetComponent<Camera>(0, cameraComponentType);
 
-        camera.renderView.SetPerspective(1.22173f, windowSize.x / (float)windowSize.y, 0.1f, 100.0f);
+        camera.renderView.SetPerspective(1.22173f, windowSize.x / (float)windowSize.y, 0.1f, 300.0f);
 
         float time = static_cast<float>(elapsedFrames);
 
@@ -132,28 +136,9 @@ namespace
             Transform& transform = table.GetComponent<Transform>(i, transformComponentType);
 
             pass.Draw(36, transform, material, camera.renderView, nullptr);
+
+            //transforms.push_back(transform);
         }
-        
-        /*
-        Transform objectTransform1 = 
-        {
-            {0, 0, 5},
-            glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
-            {1, 1, 1}
-        };
-
-        Transform objectTransform2 = 
-        {
-            {0, 3, 5},
-            glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
-            {1, 1, 1}
-        };
-
-        std::vector<Transform> transforms {objectTransform1, objectTransform2};
-
-        pass.DrawInstanced(36, 2, *transforms.data(), material, camera.renderView, nullptr);*/
-        //pass.Draw(36, objectTransform1, material, renderView, nullptr);
-        //pass.Draw(36, objectTransform2, material, renderView, nullptr);
 
         Graphics::AddPass(pass);
 

@@ -2573,7 +2573,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             vkCmdDraw(cmdBuffer, drawCall.VertexShaderInvocations, drawCall.InstanceCount, 0, 0);
 
             GlobalInstanceOffsetID += drawCall.InstanceCount;
-            GlobalDrawInfoParamsOffset += drawCall.DrawInfoData.size();
+            GlobalDrawInfoParamsOffset += drawCall.drawCallParamsSize;
         }
     }
     vkCmdEndRenderingKHR(cmdBuffer);
@@ -2795,24 +2795,21 @@ void RenderGraph::UploadInstanceAnDrawInfoParams()
 
         numInstances += instanceCount;
 
-        // Draw Call
-        for (uint32_t i = 0; i < drawCallCount; i++)
-        {
-            DrawCall& drawCall = pass.drawCalls[i];
 
-            uint64_t drawCallInfoSize = drawCall.DrawInfoData.size();
+        std::vector<std::byte>& passDrawCallParams = pass.drawCallParams;
 
-            drawCallInfoParams.resize(drawCallInfoBufferSize + drawCallInfoSize);
-            
-            std::memcpy
-            (
-                static_cast<std::byte*>(drawCallInfoParams.data()) + drawCallInfoBufferSize,
-                drawCall.DrawInfoData.data(),
-                drawCallInfoSize
-            );
+        uint32_t passDrawCallParamsSize = passDrawCallParams.size();
 
-            drawCallInfoBufferSize += drawCallInfoSize;
-        }
+        drawCallInfoParams.resize(drawCallInfoBufferSize + passDrawCallParamsSize);
+
+        std::memcpy
+        (
+            static_cast<std::byte*>(drawCallInfoParams.data()) + drawCallInfoBufferSize,
+            passDrawCallParams.data(),
+            passDrawCallParamsSize
+        );
+
+        drawCallInfoBufferSize += passDrawCallParamsSize;
     }
 
     uint64_t instaceBufferSize = sizeof(InstanceParams) * numInstances;
@@ -3173,153 +3170,158 @@ void RenderGraph::AddBufferBucketPasses(uint32_t passesCount)
 
 void RenderGraph::AddPass(GraphicsPass& pass)
 {
-    Pass data
-    {
-        .passType = Pass::PassType::GRAPHICS,
-        .transientBuffers = pass.GetTransientBuffers(),
-        .transientTextures = pass.GetTransientTextures(),
+    passes.emplace_back(
+        Pass
+        {
+            .passType = Pass::PassType::GRAPHICS,
+            .transientBuffers = std::move(pass.GetTransientBuffers()),
+            .transientTextures = std::move(pass.GetTransientTextures()),
 
-        .persistentBuffers = pass.GetPersistentBuffers(),
-        .persistentTextures = pass.GetPersistentTextures(),
+            .persistentBuffers = std::move(pass.GetPersistentBuffers()),
+            .persistentTextures = std::move(pass.GetPersistentTextures()),
 
-        .loadStoreOps = pass.GetLoadStoreOperations(),
-        .drawCalls = pass.GetDrawCalls(),
-        .instanceParams = pass.GetInstanceParams()
-    };
-
-    passes.push_back(data);
+            .loadStoreOps = std::move(pass.GetLoadStoreOperations()),
+            .drawCalls = std::move(pass.GetDrawCalls()),
+            .instanceParams = std::move(pass.GetInstanceParams()),
+            .drawCallParams = std::move(pass.GetDrawCallParams())
+        }
+    );
 }
 
 void RenderGraph::AddPass(TransferPass& pass)
 {
-    Pass data
-    {
-        .passType = Pass::PassType::TRANSFER,
-        .transientBuffers = pass.GetTransientBuffers(),
-        .transientTextures = pass.GetTransientTextures(),
+    passes.emplace_back
+    (
+        Pass 
+        {
+            .passType = Pass::PassType::TRANSFER,
+            .transientBuffers = std::move(pass.GetTransientBuffers()),
+            .transientTextures = std::move(pass.GetTransientTextures()),
 
-        .persistentBuffers = pass.GetPersistentBuffers(),
-        .persistentTextures = pass.GetPersistentTextures(),
+            .persistentBuffers = std::move(pass.GetPersistentBuffers()),
+            .persistentTextures = std::move(pass.GetPersistentTextures()),
 
-        .transientBufferCopies = pass.GetTransientBufferCopies(),
-        .transientTextureCopies = pass.GetTransientTextureCopies(),
-        .transientBufferToTextureCopies = pass.GetTransientBufferToTextureCopies(),
-        .transientTextureToBufferCopies = pass.GetTransientTextureToBufferCopies(),
+            .transientBufferCopies = std::move(pass.GetTransientBufferCopies()),
+            .transientTextureCopies = std::move(pass.GetTransientTextureCopies()),
+            .transientBufferToTextureCopies = std::move(pass.GetTransientBufferToTextureCopies()),
+            .transientTextureToBufferCopies = std::move(pass.GetTransientTextureToBufferCopies()),
 
-        .persistentBufferCopies = pass.GetPersistentBufferCopies(),
-        .persistentTextureCopies = pass.GetPersistentTextureCopies(),
-        .persistentBufferToTextureCopies = pass.GetPersistentBufferToTextureCopies(),
-        .persistentTextureToBufferCopies = pass.GetPersistentTextureToBufferCopies(),
+            .persistentBufferCopies = std::move(pass.GetPersistentBufferCopies()),
+            .persistentTextureCopies = std::move(pass.GetPersistentTextureCopies()),
+            .persistentBufferToTextureCopies = std::move(pass.GetPersistentBufferToTextureCopies()),
+            .persistentTextureToBufferCopies = std::move(pass.GetPersistentTextureToBufferCopies()),
 
-        .transientPersistentBufferCopies = pass.GetTransientPersistentBufferCopies(),
-        .persistentTransientBufferCopies = pass.GetPersistentTransientBufferCopies(),
-        .transientPersistentTextureCopies = pass.GetTransientPersistentTextureCopies(),
-        .persistentTransientTextureCopies = pass.GetPersistentTransientTextureCopies(),
+            .transientPersistentBufferCopies = std::move(pass.GetTransientPersistentBufferCopies()),
+            .persistentTransientBufferCopies = std::move(pass.GetPersistentTransientBufferCopies()),
+            .transientPersistentTextureCopies = std::move(pass.GetTransientPersistentTextureCopies()),
+            .persistentTransientTextureCopies = std::move(pass.GetPersistentTransientTextureCopies()),
 
-        .transientPersistentBufferToTextureCopies = pass.GetTransientPersistentBufferToTextureCopies(),
-        .persistentTransientBufferToTextureCopies = pass.GetPersistentTransientBufferToTextureCopies(),
-        .transientPersistentTextureToBufferCopies = pass.GetTransientPersistentTextureToBufferCopies(),
-        .persistentTransientTextureToBufferCopies = pass.GetPersistentTransientTextureToBufferCopies(),
+            .transientPersistentBufferToTextureCopies = std::move(pass.GetTransientPersistentBufferToTextureCopies()),
+            .persistentTransientBufferToTextureCopies = std::move(pass.GetPersistentTransientBufferToTextureCopies()),
+            .transientPersistentTextureToBufferCopies = std::move(pass.GetTransientPersistentTextureToBufferCopies()),
+            .persistentTransientTextureToBufferCopies = std::move(pass.GetPersistentTransientTextureToBufferCopies()),
 
-        .transientBufferUploads = pass.GetTransientBufferUploads(),
-        .transientTextureUploads = pass.GetTransientTextureUploads(),
-        .persistentBufferUploads = pass.GetPersistentBufferUploads(),
-        .persistentTextureUploads = pass.GetPersistentTextureUploads()
-    };
-
-    passes.push_back(data);
+            .transientBufferUploads = std::move(pass.GetTransientBufferUploads()),
+            .transientTextureUploads = std::move(pass.GetTransientTextureUploads()),
+            .persistentBufferUploads = std::move(pass.GetPersistentBufferUploads()),
+            .persistentTextureUploads = std::move(pass.GetPersistentTextureUploads())
+        }
+    );
 }
 
 void RenderGraph::AddPass(ComputePass& pass)
 {
-    Pass data
-    {
-        .passType = Pass::PassType::COMPUTE,
-        .transientBuffers = pass.GetTransientBuffers(),
-        .transientTextures = pass.GetTransientTextures(),
-        
-        .persistentBuffers = pass.GetPersistentBuffers(),
-        .persistentTextures = pass.GetPersistentTextures()
+    passes.emplace_back
+    (
+        Pass
+        {
+            .passType = Pass::PassType::COMPUTE,
+            .transientBuffers = std::move(pass.GetTransientBuffers()),
+            .transientTextures = std::move(pass.GetTransientTextures()),
+            
+            .persistentBuffers = std::move(pass.GetPersistentBuffers()),
+            .persistentTextures = std::move(pass.GetPersistentTextures())
 
-        // To add compute
-    };
-    passes.push_back(data);
+            // To add compute
+        }
+    );
 }
 
 void RenderGraph::AddPass(GraphicsPass& pass, uint32_t index)
 {
-    Pass data
-    {
-        .passType = Pass::PassType::GRAPHICS,
-        .transientBuffers = pass.GetTransientBuffers(),
-        .transientTextures = pass.GetTransientTextures(),
+    passes.emplace(passes.cbegin() + index, 
+        Pass
+        {
+            .passType = Pass::PassType::GRAPHICS,
+            .transientBuffers = std::move(pass.GetTransientBuffers()),
+            .transientTextures = std::move(pass.GetTransientTextures()),
 
-        .persistentBuffers = pass.GetPersistentBuffers(),
-        .persistentTextures = pass.GetPersistentTextures(),
+            .persistentBuffers = std::move(pass.GetPersistentBuffers()),
+            .persistentTextures = std::move(pass.GetPersistentTextures()),
 
-        .loadStoreOps = pass.GetLoadStoreOperations(),
-        .drawCalls = pass.GetDrawCalls(),
-        .instanceParams = pass.GetInstanceParams()
-    };
-
-    passes.insert(passes.cbegin() + index, data);
+            .loadStoreOps = std::move(pass.GetLoadStoreOperations()),
+            .drawCalls = std::move(pass.GetDrawCalls()),
+            .instanceParams = std::move(pass.GetInstanceParams()),
+            .drawCallParams = std::move(pass.GetDrawCallParams())
+        }
+    );
 }
 
 void RenderGraph::AddPass(TransferPass& pass, uint32_t index)
 {
-    Pass data
-    {
-        .passType = Pass::PassType::TRANSFER,
-        .transientBuffers = pass.GetTransientBuffers(),
-        .transientTextures = pass.GetTransientTextures(),
+    passes.emplace(passes.cbegin() + index,
+        Pass
+        {
+            .passType = Pass::PassType::TRANSFER,
+            .transientBuffers = std::move(pass.GetTransientBuffers()),
+            .transientTextures = std::move(pass.GetTransientTextures()),
 
-        .persistentBuffers = pass.GetPersistentBuffers(),
-        .persistentTextures = pass.GetPersistentTextures(),
+            .persistentBuffers = std::move(pass.GetPersistentBuffers()),
+            .persistentTextures = std::move(pass.GetPersistentTextures()),
 
-        .transientBufferCopies = pass.GetTransientBufferCopies(),
-        .transientTextureCopies = pass.GetTransientTextureCopies(),
-        .transientBufferToTextureCopies = pass.GetTransientBufferToTextureCopies(),
-        .transientTextureToBufferCopies = pass.GetTransientTextureToBufferCopies(),
+            .transientBufferCopies = std::move(pass.GetTransientBufferCopies()),
+            .transientTextureCopies = std::move(pass.GetTransientTextureCopies()),
+            .transientBufferToTextureCopies = std::move(pass.GetTransientBufferToTextureCopies()),
+            .transientTextureToBufferCopies = std::move(pass.GetTransientTextureToBufferCopies()),
 
-        .persistentBufferCopies = pass.GetPersistentBufferCopies(),
-        .persistentTextureCopies = pass.GetPersistentTextureCopies(),
-        .persistentBufferToTextureCopies = pass.GetPersistentBufferToTextureCopies(),
-        .persistentTextureToBufferCopies = pass.GetPersistentTextureToBufferCopies(),
+            .persistentBufferCopies = std::move(pass.GetPersistentBufferCopies()),
+            .persistentTextureCopies = std::move(pass.GetPersistentTextureCopies()),
+            .persistentBufferToTextureCopies = std::move(pass.GetPersistentBufferToTextureCopies()),
+            .persistentTextureToBufferCopies = std::move(pass.GetPersistentTextureToBufferCopies()),
 
-        .transientPersistentBufferCopies = pass.GetTransientPersistentBufferCopies(),
-        .persistentTransientBufferCopies = pass.GetPersistentTransientBufferCopies(),
-        .transientPersistentTextureCopies = pass.GetTransientPersistentTextureCopies(),
-        .persistentTransientTextureCopies = pass.GetPersistentTransientTextureCopies(),
+            .transientPersistentBufferCopies = std::move(pass.GetTransientPersistentBufferCopies()),
+            .persistentTransientBufferCopies = std::move(pass.GetPersistentTransientBufferCopies()),
+            .transientPersistentTextureCopies = std::move(pass.GetTransientPersistentTextureCopies()),
+            .persistentTransientTextureCopies = std::move(pass.GetPersistentTransientTextureCopies()),
 
-        .transientPersistentBufferToTextureCopies = pass.GetTransientPersistentBufferToTextureCopies(),
-        .persistentTransientBufferToTextureCopies = pass.GetPersistentTransientBufferToTextureCopies(),
-        .transientPersistentTextureToBufferCopies = pass.GetTransientPersistentTextureToBufferCopies(),
-        .persistentTransientTextureToBufferCopies = pass.GetPersistentTransientTextureToBufferCopies(),
+            .transientPersistentBufferToTextureCopies = std::move(pass.GetTransientPersistentBufferToTextureCopies()),
+            .persistentTransientBufferToTextureCopies = std::move(pass.GetPersistentTransientBufferToTextureCopies()),
+            .transientPersistentTextureToBufferCopies = std::move(pass.GetTransientPersistentTextureToBufferCopies()),
+            .persistentTransientTextureToBufferCopies = std::move(pass.GetPersistentTransientTextureToBufferCopies()),
 
-        .transientBufferUploads = pass.GetTransientBufferUploads(),
-        .transientTextureUploads = pass.GetTransientTextureUploads(),
-        .persistentBufferUploads = pass.GetPersistentBufferUploads(),
-        .persistentTextureUploads = pass.GetPersistentTextureUploads()
-    };
-
-    passes.insert(passes.cbegin() + index, data);
+            .transientBufferUploads = std::move(pass.GetTransientBufferUploads()),
+            .transientTextureUploads = std::move(pass.GetTransientTextureUploads()),
+            .persistentBufferUploads = std::move(pass.GetPersistentBufferUploads()),
+            .persistentTextureUploads = std::move(pass.GetPersistentTextureUploads())
+        }
+    );
 }
 
 void RenderGraph::AddPass(ComputePass& pass, uint32_t index)
 {
-    Pass data
-    {
-        .passType = Pass::PassType::COMPUTE,
-        .transientBuffers = pass.GetTransientBuffers(),
-        .transientTextures = pass.GetTransientTextures(),
-        
-        .persistentBuffers = pass.GetPersistentBuffers(),
-        .persistentTextures = pass.GetPersistentTextures()
-
-        // To add compute
-    };
-
-    passes.insert(passes.cbegin() + index, data);
+    passes.emplace(passes.cbegin() + index,
+        Pass
+        {
+            .passType = Pass::PassType::COMPUTE,
+            .transientBuffers = std::move(pass.GetTransientBuffers()),
+            .transientTextures = std::move(pass.GetTransientTextures()),
+            
+            .persistentBuffers = std::move(pass.GetPersistentBuffers()),
+            .persistentTextures = std::move(pass.GetPersistentTextures())
+            
+            // To add compute
+        }
+    );
 }
 
 void RenderGraph::SetPresentTexture2D(TransientTextureHandle handle)

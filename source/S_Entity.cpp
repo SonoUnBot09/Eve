@@ -16,7 +16,7 @@ using namespace Eve::Input;
 
 namespace 
 {
-    static constexpr uint32_t entitiesCount = 10;
+    static constexpr uint32_t entitiesCount = 46;
     static bool isFocus = false;
 
     void Start(uint32_t systemId)
@@ -55,7 +55,7 @@ namespace
             {1,1,1}
         };
 
-        Camera camera {{0,0,1}, {0,1,0}, 1, 0.5};
+        Camera camera {{0,0,1}, {0,1,0}, 3, 0.5};
 
         entityCommandInfo.AddComponent(cameraTransform);
         entityCommandInfo.AddComponent(camera);

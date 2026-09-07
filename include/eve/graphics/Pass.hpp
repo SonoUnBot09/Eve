@@ -1,6 +1,7 @@
 #pragma once
 
-#include "eve/graphics/MaterialHandle.hpp"
+#include "eve/graphics/Pass.hpp"
+#include <eve/graphics/MaterialHandle.hpp>
 #include <vector>
 #include <utility>
 #include <eve/graphics/Texture.hpp>
@@ -10,6 +11,7 @@
 #include <eve/graphics/details/Usage.hpp>
 #include <eve/components/Transform.hpp>
 #include <eve/graphics/RenderViewHandle.hpp>
+#include <eve/graphics/details/DefaultNoInitAllocator.hpp>
 
 namespace Eve::Graphics
 {
@@ -46,7 +48,7 @@ namespace Eve::Graphics
         MaterialHandle MaterialHandle;
 
         // Draw Info Params
-        std::vector<std::byte> DrawInfoData;
+        uint32_t drawCallParamsSize;
 
         // Render View
         RenderViewHandle RenderView;
@@ -129,6 +131,28 @@ namespace Eve::Graphics
     {
         public:
 
+            GraphicsPass()
+            {
+                drawCalls.reserve(1000);
+                instanceParams.reserve(10000);
+                drawCallParams.reserve(1024 * 256); // 256 KB
+            }
+
+            GraphicsPass(uint32_t drawCallCount)
+            {
+                drawCalls.reserve(drawCallCount);
+                instanceParams.reserve(drawCallCount);
+                drawCallParams.reserve(1024 * 256); // 256 KB
+            }
+
+            GraphicsPass(uint32_t drawCallCount, uint32_t instanceCount)
+            {
+                drawCalls.reserve(drawCallCount);
+                instanceParams.reserve(instanceCount);
+                drawCallParams.reserve(1024 * 256); // 256 KB
+            }
+
+
             void UseTransientTexture(TransientTextureHandle texture, Usage accessType);
             void UseTransientBuffer(TransientBufferHandle buffer, Usage accessType);
 
@@ -153,8 +177,10 @@ namespace Eve::Graphics
             void UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
             void UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
 
-            void Draw(uint32_t vertexShaderInvocations, Transform& transform, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo);
-            void DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, Transform& transforms, MaterialHandle material, RenderViewHandle renderView,  DrawInfo* drawInfo);
+            void Draw(uint32_t vertexShaderInvocations, const Transform& transform, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo);
+            void Draw(uint32_t vertexShaderInvocations, const glm::mat4& objectMatrix, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo);
+            void DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, const Transform* transforms, MaterialHandle material, RenderViewHandle renderView,  DrawInfo* drawInfo);
+            void DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, const glm::mat4* objectMatrices, MaterialHandle material, RenderViewHandle renderView,  DrawInfo* drawInfo);
 
         private:
 
@@ -166,7 +192,8 @@ namespace Eve::Graphics
             inline std::vector<std::pair<TransientTextureHandle, LoadStoreOp>>& GetLoadStoreOperations() { return loadStoreOps; }
 
             inline std::vector<DrawCall>& GetDrawCalls() { return drawCalls; }
-            inline std::vector<InstanceParams>& GetInstanceParams() { return instanceParams; }
+            inline std::vector<InstanceParams, DefaultNoInitAllocator<InstanceParams>>& GetInstanceParams() { return instanceParams; }
+            inline std::vector<std::byte>& GetDrawCallParams() { return drawCallParams; }
 
             void Clear();
 
@@ -179,7 +206,8 @@ namespace Eve::Graphics
             std::vector<std::pair<TransientTextureHandle, LoadStoreOp>> loadStoreOps;
 
             std::vector<DrawCall> drawCalls;
-            std::vector<InstanceParams> instanceParams;
+            std::vector<InstanceParams, DefaultNoInitAllocator<InstanceParams>> instanceParams;
+            std::vector<std::byte> drawCallParams;
 
             friend class RenderGraph;
     };

@@ -101,7 +101,7 @@ bool GraphicsCore::Render()
             VK_CHECK(result);
         }
     }
-    
+
     // Compile Graph, Update Descriptor Set, Record Commands
     RenderGraph::Execute(frameData.CmdBuffer, frameIndex, swaphchainImageIndex);
 

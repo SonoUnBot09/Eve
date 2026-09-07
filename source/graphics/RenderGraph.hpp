@@ -1,6 +1,5 @@
 #pragma once
 
-#include "eve/graphics/Buffer.hpp"
 #include <vector>
 #include <cstdint>
 
@@ -105,7 +104,8 @@ namespace Eve::Graphics
 
                 // --- Graphics ---
                 std::vector<DrawCall> drawCalls;
-                std::vector<InstanceParams> instanceParams;
+                std::vector<InstanceParams, DefaultNoInitAllocator<InstanceParams>> instanceParams;
+                std::vector<std::byte> drawCallParams;
 
                 // --- Transfer ---
                 std::vector<BufferCopy> transientBufferCopies;
