@@ -38,6 +38,7 @@ namespace Eve::Graphics
 
             // --- Shaders & Materials ---
             static ShaderHandle CreateGraphicsShader(ShaderInfo shaderInfo);
+            static ComputeShaderHandle CreateComputeShader(std::string module);
             static MaterialHandle CreateMaterial(ShaderHandle handle);
 
             static RenderViewHandle CreateRenderView();

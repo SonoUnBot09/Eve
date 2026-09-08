@@ -1,5 +1,6 @@
 #pragma once
 
+#include "eve/components/Transform.hpp"
 #include <vector>
 #include <cstdint>
 
@@ -104,7 +105,7 @@ namespace Eve::Graphics
 
                 // --- Graphics ---
                 std::vector<DrawCall> drawCalls;
-                std::vector<InstanceParams, DefaultNoInitAllocator<InstanceParams>> instanceParams;
+                std::vector<Transform, DefaultNoInitAllocator<Transform>> transforms;
                 std::vector<std::byte> drawCallParams;
 
                 // --- Transfer ---
@@ -134,7 +135,8 @@ namespace Eve::Graphics
                 std::vector<TextureUpload> persistentTextureUploads;
 
                 // --- Compute ---
-
+                std::vector<ComputeDispatch> computeDispatches;
+                std::vector<std::byte> computeParams;
 
                 std::vector<TextureBarrierInfoPair> transientTexturesBarriers;
                 std::vector<BufferBarrierInfoPair> transientBuffersBarriers;
@@ -155,24 +157,37 @@ namespace Eve::Graphics
                 std::vector<uint32_t> BuffersToDestroy;
             };
 
+            struct ObjectParams
+            {
+                glm::mat4 ObjectToWorld;
+                glm::mat4 WorldToObject;
+            };
+
+            struct MatricesShaderParams
+            {
+                uint32_t InstanceCount;
+                uint32_t TransformBufferID;
+                uint32_t MatricesBufferID;
+            };
+
             struct PushConstant
             {
-                uint64_t DrawInfoParamsBufferOffset;
+                uint64_t DrawComputeParamsBufferOffset;
                 uint32_t GlobalInstanceOffsetID;
                 uint32_t MaterialBufferID;
                 uint32_t InstanceParamsBufferID;
-                uint32_t DrawCallInfoParamsBufferID;
+                uint32_t DrawComputeParamsBufferID;
                 uint32_t RenderViewBufferID;
                 uint32_t RenderViewID;
 
                 bool operator== (PushConstant& other)
                 {
                     return
-                        DrawInfoParamsBufferOffset == other.DrawInfoParamsBufferOffset &&
+                        DrawComputeParamsBufferOffset == other.DrawComputeParamsBufferOffset &&
                         GlobalInstanceOffsetID == other.GlobalInstanceOffsetID &&
                         MaterialBufferID == other.MaterialBufferID &&
                         InstanceParamsBufferID == other.InstanceParamsBufferID &&
-                        DrawCallInfoParamsBufferID == other.DrawCallInfoParamsBufferID &&
+                        DrawComputeParamsBufferID == other.DrawComputeParamsBufferID &&
                         RenderViewBufferID == other.RenderViewBufferID &&
                         RenderViewID == other.RenderViewID;
                 };
@@ -223,9 +238,11 @@ namespace Eve::Graphics
             static void RecordPersistentTextureUpload(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
 
             static void RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
+            static void RecordComputeDispatches(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
             static void RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex);
 
-            static void UploadInstanceAnDrawInfoParams();
+            static void UploadGraphicsPassesData();
+            static void UploadComputePassesData();
             static void UploadRenderViews();
 
             // Input
@@ -246,14 +263,20 @@ namespace Eve::Graphics
             inline static TransientTextureHandle presentTexture = {UINT32_MAX};
             inline static bool isPresentTextureValid = false;
 
+            #pragma region Internal Engine Stuff
+            inline static ComputeShaderHandle matricesComputeShaderCalculator;
             inline static TransferPass universalTransferPass;
-            inline static std::vector<InstanceParams> instanceParams;
-            inline static std::vector<std::byte> drawCallInfoParams;
-            inline static TransientBufferHandle instanceParamsBuffer;
-            inline static TransientBufferHandle drawInfoParamsBuffer;
+            inline static std::vector<Transform, DefaultNoInitAllocator<Transform>> transformsData;
+            inline static std::vector<std::byte, DefaultNoInitAllocator<std::byte>> drawCallParams;
+            inline static std::vector<std::byte, DefaultNoInitAllocator<std::byte>> computeParams;
+            inline static TransientBufferHandle objectMatricesBuffer;
+            inline static TransientBufferHandle drawCallParamsBuffer;
+            inline static TransientBufferHandle computeParamsBuffer;
             inline static TransientBufferHandle renderViewsBuffer;
-            inline static uint32_t GlobalInstanceOffsetID;
-            inline static uint64_t GlobalDrawInfoParamsOffset;
+            inline static uint32_t globalInstanceOffsetID;
+            inline static uint64_t globalDrawParamsOffset;
+            inline static uint64_t globalComputeParamsOffset;
+            #pragma endregion
 
             inline static std::vector<uint32_t> barriersOffsetPerTexture;
             inline static std::vector<std::pair<TextureBarrierInfo, uint32_t>> texturesBarriersInfo; // The second element in the pair is the sync point index

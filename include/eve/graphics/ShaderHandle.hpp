@@ -10,8 +10,11 @@ namespace Eve::Graphics
     struct ShaderHandle
     {
         uint32_t Id;
+    };
 
-        uint32_t GetMaterialUBOId();
+    struct ComputeShaderHandle
+    {
+        uint32_t Id;
     };
 
     struct ShaderInfo

@@ -90,7 +90,8 @@ namespace Eve::Graphics
                 slang::IModule* module = session->loadModule(shaderModule, diagnostics.writeRef());
                 CheckSlangDiagnostics(diagnostics.get(), "Module Load");
 
-                if (!module) {
+                if (!module) 
+                {
                     throw std::runtime_error("Unable to get a valid Slang module");
                 }
 
@@ -123,13 +124,9 @@ namespace Eve::Graphics
                 ShaderBytecode result;
                 Slang::ComPtr<slang::IComponentType> program;
                 
-                result.compute = CompileEntryPoint(session, module, "compute", std::addressof(program));
+                result.compute = CompileEntryPoint(session, module, "main", std::addressof(program));
 
                 MaterialProperties properties;
-                if (program) 
-                {
-                    properties = SearchProperties(program->getLayout()); 
-                }
 
                 return Shader{result, properties};
             }

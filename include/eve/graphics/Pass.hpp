@@ -31,9 +31,9 @@ namespace Eve::Graphics
         DISCARD
     };
 
-    struct DrawInfo
+    struct DrawParams
     {
-        explicit DrawInfo (void* data, uint32_t sizeBytes) :  Data(data), SizeBytes(sizeBytes) {};
+        explicit DrawParams (void* data, uint32_t sizeBytes) :  Data(data), SizeBytes(sizeBytes) {};
         void* Data;
         uint32_t SizeBytes;
     };
@@ -54,10 +54,23 @@ namespace Eve::Graphics
         RenderViewHandle RenderView;
     };
 
-    struct InstanceParams
+    struct ComputeParams
     {
-        glm::mat4 ObjectToWorld;
-        glm::mat4 WorldToObject;
+        explicit ComputeParams (void* data, uint32_t sizeBytes) :  Data(data), SizeBytes(sizeBytes) {};
+        void* Data;
+        uint32_t SizeBytes;
+    };
+
+    struct ComputeDispatch
+    {
+        // Dispatch
+        uint32_t XNumGroupThreads, YNumGroupThreads, ZNumGroupThreads;
+
+        // Shader
+        ComputeShaderHandle ComputeShaderHandle;
+
+        // Params
+        uint32_t ComputeParamsSize;
     };
 
     struct LoadStoreOp
@@ -134,24 +147,23 @@ namespace Eve::Graphics
             GraphicsPass()
             {
                 drawCalls.reserve(1000);
-                instanceParams.reserve(10000);
-                drawCallParams.reserve(1024 * 256); // 256 KB
+                transforms.reserve(1000);
+                drawCallParams.reserve(1024 * 16); // 16 KB
             }
 
             GraphicsPass(uint32_t drawCallCount)
             {
                 drawCalls.reserve(drawCallCount);
-                instanceParams.reserve(drawCallCount);
+                transforms.reserve(drawCallCount);
                 drawCallParams.reserve(1024 * 256); // 256 KB
             }
 
             GraphicsPass(uint32_t drawCallCount, uint32_t instanceCount)
             {
                 drawCalls.reserve(drawCallCount);
-                instanceParams.reserve(instanceCount);
+                transforms.reserve(instanceCount);
                 drawCallParams.reserve(1024 * 256); // 256 KB
             }
-
 
             void UseTransientTexture(TransientTextureHandle texture, Usage accessType);
             void UseTransientBuffer(TransientBufferHandle buffer, Usage accessType);
@@ -177,10 +189,8 @@ namespace Eve::Graphics
             void UseDepthTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
             void UseStencilTarget(TransientTextureHandle texture, LoadStoreOp loadStoreOp);
 
-            void Draw(uint32_t vertexShaderInvocations, const Transform& transform, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo);
-            void Draw(uint32_t vertexShaderInvocations, const glm::mat4& objectMatrix, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo);
-            void DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, const Transform* transforms, MaterialHandle material, RenderViewHandle renderView,  DrawInfo* drawInfo);
-            void DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, const glm::mat4* objectMatrices, MaterialHandle material, RenderViewHandle renderView,  DrawInfo* drawInfo);
+            void Draw(uint32_t vertexShaderInvocations, const Transform& transform, MaterialHandle material, RenderViewHandle renderView, DrawParams* drawInfo);
+            void DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, const Transform* transforms, MaterialHandle material, RenderViewHandle renderView,  DrawParams* drawInfo);
 
         private:
 
@@ -192,7 +202,7 @@ namespace Eve::Graphics
             inline std::vector<std::pair<TransientTextureHandle, LoadStoreOp>>& GetLoadStoreOperations() { return loadStoreOps; }
 
             inline std::vector<DrawCall>& GetDrawCalls() { return drawCalls; }
-            inline std::vector<InstanceParams, DefaultNoInitAllocator<InstanceParams>>& GetInstanceParams() { return instanceParams; }
+            inline std::vector<Transform, DefaultNoInitAllocator<Transform>>& GetTransforms() { return transforms; }
             inline std::vector<std::byte>& GetDrawCallParams() { return drawCallParams; }
 
             void Clear();
@@ -206,7 +216,7 @@ namespace Eve::Graphics
             std::vector<std::pair<TransientTextureHandle, LoadStoreOp>> loadStoreOps;
 
             std::vector<DrawCall> drawCalls;
-            std::vector<InstanceParams, DefaultNoInitAllocator<InstanceParams>> instanceParams;
+            std::vector<Transform, DefaultNoInitAllocator<Transform>> transforms;
             std::vector<std::byte> drawCallParams;
 
             friend class RenderGraph;
@@ -335,15 +345,33 @@ namespace Eve::Graphics
     struct ComputePass
     {
         public:
+
             void UseTransientTexture(TransientTextureHandle texture, Usage accessType);
             void UseTransientBuffer(TransientBufferHandle texture, Usage accessType);
 
+            void UseReadOnlyTexture(TransientTextureHandle texture);
+            void UseReadOnlyTexture(TextureHandle texture);
+
+            void UseReadWriteTexture(TransientTextureHandle texture);
+            void UseReadWriteTexture(TextureHandle texture);
+
+            void UseReadOnlyBuffer(TransientBufferHandle buffer);
+            void UseReadOnlyBuffer(BufferHandle buffer);
+
+            void UseReadWriteBuffer(TransientBufferHandle buffer);
+            void UseReadWriteBuffer(BufferHandle buffer);
+
+            void Dispatch(uint32_t XNumGroups, uint32_t YNumGroups, uint32_t ZNumGroups, ComputeShaderHandle shader, ComputeParams* params);
+
         private:
 
-            std::vector<std::pair<TransientTextureHandle, Usage>>& GetTransientTextures() { return transientTextures; }
-            std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }
-            std::vector<std::pair<TextureHandle, Usage>>& GetPersistentTextures() { return persistentTextures; }
-            std::vector<std::pair<BufferHandle, Usage>>& GetPersistentBuffers() { return persistentBuffers; }
+            inline std::vector<std::pair<TransientTextureHandle, Usage>>& GetTransientTextures() { return transientTextures; }
+            inline std::vector<std::pair<TransientBufferHandle, Usage>>& GetTransientBuffers() { return transientBuffers; }
+            inline std::vector<std::pair<TextureHandle, Usage>>& GetPersistentTextures() { return persistentTextures; }
+            inline std::vector<std::pair<BufferHandle, Usage>>& GetPersistentBuffers() { return persistentBuffers; }
+
+            inline std::vector<ComputeDispatch>& GetComputeDispatches() { return dispatches; }
+            inline std::vector<std::byte>& GetComputeParams() { return computeParams; }
 
             void Clear();
 
@@ -351,6 +379,9 @@ namespace Eve::Graphics
             std::vector<std::pair<TransientBufferHandle, Usage>> transientBuffers;
             std::vector<std::pair<TextureHandle, Usage>> persistentTextures;
             std::vector<std::pair<BufferHandle, Usage>> persistentBuffers;
+
+            std::vector<ComputeDispatch> dispatches;
+            std::vector<std::byte> computeParams;
 
             friend class RenderGraph;
     };

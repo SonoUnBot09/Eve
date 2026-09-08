@@ -2,147 +2,65 @@
 #include <graphics/registers/MemoryRegistry.hpp>
 #include "Resources.hpp"
 #include <eve/graphics/details/Usage.hpp>
+#include "eve/graphics/Buffer.hpp"
 #include "eve/graphics/MaterialHandle.hpp"
 #include "eve/graphics/RenderViewHandle.hpp"
-#include "glm/ext/matrix_transform.hpp"
-#include "glm/gtc/quaternion.hpp"
-#include "glm/matrix.hpp"
 #include "registers/MemoryRegistry.hpp"
-#include <execution>
 #include <algorithm>
 
 using namespace Eve::Graphics;
 
 #pragma region Graphics Pass
 
-void GraphicsPass::Draw(uint32_t vertexShaderInvocations, const Transform& transform, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
+void GraphicsPass::Draw(uint32_t vertexShaderInvocations, const Transform& transformParam, MaterialHandle material, RenderViewHandle renderView, DrawParams* drawParams)
 {
     uint64_t drawParamsOffset = 0;
     uint32_t drawParamsSizeBytes = 0;
 
-    if(drawInfo != nullptr)
+    if(drawParams != nullptr)
     {
         static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
-        drawParamsSizeBytes = std::min((drawInfo->SizeBytes + 7u) & ~7u, maxDrawInfoSize);
+        drawParamsSizeBytes = std::min((drawParams->SizeBytes + 7u) & ~7u, maxDrawInfoSize);
 
         drawParamsOffset = drawCallParams.size();
 
         drawCallParams.resize(drawParamsOffset + drawParamsSizeBytes);
 
-        memcpy(drawCallParams.data() + drawParamsOffset, drawInfo->Data, drawParamsSizeBytes);
+        memcpy(drawCallParams.data() + drawParamsOffset, drawParams->Data, drawParamsSizeBytes);
     }
 
     drawCalls.emplace_back(vertexShaderInvocations, 1, material, drawParamsSizeBytes, renderView);
 
-    glm::mat4 objectToWorld = 
-        glm::translate(glm::mat4(1.0f), transform.Position) * 
-        glm::mat4_cast(transform.Rotation) *
-        glm::scale(glm::mat4(1.0f), transform.Scale);
-    glm::mat4 worldToObject = glm::inverse(objectToWorld);
-
-    instanceParams.push_back({objectToWorld, worldToObject});
+    transforms.push_back(transformParam);
 }
 
-void GraphicsPass::Draw(uint32_t vertexShaderInvocations, const glm::mat4& objectMatrix, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
+void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, const Transform* transformsParams, MaterialHandle material, RenderViewHandle renderView, DrawParams* drawParams)
 {
     uint64_t drawParamsOffset = 0;
     uint32_t drawParamsSizeBytes = 0;
 
-    if(drawInfo != nullptr)
+    if(drawParams != nullptr)
     {
         static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
-        drawParamsSizeBytes = std::min((drawInfo->SizeBytes + 7u) & ~7u, maxDrawInfoSize);
+        drawParamsSizeBytes = std::min((drawParams->SizeBytes + 7u) & ~7u, maxDrawInfoSize);
 
         drawParamsOffset = drawCallParams.size();
 
         drawCallParams.resize(drawParamsOffset + drawParamsSizeBytes);
 
-        memcpy(drawCallParams.data() + drawParamsOffset, drawInfo->Data, drawParamsSizeBytes);
-    }
-
-    drawCalls.emplace_back(vertexShaderInvocations, 1, material, drawParamsSizeBytes, renderView);
-
-    glm::mat4 worldToObject = glm::inverse(objectMatrix);
-
-    instanceParams.push_back({objectMatrix, worldToObject});
-}
-
-void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, const Transform* transforms, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
-{
-    uint64_t drawParamsOffset = 0;
-    uint32_t drawParamsSizeBytes = 0;
-
-    if(drawInfo != nullptr)
-    {
-        static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
-        drawParamsSizeBytes = std::min((drawInfo->SizeBytes + 7u) & ~7u, maxDrawInfoSize);
-
-        drawParamsOffset = drawCallParams.size();
-
-        drawCallParams.resize(drawParamsOffset + drawParamsSizeBytes);
-
-        memcpy(drawCallParams.data() + drawParamsOffset, drawInfo->Data, drawParamsSizeBytes);
+        memcpy(drawCallParams.data() + drawParamsOffset, drawParams->Data, drawParamsSizeBytes);
     }
 
     drawCalls.emplace_back(vertexShaderInvocations, instanceCount, material, drawParamsSizeBytes, renderView);
 
-    size_t startOffset = instanceParams.size();
-    instanceParams.resize(startOffset + instanceCount);
+    size_t startOffset = transforms.size();
+    transforms.resize(startOffset + instanceCount);
 
-    std::transform
+    memcpy
     (
-        std::execution::par_unseq,
-        transforms,               
-        transforms + instanceCount,
-        instanceParams.begin() + startOffset,
-        [](const Transform& transform) 
-        {
-            glm::mat3 rot = glm::mat3_cast(transform.Rotation);
-            glm::vec3 invScale = 1.0f / transform.Scale;
-
-            glm::mat4 objectToWorld(1.0f);
-            objectToWorld[0] = glm::vec4(rot[0] * transform.Scale.x, 0.0f);
-            objectToWorld[1] = glm::vec4(rot[1] * transform.Scale.y, 0.0f);
-            objectToWorld[2] = glm::vec4(rot[2] * transform.Scale.z, 0.0f);
-            objectToWorld[3] = glm::vec4(transform.Position, 1.0f);
-
-            return InstanceParams{objectToWorld, glm::inverse(objectToWorld)}; 
-        }
-    );
-}
-
-void GraphicsPass::DrawInstanced(uint32_t vertexShaderInvocations, uint32_t instanceCount, const glm::mat4* objectMatrices, MaterialHandle material, RenderViewHandle renderView, DrawInfo* drawInfo)
-{
-    uint64_t drawParamsOffset = 0;
-    uint32_t drawParamsSizeBytes = 0;
-
-    if(drawInfo != nullptr)
-    {
-        static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
-        drawParamsSizeBytes = std::min((drawInfo->SizeBytes + 7u) & ~7u, maxDrawInfoSize);
-
-        drawParamsOffset = drawCallParams.size();
-
-        drawCallParams.resize(drawParamsOffset + drawParamsSizeBytes);
-
-        memcpy(drawCallParams.data() + drawParamsOffset, drawInfo->Data, drawParamsSizeBytes);
-    }
-
-    drawCalls.emplace_back(vertexShaderInvocations, instanceCount, material, drawParamsSizeBytes, renderView);
-
-    size_t startOffset = instanceParams.size();
-    instanceParams.resize(startOffset + instanceCount);
-
-    std::transform
-    (
-        std::execution::par_unseq,
-        objectMatrices,               
-        objectMatrices + instanceCount,
-        instanceParams.begin() + startOffset,
-        [](const glm::mat4& model) 
-        {
-            return InstanceParams{model, glm::inverse(model)}; 
-        }
+        transforms.data() + startOffset,
+        transformsParams,
+        sizeof(Transform) * instanceCount
     );
 }
 
@@ -246,7 +164,7 @@ void GraphicsPass::Clear()
     loadStoreOps.clear();
 
     drawCalls.clear();
-    instanceParams.clear();
+    transforms.clear();
 }
 #pragma endregion
 
@@ -488,6 +406,72 @@ void TransferPass::Clear()
 #pragma endregion
 
 #pragma region Compute Pass
+
+void ComputePass::Dispatch(uint32_t XNumGroups, uint32_t YNumGroups, uint32_t ZNumGroups, ComputeShaderHandle shader, ComputeParams* params)
+{
+    uint64_t computeParamsOffset = 0;
+    uint32_t computeParamsSizeBytes = 0;
+
+    if(params != nullptr)
+    {
+        static constexpr uint32_t maxDrawInfoSize = 16 * 1024;
+        computeParamsSizeBytes = std::min((params->SizeBytes + 7u) & ~7u, maxDrawInfoSize);
+
+        computeParamsOffset = computeParams.size();
+
+        computeParams.resize(computeParamsOffset + computeParamsSizeBytes);
+
+        memcpy(computeParams.data() + computeParamsOffset, params->Data, computeParamsSizeBytes);
+    }
+
+    dispatches.emplace_back(
+        ComputeDispatch
+        {
+            XNumGroups,
+            YNumGroups,
+            ZNumGroups,
+            shader,
+            computeParamsSizeBytes
+        }
+    );
+
+}
+
+void ComputePass::UseReadOnlyTexture(TransientTextureHandle texture)
+{
+    transientTextures.emplace_back(texture, Usage::COMPUTE_READ_TEXTURE_STORAGE);
+}
+void ComputePass::UseReadOnlyTexture(TextureHandle texture)
+{
+    persistentTextures.emplace_back(texture, Usage::COMPUTE_READ_TEXTURE_STORAGE);
+}
+
+void ComputePass::UseReadWriteTexture(TransientTextureHandle texture)
+{
+    transientTextures.emplace_back(texture, Usage::COMPUTE_READ_WRITE_TEXTURE_STORAGE);
+}
+void ComputePass::UseReadWriteTexture(TextureHandle texture)
+{
+    persistentTextures.emplace_back(texture, Usage::COMPUTE_READ_WRITE_TEXTURE_STORAGE);
+}
+
+void ComputePass::UseReadOnlyBuffer(TransientBufferHandle buffer)
+{
+    transientBuffers.emplace_back(buffer, Usage::COMPUTE_READ_BUFFER_STORAGE);
+}
+void ComputePass::UseReadOnlyBuffer(BufferHandle buffer)
+{
+    persistentBuffers.emplace_back(buffer, Usage::COMPUTE_READ_BUFFER_STORAGE);
+}
+
+void ComputePass::UseReadWriteBuffer(TransientBufferHandle buffer)
+{
+    transientBuffers.emplace_back(buffer, Usage::COMPUTE_READ_WRITE_BUFFER_STORAGE);
+}
+void ComputePass::UseReadWriteBuffer(BufferHandle buffer)
+{
+    persistentBuffers.emplace_back(buffer, Usage::COMPUTE_READ_WRITE_BUFFER_STORAGE);
+}
 
 void ComputePass::UseTransientTexture(TransientTextureHandle texture, Usage accessType)
 {

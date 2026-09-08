@@ -19,11 +19,11 @@ namespace Internal
 
     struct PushConstant
     {
-        uint64_t DrawInfoParamsBufferOffset;
+        uint64_t DrawComputeParamsBufferOffset;
         uint32_t GlobalInstanceOffsetID;
         uint32_t MaterialBufferID;
         uint32_t InstanceParamsBufferID;
-        uint32_t DrawCallInfoParamsBufferID;
+        uint32_t DrawComputeParamsBufferID;
         uint32_t RenderViewBufferID;
         uint32_t RenderViewID;
     };
@@ -67,8 +67,8 @@ public struct EveResources
     public inline float4x4 GetObjectToWorldMatrix(uint32_t globalInstanceID) { return GetBuffer<Internal::InstanceParams>(Internal::pushConstant.InstanceParamsBufferID)[globalInstanceID].ObjectToWorld; }
     public inline float4x4 GetWorldToObjectMatrix(uint32_t globalInstanceID) { return GetBuffer<Internal::InstanceParams>(Internal::pushConstant.InstanceParamsBufferID)[globalInstanceID].WorldToObject; }
 
-    public inline const T GetDrawInfoParams<T>() { return *(T *)(GetBuffer<uint8_t>(Internal::pushConstant.DrawCallInfoParamsBufferID) + Internal::pushConstant.DrawInfoParamsBufferOffset); }
-    public inline const T* GetDrawInfoParamsPtr<T>() { return (T *)(GetBuffer<uint8_t>(Internal::pushConstant.DrawCallInfoParamsBufferID) + Internal::pushConstant.DrawInfoParamsBufferOffset); }
+    public inline const T GetDrawInfoParams<T>() { return *(T *)(GetBuffer<uint8_t>(Internal::pushConstant.DrawComputeParamsBufferID) + Internal::pushConstant.DrawComputeParamsBufferOffset); }
+    public inline const T* GetDrawInfoParamsPtr<T>() { return (T *)(GetBuffer<uint8_t>(Internal::pushConstant.DrawComputeParamsBufferID) + Internal::pushConstant.DrawComputeParamsBufferOffset); }
 
     public inline float4x4 GetViewMatrix() { return GetBuffer<Internal::RenderViewObject>(Internal::pushConstant.RenderViewBufferID)[Internal::pushConstant.RenderViewID].ViewMatrix; }
     public inline float4x4 GetInvViewMatrix() { return GetBuffer<Internal::RenderViewObject>(Internal::pushConstant.RenderViewBufferID)[Internal::pushConstant.RenderViewID].InvViewMatrix; }

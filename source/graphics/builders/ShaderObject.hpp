@@ -12,4 +12,10 @@ namespace Eve::Graphics
         VkShaderModule VertexModule;
         VkShaderModule FragmentModule;
     };
+
+    struct ComputeShaderObject
+    {
+        VkPipeline Pipeline;
+        VkShaderModule ComputeShaderModule;
+    };
 }

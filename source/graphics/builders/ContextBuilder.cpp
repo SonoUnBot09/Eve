@@ -254,7 +254,8 @@ void ContextBuilder::CreateDevice(Context& context)
        !availableFeatures12.runtimeDescriptorArray || !availableFeatures12.shaderSampledImageArrayNonUniformIndexing ||
        !availableFeatures12.descriptorBindingSampledImageUpdateAfterBind || !availableFeatures12.descriptorBindingStorageImageUpdateAfterBind ||
        !availableFeatures12.descriptorBindingUniformBufferUpdateAfterBind || !availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind ||
-       !availableFeatures11.shaderDrawParameters || !availableFeatures.features.shaderInt64 || !availableFeatures12.scalarBlockLayout)
+       !availableFeatures11.shaderDrawParameters || !availableFeatures.features.shaderInt64 || !availableFeatures12.scalarBlockLayout ||
+       !availableFeatures12.shaderInt8)
     {
         printError("Available device features do not respect application features requirement");
     }
@@ -288,6 +289,7 @@ void ContextBuilder::CreateDevice(Context& context)
     features12.timelineSemaphore = VK_TRUE;
     features12.bufferDeviceAddress = VK_TRUE;
     features12.scalarBlockLayout = VK_TRUE;
+    features12.shaderInt8 = VK_TRUE;
 
     VkPhysicalDeviceVulkan11Features features11{};
     features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;

@@ -41,6 +41,8 @@ bool GraphicsCore::Initialize(std::vector<std::string>& searchShaderPaths)
         return false;
     }
 
+    RenderGraph::Initialize();
+
     return true;
 }
 

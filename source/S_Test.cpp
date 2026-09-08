@@ -131,14 +131,19 @@ namespace
 
         uint32_t entitiesCount = table.GetEntitiesCount();
 
-        for(uint32_t i = 0; i < entitiesCount; i++)
+        if(getTransforms)
         {
-            Transform& transform = table.GetComponent<Transform>(i, transformComponentType);
+            for(uint32_t i = 0; i < entitiesCount; i++)
+            {
+                Transform& transform = table.GetComponent<Transform>(i, transformComponentType);
 
-            pass.Draw(36, transform, material, camera.renderView, nullptr);
+                transforms.push_back(transform);
+            }
 
-            //transforms.push_back(transform);
+            getTransforms = false;
         }
+
+        pass.DrawInstanced(36, entitiesCount, transforms.data(), material, camera.renderView, nullptr);
 
         Graphics::AddPass(pass);
 

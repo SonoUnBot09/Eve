@@ -12,24 +12,49 @@ using namespace Eve::Debug;
 
 void PipelineBuilder::Initialize()
 {
-    VkPushConstantRange pushConstantRange
+    // Graphics layout
     {
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        .offset = 0,
-        .size = 128
-    };
+        VkPushConstantRange pushConstantRange
+        {
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            .offset = 0,
+            .size = 128
+        };
 
-    VkDescriptorSetLayout descriptorSetLayout = ResourceMapper::GetDescriptorSetLayout();
-    VkPipelineLayoutCreateInfo pipelineLayoutCI
+        VkDescriptorSetLayout descriptorSetLayout = ResourceMapper::GetDescriptorSetLayout();
+        VkPipelineLayoutCreateInfo pipelineLayoutCI
+        {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = 1,
+            .pSetLayouts = &descriptorSetLayout,
+            .pushConstantRangeCount = 1,
+            .pPushConstantRanges = &pushConstantRange
+        };
+
+        VK_CHECK(vkCreatePipelineLayout(GraphicsCore::Context.Device, &pipelineLayoutCI, nullptr, &graphicsPipelineLayout));
+    }
+
+    // Compute layout
     {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 1,
-        .pSetLayouts = &descriptorSetLayout,
-        .pushConstantRangeCount = 1,
-        .pPushConstantRanges = &pushConstantRange
-    };
+        VkPushConstantRange pushConstantRange
+        {
+            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+            .offset = 0,
+            .size = 128
+        };
 
-    VK_CHECK(vkCreatePipelineLayout(GraphicsCore::Context.Device, &pipelineLayoutCI, nullptr, &graphicsPipelineLayout));
+        VkDescriptorSetLayout descriptorSetLayout = ResourceMapper::GetDescriptorSetLayout();
+        VkPipelineLayoutCreateInfo pipelineLayoutCI
+        {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = 1,
+            .pSetLayouts = &descriptorSetLayout,
+            .pushConstantRangeCount = 1,
+            .pPushConstantRanges = &pushConstantRange
+        };
+
+        VK_CHECK(vkCreatePipelineLayout(GraphicsCore::Context.Device, &pipelineLayoutCI, nullptr, &computePipelineLayout));
+    }
 }
 
 bool PipelineBuilder::GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipelineLayout)
@@ -37,6 +62,17 @@ bool PipelineBuilder::GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipeli
     if(PipelineBuilder::graphicsPipelineLayout)
     {
         graphicsPipelineLayout = PipelineBuilder::graphicsPipelineLayout;
+        return true;
+    }
+
+    return false;
+}
+
+bool PipelineBuilder::GetComputePipelineLayout(VkPipelineLayout &computePipelineLayout)
+{
+    if(PipelineBuilder::computePipelineLayout)
+    {
+        computePipelineLayout = PipelineBuilder::computePipelineLayout;
         return true;
     }
 
@@ -186,6 +222,40 @@ bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo shaderInfo, GraphicsShade
 
     VK_CHECK(vkCreateGraphicsPipelines(GraphicsCore::Context.Device, nullptr, 1, &pipelineCI, nullptr,
         &shaderObject.Pipeline));
+
+    return true;
+}
+
+bool PipelineBuilder::BuildComputePipeline(std::string& shaderModule, ComputeShaderObject &pipeline)
+{
+    Shader shader = SlangCompiler::CompileCompute(shaderModule.c_str());
+
+    VkShaderModule computeShader = CreateComputeModule(shader.bytecode);
+
+    pipeline.ComputeShaderModule = computeShader;
+
+    if(computeShader == nullptr)
+    {
+        std::cerr << "Failed to create the compute shader" << std::endl;
+        return false;
+    }
+
+    VkPipelineShaderStageCreateInfo shaderStageCI
+    {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+        .module = computeShader,
+        .pName = "main"
+    };
+
+    VkComputePipelineCreateInfo pipelineInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+        .stage = shaderStageCI,
+        .layout = computePipelineLayout
+    };
+
+    VK_CHECK(vkCreateComputePipelines(GraphicsCore::Context.Device, nullptr, 1, &pipelineInfo, nullptr, &pipeline.Pipeline));
 
     return true;
 }

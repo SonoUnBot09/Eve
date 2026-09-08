@@ -16,9 +16,15 @@ namespace Eve::Graphics
         public:
 
             static void Initialize();
+            
             static bool GetGraphicsPipelineLayout(VkPipelineLayout& graphicsPipelineLayout);
+            static bool GetComputePipelineLayout(VkPipelineLayout& computePipelineLayout);
+
             inline static VkPipelineLayout GetGraphicsPipelineLayout() { return graphicsPipelineLayout; }
+            inline static VkPipelineLayout GetComputePielineLayout() { return computePipelineLayout; }
+
             static bool BuildGraphicsPipeline(ShaderInfo shaderInfo,  GraphicsShaderObject& pipeline, MaterialProperties& properties);
+            static bool BuildComputePipeline(std::string& shaderModule, ComputeShaderObject& pipeline);
 
         private:
 
@@ -27,5 +33,6 @@ namespace Eve::Graphics
             inline static VkShaderModule CreateComputeModule(ShaderBytecode& input);
 
             inline static VkPipelineLayout graphicsPipelineLayout = nullptr;
+            inline static VkPipelineLayout computePipelineLayout = nullptr;
     };
 }

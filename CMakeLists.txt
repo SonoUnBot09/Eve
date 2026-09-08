@@ -97,4 +97,4 @@ target_include_directories(Eve
     PUBLIC include
 )
 
-target_compile_definitions(Eve PRIVATE GLM_FORCE_LEFT_HANDED GLM_FORCE_DEPTH_ZERO_TO_ONE)
+target_compile_definitions(Eve PRIVATE GLM_FORCE_LEFT_HANDED GLM_FORCE_DEPTH_ZERO_TO_ONE GLM_FORCE_QUAT_DATA_XYZW)

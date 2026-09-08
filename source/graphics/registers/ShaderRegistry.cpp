@@ -19,11 +19,22 @@ ShaderHandle ShaderRegistry::CreateGraphicsShader(ShaderInfo shaderInfo)
 
     PipelineBuilder::BuildGraphicsPipeline(shaderInfo, shaderObject, properties);
 
-    shaderObjects.push_back(shaderObject);
+    graphicsShaderObjects.push_back(shaderObject);
 
     materialProperties.push_back(properties);
 
-    return ShaderHandle{.Id = static_cast<uint32_t>(shaderObjects.size() - 1)};
+    return ShaderHandle{.Id = static_cast<uint32_t>(graphicsShaderObjects.size() - 1)};
+}
+
+ComputeShaderHandle ShaderRegistry::CreateComputeShader(std::string shaderModule)
+{
+    ComputeShaderObject shaderObject {};
+
+    PipelineBuilder::BuildComputePipeline(shaderModule, shaderObject);
+
+    computeShaderObjects.push_back(shaderObject);
+
+    return ComputeShaderHandle{.Id = static_cast<uint32_t>(computeShaderObjects.size() - 1)};
 }
 
 void ShaderRegistry::DestroyAllShaders()
@@ -34,13 +45,28 @@ void ShaderRegistry::DestroyAllShaders()
         vkDestroyPipelineLayout(GraphicsCore::Context.Device, graphicsPipelineLayout, nullptr);
     }
 
-    for(uint32_t i = 0; i < shaderObjects.size(); i++)
+    VkPipelineLayout computePipelineLayout{};
+    if(PipelineBuilder::GetComputePipelineLayout(computePipelineLayout))
     {
-        GraphicsShaderObject& shader = shaderObjects[i];
+        vkDestroyPipelineLayout(GraphicsCore::Context.Device, computePipelineLayout, nullptr);
+    }
+
+    for(uint32_t i = 0; i < graphicsShaderObjects.size(); i++)
+    {
+        GraphicsShaderObject& shader = graphicsShaderObjects[i];
 
         vkDestroyPipeline(GraphicsCore::Context.Device, shader.Pipeline, nullptr);
 
         vkDestroyShaderModule(GraphicsCore::Context.Device, shader.VertexModule, nullptr);
         vkDestroyShaderModule(GraphicsCore::Context.Device, shader.FragmentModule, nullptr);
+    }
+
+    for(uint32_t i = 0; i < computeShaderObjects.size(); i++)
+    {
+        ComputeShaderObject& shader = computeShaderObjects[i];
+
+        vkDestroyPipeline(GraphicsCore::Context.Device, shader.Pipeline, nullptr);
+
+        vkDestroyShaderModule(GraphicsCore::Context.Device, shader.ComputeShaderModule, nullptr);
     }
 }

@@ -77,6 +77,11 @@ ShaderHandle Graphics::CreateGraphicsShader(ShaderInfo shaderInfo)
     return ShaderRegistry::CreateGraphicsShader(shaderInfo);
 }
 
+ComputeShaderHandle Graphics::CreateComputeShader(std::string module)
+{
+    return ShaderRegistry::CreateComputeShader(module);
+}
+
 RenderViewHandle Graphics::CreateRenderView()
 {
     return RenderViewRegistry::CreateRenderView();

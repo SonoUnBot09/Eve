@@ -612,6 +612,11 @@ namespace
     }
 };
 
+void RenderGraph::Initialize()
+{
+    matricesComputeShaderCalculator = ShaderRegistry::CreateComputeShader("matrices_calculator");
+}
+
 bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
 {
     bool success = CompileGraph(frameIndex);
@@ -628,7 +633,8 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
 
     VkDescriptorSet descriptorSet = ResourceMapper::GetDescriptorSet(frameIndex);
 
-    vkCmdBindDescriptorSets(
+    vkCmdBindDescriptorSets
+    (
         cmdBuffer, 
         VK_PIPELINE_BIND_POINT_GRAPHICS, 
         PipelineBuilder::GetGraphicsPipelineLayout(), 
@@ -638,6 +644,19 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
         0, 
         nullptr
     );
+
+    vkCmdBindDescriptorSets
+    (
+        cmdBuffer, 
+        VK_PIPELINE_BIND_POINT_COMPUTE, 
+        PipelineBuilder::GetComputePielineLayout(), 
+        0, 
+        1, 
+        &descriptorSet, 
+        0, 
+        nullptr
+    );
+
 
     RecordCommands(cmdBuffer, frameIndex, swapchainImageIndex);
 
@@ -651,7 +670,8 @@ bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32
 bool RenderGraph::CompileGraph(uint32_t frameIndex)
 {
     MaterialRegistry::UploadMaterials();
-    UploadInstanceAnDrawInfoParams();
+    UploadGraphicsPassesData();
+    UploadComputePassesData();
     UploadRenderViews();
 
     RenderGraph::AddPass(universalTransferPass);
@@ -669,15 +689,15 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
 
         if(pass.passType == Pass::PassType::GRAPHICS)
         {
-            pass.transientBuffers.push_back(std::pair{instanceParamsBuffer, Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE});
-            pass.transientBuffers.push_back(std::pair{drawInfoParamsBuffer, Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE});
+            pass.transientBuffers.push_back(std::pair{objectMatricesBuffer, Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE});
+            pass.transientBuffers.push_back(std::pair{drawCallParamsBuffer, Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE});
             pass.transientBuffers.push_back(std::pair{renderViewsBuffer, Usage::VERTEX_FRAGMENT_READ_BUFFER_STORAGE});
             
         }
         else if (pass.passType == Pass::PassType::COMPUTE)
         {
-            pass.transientBuffers.push_back(std::pair{instanceParamsBuffer, Usage::COMPUTE_READ_BUFFER_STORAGE});
-            pass.transientBuffers.push_back(std::pair{drawInfoParamsBuffer, Usage::COMPUTE_READ_BUFFER_STORAGE});
+            pass.transientBuffers.push_back(std::pair{objectMatricesBuffer, Usage::COMPUTE_READ_BUFFER_STORAGE});
+            pass.transientBuffers.push_back(std::pair{computeParamsBuffer, Usage::COMPUTE_READ_BUFFER_STORAGE});
             pass.transientBuffers.push_back(std::pair{renderViewsBuffer, Usage::COMPUTE_READ_BUFFER_STORAGE});
         }
     } 
@@ -1499,7 +1519,7 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
         }
         else 
         {
-            // TODO: Implement compute shaders
+            RecordComputeDispatches(cmdBuffer, pass, frameIndex);
         }
     }
 
@@ -1537,8 +1557,9 @@ void RenderGraph::Clear()
     isPresentTextureValid = false;
 
     universalTransferPass.Clear();
-    GlobalInstanceOffsetID = 0;
-    GlobalDrawInfoParamsOffset = 0;
+    globalInstanceOffsetID = 0;
+    globalDrawParamsOffset = 0;
+    globalComputeParamsOffset = 0;
 }
 
 void RenderGraph::RecordTransientBufferCopy(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
@@ -2318,7 +2339,7 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
 
     PushConstant currentPushConstantData {};
     ShaderHandle currentShaderHandle;
-    uint32_t pushConstantSize = sizeof(PushConstant);
+    static constexpr uint32_t pushConstantSize = sizeof(PushConstant);
     bool isFirstDrawCall = true;
     
     // No draw calls
@@ -2542,11 +2563,11 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             // --- Push Constant ---
             PushConstant newPushConstantData
             {
-                .DrawInfoParamsBufferOffset = GlobalDrawInfoParamsOffset,
-                .GlobalInstanceOffsetID = GlobalInstanceOffsetID,
+                .DrawComputeParamsBufferOffset = globalDrawParamsOffset,
+                .GlobalInstanceOffsetID = globalInstanceOffsetID,
                 .MaterialBufferID = MaterialRegistry::GetPropertiesUBOId(drawCall.MaterialHandle),
-                .InstanceParamsBufferID = instanceParamsBuffer.Id,
-                .DrawCallInfoParamsBufferID = drawInfoParamsBuffer.Id,
+                .InstanceParamsBufferID = objectMatricesBuffer.Id,
+                .DrawComputeParamsBufferID = drawCallParamsBuffer.Id,
                 .RenderViewBufferID = renderViewsBuffer.Id,
                 .RenderViewID = drawCall.RenderView.Id
             };
@@ -2572,11 +2593,68 @@ void RenderGraph::RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_
             // --- Draw ---
             vkCmdDraw(cmdBuffer, drawCall.VertexShaderInvocations, drawCall.InstanceCount, 0, 0);
 
-            GlobalInstanceOffsetID += drawCall.InstanceCount;
-            GlobalDrawInfoParamsOffset += drawCall.drawCallParamsSize;
+            globalInstanceOffsetID += drawCall.InstanceCount;
+            globalDrawParamsOffset += drawCall.drawCallParamsSize;
         }
     }
     vkCmdEndRenderingKHR(cmdBuffer);
+}
+
+void RenderGraph::RecordComputeDispatches(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex)
+{
+    std::vector<ComputeDispatch>& dispatches = pass.computeDispatches;
+
+    static constexpr uint32_t pushConstantSize = sizeof(PushConstant);
+
+    ComputeShaderHandle currentComputeShader;
+    PushConstant currentPushConstant {};
+    bool isFirstDispatch = true;
+
+    for(uint32_t i = 0; i < dispatches.size(); i++)
+    {
+        ComputeDispatch& dispatch = dispatches[i];
+
+        bool shaderChanged = !(currentComputeShader.Id == dispatch.ComputeShaderHandle.Id);
+
+        if(isFirstDispatch || shaderChanged)
+        {
+            ComputeShaderObject shaderObject = ShaderRegistry::GetShaderObject(dispatch.ComputeShaderHandle);
+            vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, shaderObject.Pipeline);
+
+            currentComputeShader = dispatch.ComputeShaderHandle;
+        }
+
+        PushConstant newPushConstantData
+        {
+            .DrawComputeParamsBufferOffset = globalComputeParamsOffset,
+            .GlobalInstanceOffsetID = 0,
+            .MaterialBufferID = 0,
+            .InstanceParamsBufferID = 0,
+            .DrawComputeParamsBufferID = computeParamsBuffer.Id,
+            .RenderViewBufferID = 0,
+            .RenderViewID = 0
+        };
+
+        bool pushConstantChanged = !(newPushConstantData == currentPushConstant);
+
+        if(pushConstantChanged)
+        {
+            vkCmdPushConstants(
+                cmdBuffer,
+                PipelineBuilder::GetComputePielineLayout(),
+                VK_SHADER_STAGE_COMPUTE_BIT,
+                0,
+                pushConstantSize,
+                &newPushConstantData
+            );
+
+            currentPushConstant = newPushConstantData;
+        }
+
+        vkCmdDispatch(cmdBuffer, dispatch.XNumGroupThreads, dispatch.YNumGroupThreads, dispatch.ZNumGroupThreads);
+
+        globalComputeParamsOffset += dispatch.ComputeParamsSize;
+    }
 }
 
 void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
@@ -2772,7 +2850,7 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
     vkCmdPipelineBarrier2KHR(cmdBuffer, &presentDep);
 }
 
-void RenderGraph::UploadInstanceAnDrawInfoParams()
+void RenderGraph::UploadGraphicsPassesData()
 {
     uint32_t passCount = passes.size();
 
@@ -2782,54 +2860,117 @@ void RenderGraph::UploadInstanceAnDrawInfoParams()
     {
         Pass& pass = passes[passIndex];
 
-        uint32_t instanceCount = pass.instanceParams.size();
-        uint32_t drawCallCount = pass.drawCalls.size();
+        uint32_t instanceCount = pass.transforms.size();
 
-        // Instances
-        for (uint32_t i = 0; i < instanceCount; i++)
+        if(instanceCount > 0)
         {
-            InstanceParams& param = pass.instanceParams[i];
+            uint32_t startOffset = transformsData.size();
+            transformsData.resize(startOffset + instanceCount);
 
-            instanceParams.push_back(param);
+            memcpy
+            (
+                transformsData.data() + startOffset,
+                pass.transforms.data(),
+                sizeof(Transform) * instanceCount
+            );
+
+            numInstances += instanceCount;
         }
-
-        numInstances += instanceCount;
 
 
         std::vector<std::byte>& passDrawCallParams = pass.drawCallParams;
+        uint64_t passDrawCallParamsSize = passDrawCallParams.size();
 
-        uint32_t passDrawCallParamsSize = passDrawCallParams.size();
+        if(passDrawCallParamsSize > 0)
+        {
+            drawCallParams.resize(drawCallInfoBufferSize + passDrawCallParamsSize);
 
-        drawCallInfoParams.resize(drawCallInfoBufferSize + passDrawCallParamsSize);
+            memcpy
+            (
+                static_cast<std::byte*>(drawCallParams.data()) + drawCallInfoBufferSize,
+                passDrawCallParams.data(),
+                passDrawCallParamsSize
+            );
 
-        std::memcpy
-        (
-            static_cast<std::byte*>(drawCallInfoParams.data()) + drawCallInfoBufferSize,
-            passDrawCallParams.data(),
-            passDrawCallParamsSize
-        );
-
-        drawCallInfoBufferSize += passDrawCallParamsSize;
+            drawCallInfoBufferSize += passDrawCallParamsSize;
+        }
     }
 
-    uint64_t instaceBufferSize = sizeof(InstanceParams) * numInstances;
-
-    if(instaceBufferSize != 0)
+    if(numInstances > 0)
     {
-        instanceParamsBuffer = RenderGraph::RequestTransientBuffer(instaceBufferSize);
-        
-        universalTransferPass.UploadBuffer(instanceParams.data(), instanceParamsBuffer, instaceBufferSize, 0);
+        uint64_t transformBufferSize = sizeof(Transform) * numInstances;
+        uint64_t objectMatricesBufferSize = sizeof(ObjectParams) * numInstances;
 
-        instanceParams.clear();
+        TransientBufferHandle transformsBuffer = RenderGraph::RequestTransientBuffer(transformBufferSize);
+        objectMatricesBuffer = RenderGraph::RequestTransientBuffer(objectMatricesBufferSize);
+
+        universalTransferPass.UploadBuffer(transformsData.data(), transformsBuffer, transformBufferSize, 0);
+
+        transformsData.clear();
+
+        ComputePass computePass{};
+
+        computePass.UseReadOnlyBuffer(transformsBuffer);
+        computePass.UseReadWriteBuffer(objectMatricesBuffer);
+
+        MatricesShaderParams params
+        {
+            .InstanceCount = numInstances,
+            .TransformBufferID = transformsBuffer.Id,
+            .MatricesBufferID = objectMatricesBuffer.Id
+        };
+
+        ComputeParams computeParams {&params, sizeof(params)};
+
+        computePass.Dispatch(std::ceil((float)numInstances / 256.0f), 1, 1, matricesComputeShaderCalculator, &computeParams);
+
+        RenderGraph::AddPass(computePass, 0);
+
     }
 
-    if(drawCallInfoBufferSize != 0)
+    if(drawCallInfoBufferSize > 0)
     {
-        drawInfoParamsBuffer = RenderGraph::RequestTransientBuffer(drawCallInfoBufferSize);
+        drawCallParamsBuffer = RenderGraph::RequestTransientBuffer(drawCallInfoBufferSize);
 
-        universalTransferPass.UploadBuffer(drawCallInfoParams.data(), drawInfoParamsBuffer, drawCallInfoBufferSize, 0);
+        universalTransferPass.UploadBuffer(drawCallParams.data(), drawCallParamsBuffer, drawCallInfoBufferSize, 0);
 
-        drawCallInfoParams.clear();
+        drawCallParams.clear();
+    }
+}
+
+void RenderGraph::UploadComputePassesData()
+{
+    uint64_t computeParamsBufferSize = 0;
+    uint32_t passCount = passes.size();
+    for(uint32_t passIndex = 0; passIndex < passCount; passIndex++)
+    {
+        Pass& pass = passes[passIndex];
+
+        std::vector<std::byte>& passComputeParams = pass.computeParams;
+        uint32_t computeParamsSize = passComputeParams.size();
+
+        if(computeParamsSize > 0)
+        {
+            computeParams.resize(computeParamsBufferSize + computeParamsSize);
+
+            memcpy
+            (
+                static_cast<std::byte*>(computeParams.data()) + computeParamsBufferSize,
+                passComputeParams.data(),
+                computeParamsSize
+            );
+
+            computeParamsBufferSize += computeParamsSize;
+        }
+    }
+
+    if(computeParamsBufferSize > 0)
+    {
+        computeParamsBuffer = RenderGraph::RequestTransientBuffer(computeParamsBufferSize);
+
+        universalTransferPass.UploadBuffer(computeParams.data(), computeParamsBuffer, computeParamsBufferSize, 0);
+
+        computeParams.clear();
     }
 }
 
@@ -3182,7 +3323,7 @@ void RenderGraph::AddPass(GraphicsPass& pass)
 
             .loadStoreOps = std::move(pass.GetLoadStoreOperations()),
             .drawCalls = std::move(pass.GetDrawCalls()),
-            .instanceParams = std::move(pass.GetInstanceParams()),
+            .transforms = std::move(pass.GetTransforms()),
             .drawCallParams = std::move(pass.GetDrawCallParams())
         }
     );
@@ -3240,9 +3381,10 @@ void RenderGraph::AddPass(ComputePass& pass)
             .transientTextures = std::move(pass.GetTransientTextures()),
             
             .persistentBuffers = std::move(pass.GetPersistentBuffers()),
-            .persistentTextures = std::move(pass.GetPersistentTextures())
+            .persistentTextures = std::move(pass.GetPersistentTextures()),
 
-            // To add compute
+            .computeDispatches = std::move(pass.GetComputeDispatches()),
+            .computeParams = std::move(pass.GetComputeParams())
         }
     );
 }
@@ -3261,7 +3403,7 @@ void RenderGraph::AddPass(GraphicsPass& pass, uint32_t index)
 
             .loadStoreOps = std::move(pass.GetLoadStoreOperations()),
             .drawCalls = std::move(pass.GetDrawCalls()),
-            .instanceParams = std::move(pass.GetInstanceParams()),
+            .transforms = std::move(pass.GetTransforms()),
             .drawCallParams = std::move(pass.GetDrawCallParams())
         }
     );
@@ -3317,9 +3459,10 @@ void RenderGraph::AddPass(ComputePass& pass, uint32_t index)
             .transientTextures = std::move(pass.GetTransientTextures()),
             
             .persistentBuffers = std::move(pass.GetPersistentBuffers()),
-            .persistentTextures = std::move(pass.GetPersistentTextures())
-            
-            // To add compute
+            .persistentTextures = std::move(pass.GetPersistentTextures()),
+
+            .computeDispatches = std::move(pass.GetComputeDispatches()),
+            .computeParams = std::move(pass.GetComputeParams())
         }
     );
 }
