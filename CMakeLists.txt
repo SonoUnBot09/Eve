@@ -4,8 +4,45 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(Eve LANGUAGES C CXX)
 
+# --- Vulkan Dependency ---
+
+find_package(
+    Vulkan REQUIRED
+)
+
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# --- Fetch Contents ---
+
 include(FetchContent)
 
+set(SLANG_VERSION "2026.17")
+if(WIN32)
+    set(SLANG_URL "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-windows-x86_64.zip")
+else()
+    set(SLANG_URL "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-linux-x86_64.tar.gz")
+endif()
+
+FetchContent_Declare(slang_binaries URL ${SLANG_URL})
+FetchContent_MakeAvailable(slang_binaries)
+
+add_library(Slang::Slang SHARED IMPORTED GLOBAL)
+set_target_properties(Slang::Slang PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${slang_binaries_SOURCE_DIR}/include"
+)
+if(WIN32)
+    set_target_properties(Slang::Slang PROPERTIES
+        IMPORTED_LOCATION "${slang_binaries_SOURCE_DIR}/bin/slang.dll"
+        IMPORTED_IMPLIB "${slang_binaries_SOURCE_DIR}/lib/slang.lib"
+    )
+else()
+    set_target_properties(Slang::Slang PROPERTIES
+        IMPORTED_LOCATION "${slang_binaries_SOURCE_DIR}/lib/libslang.so"
+    )
+endif()
+
+set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+set(SDL_STATIC ON CACHE BOOL "" FORCE)
 FetchContent_Declare(
     SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
@@ -18,38 +55,21 @@ FetchContent_Declare(
     GIT_TAG 1.0.3
 )
 
-FetchContent_MakeAvailable(SDL3 glm)
-
-find_package(
-    Vulkan REQUIRED
-    COMPONENTS
+FetchContent_Declare(
     volk
-    shaderc_combined
+    GIT_REPOSITORY https://github.com/zeux/volk.git
+    GIT_TAG vulkan-sdk-1.4.350.0
 )
 
-find_path(SLANG_INCLUDE_DIR slang.h
-    PATHS
-    $ENV{SLANG_DIR}/include
-    /usr/local/include
-    /usr/include
+FetchContent_Declare(
+    vma
+    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+    GIT_TAG v3.4.0
 )
 
-find_library(SLANG_LIBRARY
-    NAMES slang
-    PATHS
-    $ENV{SLANG_DIR}/lib
-    /usr/local/lib
-    /usr/lib
-)
+FetchContent_MakeAvailable(SDL3 glm volk vma)
 
-#[[
-if(TARGET Vulkan::shaderc_combined)
-    set_target_properties(Vulkan::shaderc_combined PROPERTIES MAP_IMPORTED_CONFIG_DEBUG Release)
-endif()
-
-if(TARGET Vulkan::volk)
-    set_target_properties(Vulkan::volk PROPERTIES MAP_IMPORTED_CONFIG_DEBUG Release)
-endif()]]
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 file(GLOB_RECURSE SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
@@ -62,39 +82,24 @@ add_executable(Eve
 )
 
 target_compile_features(Eve PRIVATE cxx_std_20)
-#[[
-set_property(TARGET Eve PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    # Flag per GCC e Clang
-    target_compile_options(Eve PRIVATE -fsanitize=address -fno-omit-frame-pointer)
-    target_link_options(Eve PRIVATE -fsanitize=address)
 
-    if(WIN32)
-        target_compile_definitions(Eve PRIVATE 
-            _DISABLE_STRING_ANNOTATION=1 
-            _DISABLE_VECTOR_ANNOTATION=1
-        )
-    endif()
-elseif(MSVC)
-    # Flag per MSVC (Visual Studio)
-    target_compile_options(Eve PRIVATE /fsanitize=address)
-    target_link_options(Eve PRIVATE /fsanitize=address)
-endif() ]]
-
-target_link_libraries(Eve PRIVATE
-    SDL3::SDL3
+target_link_libraries(Eve 
+PUBLIC
     glm::glm
+PRIVATE
+    GPUOpen::VulkanMemoryAllocator
+    volk::volk
     Vulkan::Vulkan
-    Vulkan::volk
-    Vulkan::shaderc_combined
-    ${SLANG_LIBRARY}
+    SDL3::SDL3
+    Slang::Slang
 )
 
 target_include_directories(Eve
-    PRIVATE third-parties
-    PRIVATE source
-    PRIVATE ${SLANG_INCLUDE_DIR}
-    PUBLIC include
+PUBLIC 
+    include
+PRIVATE
+    third-parties
+    source
 )
 
-target_compile_definitions(Eve PRIVATE GLM_FORCE_LEFT_HANDED GLM_FORCE_DEPTH_ZERO_TO_ONE GLM_FORCE_QUAT_DATA_XYZW)
+target_compile_definitions(Eve PUBLIC GLM_FORCE_LEFT_HANDED GLM_FORCE_DEPTH_ZERO_TO_ONE GLM_FORCE_QUAT_DATA_XYZW)

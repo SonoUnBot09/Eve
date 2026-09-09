@@ -16,7 +16,7 @@ using namespace Eve::Input;
 
 namespace 
 {
-    static constexpr uint32_t entitiesCount = 10;
+    static constexpr uint32_t entitiesCount = 100;
     static bool isFocus = false;
 
     void Start(uint32_t systemId)

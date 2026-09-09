@@ -131,6 +131,15 @@ namespace
 
         uint32_t entitiesCount = table.GetEntitiesCount();
 
+        /*
+        for(uint32_t i = 0; i < entitiesCount; i++)
+        {
+            Transform& transform = table.GetComponent<Transform>(i, transformComponentType);
+
+            pass.Draw(36, transform, material, camera.renderView, nullptr);
+        }*/
+
+        
         if(getTransforms)
         {
             for(uint32_t i = 0; i < entitiesCount; i++)
