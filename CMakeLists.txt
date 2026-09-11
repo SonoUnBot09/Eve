@@ -75,10 +75,15 @@ file(GLOB_RECURSE SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
 )
 
+file(GLOB_RECURSE THIRD_PARTIES
+    "${CMAKE_CURRENT_SOURCE_DIR}/third-parties/*.cpp"
+)
+
 add_executable(Eve
     main.cpp
     ${SOURCES}
-    third-parties/whereami.c
+    ${THIRD_PARTIES}
+    third-parties/where_am_i/whereami.c
 )
 
 target_compile_features(Eve PRIVATE cxx_std_20)
@@ -102,4 +107,11 @@ PRIVATE
     source
 )
 
-target_compile_definitions(Eve PUBLIC GLM_FORCE_LEFT_HANDED GLM_FORCE_DEPTH_ZERO_TO_ONE GLM_FORCE_QUAT_DATA_XYZW)
+target_compile_definitions(Eve 
+PRIVATE
+    IMGUI_IMPL_VULKAN_USE_VOLK
+PUBLIC 
+    GLM_FORCE_LEFT_HANDED 
+    GLM_FORCE_DEPTH_ZERO_TO_ONE 
+    GLM_FORCE_QUAT_DATA_XYZW
+    )

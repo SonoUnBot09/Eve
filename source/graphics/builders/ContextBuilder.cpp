@@ -7,6 +7,10 @@
 #include <eve/debug/Debug.hpp>
 #include <graphics/ErrorManager.hpp>
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_sdl3.h>
+#include <imgui/imgui_impl_vulkan.h>
+
 using namespace Eve::Debug;
 using namespace Eve::Graphics;
 

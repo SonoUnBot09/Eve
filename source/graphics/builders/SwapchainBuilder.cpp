@@ -197,13 +197,12 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
         );
     }
 
-    std::cout << swapchain.Width << "  " << swapchain.Height << std::endl;
     if(swapchain.Width == 0 || swapchain.Height == 0)
     {
         return false;
     }
 
-    Destroy(swapchain);
+    Swapchain oldSwapchain = swapchain;
 
     uint32_t swapchainImagesCount = 3; 
 
@@ -265,7 +264,8 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = surfaceCaps.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR
+        .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR,
+        .oldSwapchain = oldSwapchain.Swapchain
     };
 
     VK_CHECK(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain));
@@ -298,7 +298,7 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
         VK_CHECK(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchain.swapchainImageViews[i]));
     }
 
-    std::cout << "Swapchain Recreated" << std::endl;
+    Destroy(oldSwapchain);
 
     return true;
 }

@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <string>
 extern "C" { 
-    #include <whereami.h> 
+    #include "where_am_i/whereami.h"
 }
 
 namespace fs = std::filesystem;

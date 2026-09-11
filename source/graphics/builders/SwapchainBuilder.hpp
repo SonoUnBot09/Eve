@@ -13,7 +13,6 @@ namespace Eve::Graphics
 
             static void Destroy(Swapchain& swapchain);
         private:
-        
             inline static VkFormat chooseFormat = VK_FORMAT_UNDEFINED;
     };
 }

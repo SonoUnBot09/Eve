@@ -10,6 +10,7 @@
 #include <graphics/RenderGraph.hpp>
 #include <cstdint>
 #include <graphics/ErrorManager.hpp>
+#include <graphics/builders/ImGUIBuilder.hpp>
 
 using namespace Eve::Graphics;
 
@@ -42,6 +43,11 @@ bool GraphicsCore::Initialize(std::vector<std::string>& searchShaderPaths)
     }
 
     RenderGraph::Initialize();
+
+    if(!ImGUIBuilder::Build())
+    {
+        return false;
+    }
 
     return true;
 }
@@ -203,6 +209,8 @@ void GraphicsCore::Destroy()
     }
 
     vkDestroySemaphore(Context.Device, timelineSemaphore, nullptr);
+
+    ImGUIBuilder::Destroy();
 
     ShaderRegistry::DestroyAllShaders();
 
