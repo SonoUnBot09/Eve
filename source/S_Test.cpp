@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 #include <glm/common.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <eve/graphics/UI.hpp>
 
 using namespace Eve::Entities;
 using namespace Eve::Graphics;
@@ -28,6 +29,11 @@ namespace
 
     inline static std::vector<Transform> transforms;
     inline static bool getTransforms = true;
+
+    inline static glm::vec3 color = glm::vec3(0.5,0.7,0);
+    inline static glm::vec3 lightDir = glm::vec3(0.5, 1, 1);
+    inline static glm::vec3 cubesOffset = glm::vec3(0, 0, 0);
+    inline static glm::vec3 cubesRotation = glm::vec3(0,0,0);
 
     void Start(uint32_t systemId)
     {    
@@ -53,7 +59,7 @@ namespace
 
         buffer = Graphics::CreateGPUBuffer(256);
 
-        material.SetVector3("color", glm::vec3(0.5,0.7,0));
+        material.SetVector3("color", color);
     }
 
     void Update(float deltaTime, uint32_t systemId)
@@ -140,19 +146,30 @@ namespace
         }*/
 
         
-        if(getTransforms)
+        transforms.clear();
+        for(uint32_t i = 0; i < entitiesCount; i++)
         {
-            for(uint32_t i = 0; i < entitiesCount; i++)
-            {
-                Transform& transform = table.GetComponent<Transform>(i, transformComponentType);
+            Transform transform = table.GetComponent<Transform>(i, transformComponentType);
 
-                transforms.push_back(transform);
-            }
+            transform.Position += cubesOffset;
+            transform.Rotation *= glm::quat(cubesRotation);
 
-            getTransforms = false;
+            transforms.push_back(transform);
         }
+      
 
-        pass.DrawInstanced(36, entitiesCount, transforms.data(), material, camera.renderView, nullptr);
+        UI::DockableWindow("Scene Properties");
+
+        UI::ColorWheel3("Cubes Color", color);
+        UI::Float3("Light Direction", lightDir, -1.0f, 1.0f);
+        UI::Float3RGB("Cubes Position", cubesOffset);
+        UI::Float3RGB("Cubes Rotation", cubesRotation);
+
+        material.SetVector3("color", color);
+
+        DrawParams drawParams(&lightDir, sizeof(lightDir));
+
+        pass.DrawInstanced(36, entitiesCount, transforms.data(), material, camera.renderView, &drawParams);
 
         Graphics::AddPass(pass);
 

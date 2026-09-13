@@ -7,11 +7,17 @@ struct V2F
     float4 position : SV_Position;
     float3 normal : NORMAL;
     float3 color : COLOR;
+    nointerpolation float3 lightDir;
 };
 
 struct Properties
 {
     float3 color;
+}
+
+struct DrawParams
+{
+    float3 lightDir;
 }
 
 
@@ -74,6 +80,8 @@ V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
 
     Properties properties = Eve.GetMaterialProperties<Properties>();
 
+    DrawParams drawParams = Eve.GetDrawInfoParams<DrawParams>();
+
     V2F output;
 
     uint32_t vertexIndex = indices[vertexID];
@@ -88,6 +96,7 @@ V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
     output.position = mul(mvp, float4(vertexPos * 0.25f, 1.0));
     output.normal = normal;
     output.color = properties.color;
+    output.lightDir = drawParams.lightDir;
 
     return output;
 }
@@ -97,8 +106,7 @@ float4 fragment(V2F input) : SV_Target
 {
     float3 normal = normalize(input.normal);
 
-    // Direzione della luce fissa nel mondo
-    float3 lightDir = normalize(float3(1.0, 1.0, -1.0));
+    float3 lightDir = normalize(input.lightDir);
 
     float lightIntensity = max(dot(normal, lightDir), 0.15);
 
