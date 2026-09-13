@@ -240,6 +240,7 @@ namespace Eve::Graphics
             static void RecordDrawCalls(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
             static void RecordComputeDispatches(VkCommandBuffer cmdBuffer, Pass& pass, uint32_t frameIndex);
             static void RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex);
+            static void RecordImGUIPass(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex);
 
             static void UploadGraphicsPassesData();
             static void UploadComputePassesData();

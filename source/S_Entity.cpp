@@ -1,6 +1,7 @@
 #include "eve/entities/ComponentsRegistry.hpp"
 #include "eve/input/KeyboardKey.hpp"
 #include "eve/input/MouseKey.hpp"
+#include <eve/graphics/UI.hpp>
 #include <eve/entities/EntityCommandInfo.hpp>
 #include <cstdint>
 #include <glm/gtc/quaternion.hpp>
@@ -10,6 +11,7 @@
 #include <eve/entities/EntityManager.hpp>
 #include <eve/input/Input.hpp>
 #include <glm/glm.hpp>
+#include <imgui/imgui.h>
 
 using namespace Eve::Entities;
 using namespace Eve::Input;
@@ -18,6 +20,16 @@ namespace
 {
     static constexpr uint32_t entitiesCount = 10;
     static bool isFocus = false;
+    static bool open = true;
+
+    static float float1 = 1;
+    static glm::vec2 float2 = glm::vec2(0,1);
+    static glm::vec3 float3 = glm::vec3(0,1,2);
+    static glm::vec4 float4 = glm::vec4(0,1,2,3);
+    static bool checkValue = false;
+
+    inline static std::vector<std::string> myVector{"Ciao", "Hello", "Bye"};
+    inline static uint32_t testInt = 0;
 
     void Start(uint32_t systemId)
     {
@@ -107,7 +119,53 @@ namespace
 
         MouseState mouseState = Input::GetMouseState();
 
-        if(Input::IsMouseDown(MouseKey::BUTTON_LEFT))
+        UI::DockableWindow("MyWindow");
+
+        if(UI::CollapsingHeader("Some properties"))
+        {
+            UI::Float("A", float1, 0.01f);
+            UI::Float2("B", float2);
+            UI::Float3("C", float3);
+            UI::Float4("D", float4);
+            UI::Float3RGB("E", float3);
+            UI::Float4RGBA("F", float4);
+        }
+
+        UI::Space();
+
+        if(UI::CollapsingHeader("Color3 Menu"))
+        {
+            UI::ColorPicker3("G", float3);
+            UI::ColorWheel3("R", float3);
+        }
+
+        UI::SeparatorText("Secondo Menu");
+
+        if(UI::CollapsingHeader("Color4 Menu"))
+        {
+            UI::ColorPicker4("H", float4);
+            UI::ColorWheel4("P", float4);
+        }
+
+        UI::Separator();
+
+        UI::Checkbox("My Checkbox", checkValue);
+        UI::Button("My Button");
+
+        UI::Separator();
+
+        UI::SelectableList("MySelectableList", myVector, testInt);
+
+        UI::Window("Second Window");
+
+        UI::ColorWheel3("R", float3);
+
+        UI::Float("my float", float1, 0.1f, 0.3f);
+        UI::Float2("myfloat", float2, 0.1f, 0.2f);
+
+        bool mouseOverUI = UI::IsMouseInteracting();
+
+        if(Input::IsMouseDown(MouseKey::BUTTON_LEFT) && !mouseOverUI)
         {
             Input::LockMouseAtCenter(true);
             isFocus = true;

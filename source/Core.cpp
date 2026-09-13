@@ -2,12 +2,17 @@
 #include <graphics/GraphicsCore.hpp>
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_mouse.h"
+#include <eve/graphics/UI.hpp>
+#include "imgui/imgui_impl_sdl3.h"
 #include "input/InputManager.hpp"
 #include <Core.hpp>
 #include <eve/entities/EntityManager.hpp>
 #include <entities/systems/SystemDispatcher.hpp>
 #include <input/InputManager.hpp>
 #include <eve/debug/Debug.hpp>
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_sdl3.h>
+#include <imgui/imgui_impl_vulkan.h>
 
 using namespace Eve::Graphics;
 using namespace Eve::Entities;
@@ -113,6 +118,8 @@ void Core::Run()
         SDL_Event event;
         while(SDL_PollEvent(&event))
         {
+            ImGui_ImplSDL3_ProcessEvent(&event);
+
             if(event.type == SDL_EVENT_QUIT)
             {
                 isAppRunning = false;
@@ -187,10 +194,18 @@ void Core::Run()
         timer += deltaTime;
         fps++;
 
+        // ImGUI new frame
+        UI::StartRecording();
+
+        // User's code execution
         SystemDispatcher::ExecuteUpdateStage(deltaTime);
 
+        UI::EndRecording();
+
+        // Entity commands executions
         EntityManager::ExecuteAllCommandPools();
 
+        // Rendering
         GraphicsCore::Render();
     }
 }

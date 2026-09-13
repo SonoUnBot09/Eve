@@ -14,6 +14,7 @@
 #include "graphics/helpers/VulkanMapping.hpp"
 #include "graphics/registers/MemoryRegistry.hpp"
 #include "helpers/VulkanMapping.hpp"
+#include "imgui/imgui_impl_vulkan.h"
 #include "registers/MaterialRegistry.hpp"
 #include "registers/RenderViewRegistry.hpp"
 #include "registers/ResourceTracker.hpp"
@@ -22,6 +23,7 @@
 #include <graphics/ResourceMapper.hpp>
 #include <graphics/registers/ResourceRegistry.hpp>
 #include <graphics/ErrorManager.hpp>
+#include <imgui/imgui.h>
 
 
 using namespace Eve::Graphics;
@@ -1526,6 +1528,8 @@ bool RenderGraph::RecordCommands(VkCommandBuffer cmdBuffer, uint32_t frameIndex,
     if(GraphicsCore::CanRenderOnSwapchain())
     {
         RecordSwapchainDrawingPass(cmdBuffer, frameIndex, swapchainImageIndex);
+
+        RecordImGUIPass(cmdBuffer, frameIndex, swapchainImageIndex);
     }
 
     return true;
@@ -2817,6 +2821,91 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
         vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
     }
     vkCmdEndRenderingKHR(cmdBuffer);
+}
+
+void RenderGraph::RecordImGUIPass(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)
+{
+
+    ImGui::Render();
+
+    VkImage swapchainImage = GraphicsCore::Swapchain.swapchainImages[swapchainImageIndex];
+    VkImageView swapchainImageView = GraphicsCore::Swapchain.swapchainImageViews[swapchainImageIndex];
+
+    VkImageMemoryBarrier2KHR colorBarrier
+    {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR,
+        .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+        .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR,
+        .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+        .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR,
+        .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = swapchainImage,
+        .subresourceRange
+        {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+
+    };
+
+    VkDependencyInfoKHR colorDep
+    {
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR,
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers = &colorBarrier
+    };
+
+    vkCmdPipelineBarrier2KHR(cmdBuffer, &colorDep);
+
+    VkRenderingAttachmentInfoKHR colorAttachment
+    {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+        .imageView = swapchainImageView,
+        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .clearValue {.color{.float32{
+            1, 
+            0, 
+            0, 
+            1.0}}}
+    };
+
+    
+    if(isPresentTextureValid)
+    {
+        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    }
+    else 
+    {
+        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    }
+    //colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+    VkRenderingInfoKHR renderInfo
+    {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
+        .renderArea
+        {
+            .offset {.x = 0, .y = 0},
+            .extent {.width = GraphicsCore::Swapchain.Width, .height = GraphicsCore::Swapchain.Height}
+        },
+        .layerCount = 1,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &colorAttachment
+    };
+
+    vkCmdBeginRenderingKHR(cmdBuffer, &renderInfo);
+    
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuffer);
+
+    vkCmdEndRenderingKHR(cmdBuffer);
 
     VkImageMemoryBarrier2KHR presentBarrier
     {
@@ -2848,6 +2937,7 @@ void RenderGraph::RecordSwapchainDrawingPass(VkCommandBuffer cmdBuffer, uint32_t
     };
 
     vkCmdPipelineBarrier2KHR(cmdBuffer, &presentDep);
+
 }
 
 void RenderGraph::UploadGraphicsPassesData()
