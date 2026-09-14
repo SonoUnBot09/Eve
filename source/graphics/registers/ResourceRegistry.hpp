@@ -45,7 +45,7 @@ namespace Eve::Graphics
             inline static uint32_t samplerResourcesPeakIndex = 0;
             inline static uint32_t bufferResourcesPeakIndex = 0;
 
-            // --- Generation Indicies ---
+            // --- Generation Indices ---
             inline static std::vector<uint32_t> textureGenerations;
             inline static std::vector<uint32_t> samplerGenerations;
             inline static std::vector<uint32_t> bufferGenerations;

@@ -1,4 +1,5 @@
 #include "GraphicsCore.hpp"
+#include "eve/graphics/Mesh.hpp"
 #include "registers/MaterialRegistry.hpp"
 #include "registers/RenderViewRegistry.hpp"
 #include <eve/graphics/Graphics.hpp>
@@ -57,6 +58,26 @@ void Graphics::DestroySampler(SamplerHandle handle)
 MeshHandle Graphics::CreateMesh()
 {
     return MeshRegistry::CreateMesh();
+}
+MeshHandle Graphics::CreateCubeMesh()
+{
+    return MeshRegistry::CreateCubeMesh();
+}
+MeshHandle Graphics::CreateUVSphereMesh()
+{
+    return MeshRegistry::CreateUVSphereMesh();
+}
+MeshHandle Graphics::CreateIcoSphereMesh()
+{
+    return MeshRegistry::CreateIcoSphereMesh();
+}
+MeshHandle Graphics::CreatePlaneMesh()
+{
+    return MeshRegistry::CreatePlaneMesh();
+}
+MeshHandle Graphics::CreateQuadMesh()
+{
+    return MeshRegistry::CreateQuadMesh();
 }
 void Graphics::DestroyMesh(MeshHandle handle)
 {

@@ -158,7 +158,7 @@ bool PipelineBuilder::BuildGraphicsPipeline(ShaderInfo shaderInfo, GraphicsShade
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
         .polygonMode = GetVkPolygonMode(shaderInfo.PolygonMode),
         .cullMode = GetVkCullMode(shaderInfo.CullMode),
-        .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        .frontFace = VK_FRONT_FACE_CLOCKWISE,
         .lineWidth = shaderInfo.LineWidth
     };
 

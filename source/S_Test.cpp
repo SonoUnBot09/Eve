@@ -1,5 +1,6 @@
 #include "eve/entities/QueryInfo.hpp"
 #include "eve/graphics/Buffer.hpp"
+#include "eve/graphics/Mesh.hpp"
 #include "eve/graphics/Pass.hpp"
 #include "eve/graphics/RenderViewHandle.hpp"
 #include "eve/graphics/ShaderHandle.hpp"
@@ -27,6 +28,10 @@ namespace
     static uint64_t elapsedFrames = 0;
     static uint32_t elementsCount = 20 * 20;
 
+    static std::vector<MeshHandle> meshHandles;
+    static std::vector<std::string> meshNames { "Cube", "UV Sphere", "Ico Sphere", "Plane", "Quad" };
+    static uint32_t meshIndex = 0;
+
     inline static std::vector<Transform> transforms;
     inline static bool getTransforms = true;
 
@@ -43,7 +48,7 @@ namespace
             .ShaderModule = "triangle",
             .Topology = Topology::TOPOLOGY_TRIANGLE_LIST,
             .PolygonMode = PolygonMode::POLYGON_MODE_FILL,
-            .CullMode = CullMode::CULL_MODE_FRONT,
+            .CullMode = CullMode::CULL_MODE_BACK,
             .LineWidth = 1,
             .DepthTest = true,
             .DepthWrite = true,
@@ -57,9 +62,13 @@ namespace
 
         material = Graphics::CreateMaterial(shaderHandle);
 
-        buffer = Graphics::CreateGPUBuffer(256);
-
         material.SetVector3("color", color);
+
+        meshHandles.push_back(Graphics::CreateCubeMesh());
+        meshHandles.push_back(Graphics::CreateUVSphereMesh());
+        meshHandles.push_back(Graphics::CreateIcoSphereMesh());
+        meshHandles.push_back(Graphics::CreatePlaneMesh());
+        meshHandles.push_back(Graphics::CreateQuadMesh());
     }
 
     void Update(float deltaTime, uint32_t systemId)
@@ -100,7 +109,6 @@ namespace
             .clearDepth = 1.0
         };
 
-        pass.UseBufferReadOnlyVertex(buffer);
         pass.UseColorTarget(colorTexture, loadStoreOpColor);
         pass.UseDepthTarget(depthTexture, loadStoreOpDepth);
 
@@ -164,12 +172,33 @@ namespace
         UI::Float3("Light Direction", lightDir, -1.0f, 1.0f);
         UI::Float3RGB("Cubes Position", cubesOffset);
         UI::Float3RGB("Cubes Rotation", cubesRotation);
+        UI::SelectableList("Mesh", meshNames, meshIndex);
 
         material.SetVector3("color", color);
 
-        DrawParams drawParams(&lightDir, sizeof(lightDir));
+        struct MyDrawParams
+        {
+            uint32_t vertexBufferId;
+            uint32_t indexBufferId;
+            uint32_t normalBufferId;
+            glm::vec3 lightDir;
+        } myDrawParams;
 
-        pass.DrawInstanced(36, entitiesCount, transforms.data(), material, camera.renderView, &drawParams);
+        MeshHandle meshHandle = meshHandles[meshIndex];
+        GraphicsMesh gfxMesh = Graphics::GetGraphicsMesh(meshHandle);
+
+        myDrawParams.vertexBufferId = gfxMesh.VertexBuffer.Id;
+        myDrawParams.indexBufferId = gfxMesh.IndexBuffer.Id;
+        myDrawParams.normalBufferId = gfxMesh.NormalBuffer.Id;
+        myDrawParams.lightDir = lightDir;
+
+        pass.UseBufferReadOnlyVertex(gfxMesh.VertexBuffer);
+        pass.UseBufferReadOnlyVertex(gfxMesh.IndexBuffer);
+        pass.UseBufferReadOnlyVertex(gfxMesh.NormalBuffer);
+
+        DrawParams drawParams(&myDrawParams, sizeof(MyDrawParams));
+
+        pass.DrawInstanced(gfxMesh.IndicesCount, entitiesCount, transforms.data(), material, camera.renderView, &drawParams);
 
         Graphics::AddPass(pass);
 

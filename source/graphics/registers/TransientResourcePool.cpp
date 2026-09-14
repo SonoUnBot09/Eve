@@ -41,9 +41,9 @@ namespace
         bufferCI.pQueueFamilyIndices = nullptr;
     }
 
-    void FindBestMemoryTypeIndexDGPU(std::vector<uint32_t>& memoryTypeIndicies, const VkMemoryRequirements2& memoryRequirements)
+    void FindBestMemoryTypeIndexDGPU(std::vector<uint32_t>& memoryTypeIndices, const VkMemoryRequirements2& memoryRequirements)
     {
-        memoryTypeIndicies.resize(1);
+        memoryTypeIndices.resize(1);
 
         int32_t score = INT32_MIN;
         for(uint32_t i = 0; i < GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypeCount; i++)
@@ -84,14 +84,14 @@ namespace
             if(currentScore > score)
             {
                 score = currentScore;
-                memoryTypeIndicies[0] = i;
+                memoryTypeIndices[0] = i;
             }
         }
     }
 
-    void FindBestMemoryTypeIndexIGPU(std::vector<uint32_t>& memoryTypeIndicies, const VkMemoryRequirements2& memoryRequirements)
+    void FindBestMemoryTypeIndexIGPU(std::vector<uint32_t>& memoryTypeIndices, const VkMemoryRequirements2& memoryRequirements)
     {
-        memoryTypeIndicies.resize(2);
+        memoryTypeIndices.resize(2);
 
         std::vector<int32_t> scores { INT32_MIN, INT32_MIN };
         for(uint32_t i = 0; i < GraphicsCore::Context.PhysicalDeviceInfo.MemoryProperties.memoryTypeCount; i++)
@@ -138,29 +138,29 @@ namespace
                 if(currentScore > scores[j])
                 {
                     scores[j] = currentScore;
-                    memoryTypeIndicies[j] = i;
+                    memoryTypeIndices[j] = i;
                     break;
                 }
             }
         }
     }
 
-    std::vector<uint32_t> FindBestMemoryTypeIndicies(const VkMemoryRequirements2& memoryRequirements)
+    std::vector<uint32_t> FindBestMemoryTypeIndices(const VkMemoryRequirements2& memoryRequirements)
     {
         bool isDedicatedGPU = GraphicsCore::Context.PhysicalDeviceInfo.isDedicated;
 
-        std::vector<uint32_t> memoryTypeIndicies;
+        std::vector<uint32_t> memoryTypeIndices;
 
         if(isDedicatedGPU)
         {
-            FindBestMemoryTypeIndexDGPU(memoryTypeIndicies, memoryRequirements);
+            FindBestMemoryTypeIndexDGPU(memoryTypeIndices, memoryRequirements);
         }
         else 
         {
-            FindBestMemoryTypeIndexIGPU(memoryTypeIndicies, memoryRequirements);
+            FindBestMemoryTypeIndexIGPU(memoryTypeIndices, memoryRequirements);
         }
 
-        return memoryTypeIndicies;
+        return memoryTypeIndices;
     };
 }
 
@@ -214,9 +214,9 @@ uint32_t TransientResourcePool::FindTexturePoolIndex(const TextureInfo& textureI
     VkMemoryRequirements2 memoryRequirements { .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
     vkGetDeviceImageMemoryRequirementsKHR(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
 
-    std::vector<uint32_t> memoryTypeIndicies = FindBestMemoryTypeIndicies(memoryRequirements);
+    std::vector<uint32_t> memoryTypeIndices = FindBestMemoryTypeIndices(memoryRequirements);
 
-    uint32_t bucketIndex = GetTexturesBucketIndex(memoryTypeIndicies, passesCount);
+    uint32_t bucketIndex = GetTexturesBucketIndex(memoryTypeIndices, passesCount);
 
     MemoryInfo memoryInfo
     {
@@ -276,9 +276,9 @@ uint32_t TransientResourcePool::FindBufferPoolIndex(const BufferInfo& bufferInfo
     VkMemoryRequirements2 memoryRequirements { .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
     vkGetDeviceBufferMemoryRequirementsKHR(GraphicsCore::Context.Device, &reqs, &memoryRequirements);
 
-    std::vector<uint32_t> memoryTypeIndicies = FindBestMemoryTypeIndicies(memoryRequirements);
+    std::vector<uint32_t> memoryTypeIndices = FindBestMemoryTypeIndices(memoryRequirements);
 
-    uint32_t bucketIndex = GetBuffersBucketIndex(memoryTypeIndicies, passesCount);
+    uint32_t bucketIndex = GetBuffersBucketIndex(memoryTypeIndices, passesCount);
 
     MemoryInfo memoryInfo
     {
@@ -312,16 +312,16 @@ uint32_t TransientResourcePool::FindBufferPoolIndex(const BufferInfo& bufferInfo
     return poolIndex;
 }
 
-uint32_t TransientResourcePool::GetTexturesBucketIndex(const std::vector<uint32_t>& memoryTypeIndicies, const uint32_t passesCount)
+uint32_t TransientResourcePool::GetTexturesBucketIndex(const std::vector<uint32_t>& memoryTypeIndices, const uint32_t passesCount)
 {
-    uint32_t bucketsCount = texturesMemoryTypeIndicies.size();
+    uint32_t bucketsCount = texturesMemoryTypeIndices.size();
     for (uint32_t i = 0; i < bucketsCount; i++)
     {
-        std::vector<uint32_t>& _memoryTypeIndicies = GetTextureMemoryTypeIndicies(i);
+        std::vector<uint32_t>& _memoryTypeIndices = GetTextureMemoryTypeIndices(i);
 
-        uint32_t size = _memoryTypeIndicies.size();
+        uint32_t size = _memoryTypeIndices.size();
 
-        if(size != memoryTypeIndicies.size())
+        if(size != memoryTypeIndices.size())
         {
             continue;
         }
@@ -329,7 +329,7 @@ uint32_t TransientResourcePool::GetTexturesBucketIndex(const std::vector<uint32_
         bool isTheSame = true;
         for(uint32_t i = 0; i < size; i++)
         {
-            if(_memoryTypeIndicies[i] != memoryTypeIndicies[i])
+            if(_memoryTypeIndices[i] != memoryTypeIndices[i])
             {
                 isTheSame = false;
                 break;
@@ -342,7 +342,7 @@ uint32_t TransientResourcePool::GetTexturesBucketIndex(const std::vector<uint32_
         }
     }
 
-    texturesMemoryTypeIndicies.push_back(memoryTypeIndicies);
+    texturesMemoryTypeIndices.push_back(memoryTypeIndices);
     uint32_t bucketIndex = bucketsCount;
 
     RenderGraph::AddTextureBucketPasses(passesCount);
@@ -356,16 +356,16 @@ uint32_t TransientResourcePool::GetTexturesBucketIndex(const std::vector<uint32_
     return bucketIndex;
 }
 
-uint32_t TransientResourcePool::GetBuffersBucketIndex(const std::vector<uint32_t>& memoryTypeIndicies, const uint32_t passesCount)
+uint32_t TransientResourcePool::GetBuffersBucketIndex(const std::vector<uint32_t>& memoryTypeIndices, const uint32_t passesCount)
 {
-    uint32_t bucketsCount = buffersMemoryTypeIndicies.size();
+    uint32_t bucketsCount = buffersMemoryTypeIndices.size();
     for (uint32_t i = 0; i < bucketsCount; i++)
     {
-        std::vector<uint32_t>& _memoryTypeIndicies = GetBufferMemoryTypeIndicies(i);
+        std::vector<uint32_t>& _memoryTypeIndices = GetBufferMemoryTypeIndices(i);
 
-        uint32_t size = _memoryTypeIndicies.size();
+        uint32_t size = _memoryTypeIndices.size();
 
-        if(size != memoryTypeIndicies.size())
+        if(size != memoryTypeIndices.size())
         {
             continue;
         }
@@ -373,7 +373,7 @@ uint32_t TransientResourcePool::GetBuffersBucketIndex(const std::vector<uint32_t
         bool isTheSame = true;
         for(uint32_t i = 0; i < size; i++)
         {
-            if(_memoryTypeIndicies[i] != memoryTypeIndicies[i])
+            if(_memoryTypeIndices[i] != memoryTypeIndices[i])
             {
                 isTheSame = false;
                 break;
@@ -386,7 +386,7 @@ uint32_t TransientResourcePool::GetBuffersBucketIndex(const std::vector<uint32_t
         }
     }
 
-    buffersMemoryTypeIndicies.push_back(memoryTypeIndicies);
+    buffersMemoryTypeIndices.push_back(memoryTypeIndices);
     uint32_t bucketIndex = bucketsCount;
 
     RenderGraph::AddBufferBucketPasses(passesCount);
@@ -433,11 +433,11 @@ void TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(const uint32_t buc
         memoryBucket.IsActive = false;
     }
 
-    std::vector<uint32_t>& memoryTypeIndicies = GetTextureMemoryTypeIndicies(bucketIndex);
+    std::vector<uint32_t>& memoryTypeIndices = GetTextureMemoryTypeIndices(bucketIndex);
 
-    if(memoryTypeIndicies.size() == 1)
+    if(memoryTypeIndices.size() == 1)
     {
-        uint32_t memoryTypeIndex = memoryTypeIndicies[0];
+        uint32_t memoryTypeIndex = memoryTypeIndices[0];
         VkMemoryRequirements memReqs
         {
             .size = peakSize + Eve::Settings::transientTexturesStepPoolSize,
@@ -455,7 +455,7 @@ void TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(const uint32_t buc
     }
     else 
     {
-        uint32_t firstMemoryTypeIndex = memoryTypeIndicies[0];
+        uint32_t firstMemoryTypeIndex = memoryTypeIndices[0];
         VkMemoryRequirements firstMemReqs
         {
             .size = peakSize + Eve::Settings::transientTexturesStepPoolSize,
@@ -479,7 +479,7 @@ void TransientResourcePool::ResizeTextureMemoryBucketIfNeeded(const uint32_t buc
 
         // Allocation fallback
 
-        uint32_t secondMemoryTypeIndex = memoryTypeIndicies[1];
+        uint32_t secondMemoryTypeIndex = memoryTypeIndices[1];
         VkMemoryRequirements secondMemReqs
         {
             .size = peakSize + Eve::Settings::transientTexturesStepPoolSize,
@@ -528,11 +528,11 @@ void TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(const uint32_t buck
         memoryBucket.IsActive = false;
     }
 
-    std::vector<uint32_t>& memoryTypeIndicies = GetBufferMemoryTypeIndicies(bucketIndex);
+    std::vector<uint32_t>& memoryTypeIndices = GetBufferMemoryTypeIndices(bucketIndex);
 
-    if(memoryTypeIndicies.size() == 1)
+    if(memoryTypeIndices.size() == 1)
     {
-        uint32_t memoryTypeIndex = memoryTypeIndicies[0];
+        uint32_t memoryTypeIndex = memoryTypeIndices[0];
         VkMemoryRequirements memReqs
         {
             .size = peakSize + Eve::Settings::transientBuffersStepPoolSize,
@@ -550,7 +550,7 @@ void TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(const uint32_t buck
     }
     else 
     {
-        uint32_t firstMemoryTypeIndex = memoryTypeIndicies[0];
+        uint32_t firstMemoryTypeIndex = memoryTypeIndices[0];
         VkMemoryRequirements firstMemReqs
         {
             .size = peakSize + Eve::Settings::transientBuffersStepPoolSize,
@@ -574,7 +574,7 @@ void TransientResourcePool::ResizeBufferMemoryBucketIfNeeded(const uint32_t buck
 
         // Allocation fallback
 
-        uint32_t secondMemoryTypeIndex = memoryTypeIndicies[1];
+        uint32_t secondMemoryTypeIndex = memoryTypeIndices[1];
         VkMemoryRequirements secondMemReqs
         {
             .size = peakSize + Eve::Settings::transientTexturesStepPoolSize,

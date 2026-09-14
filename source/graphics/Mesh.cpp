@@ -7,9 +7,9 @@ void MeshHandle::SetVertices(std::vector<glm::vec3>& verticies)
 {
     MeshRegistry::SetVertices(*this, verticies);
 }
-void MeshHandle::SetIndicies(std::vector<uint32_t>& indicies)
+void MeshHandle::SetIndices(std::vector<uint32_t>& indices)
 {
-    MeshRegistry::SetIndicies(*this,indicies);
+    MeshRegistry::SetIndices(*this,indices);
 }
 void MeshHandle::SetNormals(std::vector<glm::vec3>& normals)
 {

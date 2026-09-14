@@ -12,7 +12,7 @@ namespace Eve::Graphics
         uint32_t Generation;
 
         void SetVertices(std::vector<glm::vec3>& verticies);
-        void SetIndicies(std::vector<uint32_t>& indicies);
+        void SetIndices(std::vector<uint32_t>& indices);
         void SetNormals(std::vector<glm::vec3>& normals);
         void SetColors(std::vector<glm::vec3>& colors);
         void SetUVs(std::vector<glm::vec2>& uvs);
@@ -24,7 +24,7 @@ namespace Eve::Graphics
     struct CPUMesh
     {
         std::vector<glm::vec3> Vertices;
-        std::vector<uint32_t> Indicies;
+        std::vector<uint32_t> Indices;
 
         std::vector<glm::vec3> Normals;
         std::vector<glm::vec3> Colors;
@@ -43,7 +43,7 @@ namespace Eve::Graphics
         BufferHandle TangentBuffer;
 
         uint32_t VerticiesCount;
-        uint32_t IndiciesCount;
+        uint32_t IndicesCount;
         uint32_t NormalsCount;
         uint32_t ColorsCount;
         uint32_t UVsCount;

@@ -32,6 +32,12 @@ namespace Eve::Graphics
 
             // --- Meshes ---
             static MeshHandle CreateMesh();
+            static MeshHandle CreateCubeMesh();
+            static MeshHandle CreateUVSphereMesh();
+            static MeshHandle CreateIcoSphereMesh();
+            static MeshHandle CreatePlaneMesh();
+            static MeshHandle CreateQuadMesh();
+
             static void DestroyMesh(MeshHandle handle);
             static CPUMesh& GetCPUMesh(MeshHandle handle);
             static GraphicsMesh& GetGraphicsMesh(MeshHandle handle);
@@ -60,8 +66,5 @@ namespace Eve::Graphics
             static void SetPresentTexture2D(TransientTextureHandle handle);
 
             static glm::ivec2 GetWindowSize();
-
-
-
     };
 }

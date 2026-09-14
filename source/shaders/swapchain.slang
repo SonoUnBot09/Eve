@@ -35,14 +35,14 @@ V2F vertex(uint32_t vertexID : SV_VertexID)
         { 1, 0 },
         { 1, 1 }
     };
-    const uint32_t indicies[] =
+    const uint32_t indices[] =
     {
         0, 1, 2,
         1, 2, 3
     };
 
     V2F output;
-    uint32_t vertexIndex = indicies[vertexID];
+    uint32_t vertexIndex = indices[vertexID];
     output.position = float4(vertices[vertexIndex], 1.0);
     output.uv = uvs[vertexIndex];
     return output;

@@ -11,12 +11,19 @@ namespace Eve::Graphics
         public:
 
             static MeshHandle CreateMesh();
+
+            static MeshHandle CreateCubeMesh();
+            static MeshHandle CreateUVSphereMesh();
+            static MeshHandle CreateIcoSphereMesh();
+            static MeshHandle CreatePlaneMesh();
+            static MeshHandle CreateQuadMesh();
+            
             static void DestroyMesh(MeshHandle handle);
             inline static CPUMesh& GetCPUMesh(MeshHandle handle) { return cpuMeshes[handle.Id]; }
             inline static GraphicsMesh& GetGraphicsMesh(MeshHandle handle) { return graphicsMeshes[handle.Id]; } 
 
             static void SetVertices(MeshHandle meshHandle, std::vector<glm::vec3>& verticies);
-            static void SetIndicies(MeshHandle meshHandle, std::vector<uint32_t>& indicies);
+            static void SetIndices(MeshHandle meshHandle, std::vector<uint32_t>& indices);
             static void SetNormals(MeshHandle meshHandle, std::vector<glm::vec3>& normals);
             static void SetColors(MeshHandle meshHandle, std::vector<glm::vec3>& colors);
             static void SetUVs(MeshHandle meshHandle, std::vector<glm::vec2>& uvs);

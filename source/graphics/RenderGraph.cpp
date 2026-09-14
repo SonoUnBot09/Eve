@@ -676,7 +676,7 @@ bool RenderGraph::CompileGraph(uint32_t frameIndex)
     UploadComputePassesData();
     UploadRenderViews();
 
-    RenderGraph::AddPass(universalTransferPass);
+    RenderGraph::AddPass(universalTransferPass, 0);
 
     TransientResourcePool::UpdateTexturesPool(frameIndex);
     TransientResourcePool::UpdateBuffersPool(frameIndex);
@@ -2886,7 +2886,6 @@ void RenderGraph::RecordImGUIPass(VkCommandBuffer cmdBuffer, uint32_t frameIndex
     {
         colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     }
-    //colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 
     VkRenderingInfoKHR renderInfo
     {

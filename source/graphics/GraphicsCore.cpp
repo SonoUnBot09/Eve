@@ -141,7 +141,7 @@ bool GraphicsCore::Render()
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
             .pNext = nullptr,
             .semaphore = frameData.RenderCompletedSemaphore,
-            .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
+            .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT
         });
     }
 

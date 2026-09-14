@@ -17,6 +17,9 @@ struct Properties
 
 struct DrawParams
 {
+    uint32_t vertexBufferId;
+    uint32_t indexBufferId;
+    uint32_t normalBufferId;
     float3 lightDir;
 }
 
@@ -24,56 +27,6 @@ struct DrawParams
 [shader("vertex")]
 V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
 {
-    static const float3 vertices[24] =
-    {
-        // Front face (Z = 1)
-        float3(-1.0, -1.0, 1.0), float3(1.0, -1.0, 1.0), float3(1.0, 1.0, 1.0), float3(-1.0, 1.0, 1.0),
-        // Back face (Z = -1)
-        float3(1.0, -1.0, -1.0), float3(-1.0, -1.0, -1.0), float3(-1.0, 1.0, -1.0), float3(1.0, 1.0, -1.0),
-        // Right face (X = 1)
-        float3(1.0, -1.0, 1.0), float3(1.0, -1.0, -1.0), float3(1.0, 1.0, -1.0), float3(1.0, 1.0, 1.0),
-        // Left face (X = -1)
-        float3(-1.0, -1.0, -1.0), float3(-1.0, -1.0, 1.0), float3(-1.0, 1.0, 1.0), float3(-1.0, 1.0, -1.0),
-        // Top face (Y = 1)
-        float3(-1.0, 1.0, 1.0), float3(1.0, 1.0, 1.0), float3(1.0, 1.0, -1.0), float3(-1.0, 1.0, -1.0),
-        // Bottom face (Y = -1)
-        float3(-1.0, -1.0, -1.0), float3(1.0, -1.0, -1.0), float3(1.0, -1.0, 1.0), float3(-1.0, -1.0, 1.0)
-    };
-
-    static const float3 normals[24] =
-    {
-        // Front
-        float3(0, 0, 1), float3(0, 0, 1), float3(0, 0, 1), float3(0, 0, 1),
-        // Back
-        float3(0, 0, -1), float3(0, 0, -1), float3(0, 0, -1), float3(0, 0, -1),
-        // Right
-        float3(1, 0, 0), float3(1, 0, 0), float3(1, 0, 0), float3(1, 0, 0),
-        // Left
-        float3(-1, 0, 0), float3(-1, 0, 0), float3(-1, 0, 0), float3(-1, 0, 0),
-        // Top
-        float3(0, 1, 0), float3(0, 1, 0), float3(0, 1, 0), float3(0, 1, 0),
-        // Bottom
-        float3(0, -1, 0), float3(0, -1, 0), float3(0, -1, 0), float3(0, -1, 0)
-    };
-
-    static const uint32_t indices[36] =
-    {
-        0, 1, 2, 2, 3, 0,       // Front
-        4, 5, 6, 6, 7, 4,       // Back
-        8, 9, 10, 10, 11, 8,    // Right
-        12, 13, 14, 14, 15, 12, // Left
-        16, 17, 18, 18, 19, 16, // Top
-        20, 21, 22, 22, 23, 20  // Bottom
-    };
-
-    const float2 uvs[] =
-    {
-        { 0, 0 },
-        { 0, 1 },
-        { 1, 0 },
-        { 1, 1 }
-    };
-
     uint32_t globalInstanceID = Eve.GetGlobalInstanceID(instanceID);
 
     float4x4 model = Eve.GetObjectToWorldMatrix(globalInstanceID);
@@ -81,12 +34,17 @@ V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
     Properties properties = Eve.GetMaterialProperties<Properties>();
 
     DrawParams drawParams = Eve.GetDrawInfoParams<DrawParams>();
+    
+    float3 *positions = Eve.GetBuffer<float3>(drawParams.vertexBufferId);
+    float3 *normals = Eve.GetBuffer<float3>(drawParams.normalBufferId);
+
+    uint32_t *indices = Eve.GetBuffer<uint32_t>(drawParams.indexBufferId);
 
     V2F output;
 
     uint32_t vertexIndex = indices[vertexID];
 
-    float3 vertexPos = vertices[vertexIndex];
+    float3 vertexPos = positions[vertexIndex];
     float3 normalLocal = normals[vertexIndex];
 
     float3 normal = normalize(mul(model, float4(normalLocal, 0)).xyz);

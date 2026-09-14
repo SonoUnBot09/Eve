@@ -4,7 +4,9 @@
 #include "MemoryRegistry.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
+#include "graphics/registers/MeshRegistry.hpp"
 #include <graphics/RenderGraph.hpp>
+#include <graphics/DefaultMeshes.hpp>
 
 using namespace Eve::Graphics;
 
@@ -16,7 +18,7 @@ MeshHandle MeshRegistry::CreateMesh()
     GraphicsMesh graphicsMesh
     {
         .VerticiesCount = 0,
-        .IndiciesCount = 0,
+        .IndicesCount = 0,
         .NormalsCount = 0,
         .ColorsCount = 0,
         .UVsCount = 0,
@@ -64,6 +66,339 @@ MeshHandle MeshRegistry::CreateMesh()
 
     return handle;
 }
+
+MeshHandle MeshRegistry::CreateCubeMesh()
+{
+    MeshHandle handle;
+
+    CPUMesh cpuMesh
+    {
+        .Vertices = CubeGfxMesh::positions,
+        .Indices = CubeGfxMesh::indices,
+        .Normals = CubeGfxMesh::normals,
+        .Tangents = CubeGfxMesh::tangents
+    };
+
+    GraphicsMesh graphicsMesh
+    {
+        .VerticiesCount = static_cast<uint32_t>(CubeGfxMesh::positions.size()),
+        .IndicesCount = static_cast<uint32_t>(CubeGfxMesh::indices.size()),
+        .NormalsCount = static_cast<uint32_t>(CubeGfxMesh::normals.size()),
+        .ColorsCount = 0,
+        .UVsCount = 0,
+        .TangentsCount = static_cast<uint32_t>(CubeGfxMesh::tangents.size())
+    };
+
+    MeshBufferInfo buffersInfo
+    {
+        .Vertex = false,
+        .Index = false,
+        .Normal = false,
+        .Color = false,
+        .UV = false,
+        .Tangent = false
+    };
+
+    if(freeSlots.empty())
+    {
+        uint32_t size = cpuMeshes.size();
+        generations.push_back(0);
+
+        handle.Id = size;
+        handle.Generation = generations[handle.Id];
+
+        generations[handle.Id]++;
+
+        cpuMeshes.push_back(cpuMesh);
+        graphicsMeshes.push_back(graphicsMesh);
+        meshBuffersInfo.push_back(buffersInfo);
+    }
+    else 
+    {
+        uint32_t index = freeSlots.back();
+
+        freeSlots.pop_back();
+
+        handle.Id = index;
+        handle.Generation = generations[handle.Id];
+
+        generations[handle.Id]++;
+
+        cpuMeshes[handle.Id] = cpuMesh;
+        graphicsMeshes[handle.Id] = graphicsMesh;
+        meshBuffersInfo[handle.Id] = buffersInfo;
+    };
+
+    ApplyMeshToGPU(handle);
+
+    return handle;
+}
+MeshHandle MeshRegistry::CreateUVSphereMesh()
+{
+    MeshHandle handle;
+
+    CPUMesh cpuMesh
+    {
+        .Vertices = UVSphereGfxMesh::positions,
+        .Indices = UVSphereGfxMesh::indices,
+        .Normals = UVSphereGfxMesh::normals,
+        .Tangents = UVSphereGfxMesh::tangents
+    };
+
+    GraphicsMesh graphicsMesh
+    {
+        .VerticiesCount = static_cast<uint32_t>(UVSphereGfxMesh::positions.size()),
+        .IndicesCount = static_cast<uint32_t>(UVSphereGfxMesh::indices.size()),
+        .NormalsCount = static_cast<uint32_t>(UVSphereGfxMesh::normals.size()),
+        .ColorsCount = 0,
+        .UVsCount = 0,
+        .TangentsCount = static_cast<uint32_t>(UVSphereGfxMesh::tangents.size())
+    };
+
+    MeshBufferInfo buffersInfo
+    {
+        .Vertex = false,
+        .Index = false,
+        .Normal = false,
+        .Color = false,
+        .UV = false,
+        .Tangent = false
+    };
+
+    if(freeSlots.empty())
+    {
+        uint32_t size = cpuMeshes.size();
+        generations.push_back(0);
+
+        handle.Id = size;
+        handle.Generation = generations[handle.Id];
+
+        generations[handle.Id]++;
+
+        cpuMeshes.push_back(cpuMesh);
+        graphicsMeshes.push_back(graphicsMesh);
+        meshBuffersInfo.push_back(buffersInfo);
+    }
+    else 
+    {
+        uint32_t index = freeSlots.back();
+
+        freeSlots.pop_back();
+
+        handle.Id = index;
+        handle.Generation = generations[handle.Id];
+
+        generations[handle.Id]++;
+
+        cpuMeshes[handle.Id] = cpuMesh;
+        graphicsMeshes[handle.Id] = graphicsMesh;
+        meshBuffersInfo[handle.Id] = buffersInfo;
+    };
+
+    ApplyMeshToGPU(handle);
+
+    return handle;
+}
+MeshHandle MeshRegistry::CreateIcoSphereMesh()
+{
+    MeshHandle handle;
+
+    CPUMesh cpuMesh
+    {
+        .Vertices = IcoSphereGfxMesh::positions,
+        .Indices = IcoSphereGfxMesh::indices,
+        .Normals = IcoSphereGfxMesh::normals,
+        .Tangents = IcoSphereGfxMesh::tangents
+    };
+
+    GraphicsMesh graphicsMesh
+    {
+        .VerticiesCount = static_cast<uint32_t>(IcoSphereGfxMesh::positions.size()),
+        .IndicesCount = static_cast<uint32_t>(IcoSphereGfxMesh::indices.size()),
+        .NormalsCount = static_cast<uint32_t>(IcoSphereGfxMesh::normals.size()),
+        .ColorsCount = 0,
+        .UVsCount = 0,
+        .TangentsCount = static_cast<uint32_t>(IcoSphereGfxMesh::tangents.size())
+    };
+
+    MeshBufferInfo buffersInfo
+    {
+        .Vertex = false,
+        .Index = false,
+        .Normal = false,
+        .Color = false,
+        .UV = false,
+        .Tangent = false
+    };
+
+    if(freeSlots.empty())
+    {
+        uint32_t size = cpuMeshes.size();
+        generations.push_back(0);
+
+        handle.Id = size;
+        handle.Generation = generations[handle.Id];
+
+        generations[handle.Id]++;
+
+        cpuMeshes.push_back(cpuMesh);
+        graphicsMeshes.push_back(graphicsMesh);
+        meshBuffersInfo.push_back(buffersInfo);
+    }
+    else 
+    {
+        uint32_t index = freeSlots.back();
+
+        freeSlots.pop_back();
+
+        handle.Id = index;
+        handle.Generation = generations[handle.Id];
+
+        generations[handle.Id]++;
+
+        cpuMeshes[handle.Id] = cpuMesh;
+        graphicsMeshes[handle.Id] = graphicsMesh;
+        meshBuffersInfo[handle.Id] = buffersInfo;
+    };
+
+    ApplyMeshToGPU(handle);
+
+    return handle;
+}
+MeshHandle MeshRegistry::CreatePlaneMesh()
+{
+    MeshHandle handle;
+
+    CPUMesh cpuMesh
+    {
+        .Vertices = PlaneGfxMesh::positions,
+        .Indices = PlaneGfxMesh::indices,
+        .Normals = PlaneGfxMesh::normals,
+        .Tangents = PlaneGfxMesh::tangents
+    };
+
+    GraphicsMesh graphicsMesh
+    {
+        .VerticiesCount = static_cast<uint32_t>(PlaneGfxMesh::positions.size()),
+        .IndicesCount = static_cast<uint32_t>(PlaneGfxMesh::indices.size()),
+        .NormalsCount = static_cast<uint32_t>(PlaneGfxMesh::normals.size()),
+        .ColorsCount = 0,
+        .UVsCount = 0,
+        .TangentsCount = static_cast<uint32_t>(PlaneGfxMesh::tangents.size())
+    };
+
+    MeshBufferInfo buffersInfo
+    {
+        .Vertex = false,
+        .Index = false,
+        .Normal = false,
+        .Color = false,
+        .UV = false,
+        .Tangent = false
+    };
+
+    if(freeSlots.empty())
+    {
+        uint32_t size = cpuMeshes.size();
+        generations.push_back(0);
+
+        handle.Id = size;
+        handle.Generation = generations[handle.Id];
+
+        generations[handle.Id]++;
+
+        cpuMeshes.push_back(cpuMesh);
+        graphicsMeshes.push_back(graphicsMesh);
+        meshBuffersInfo.push_back(buffersInfo);
+    }
+    else 
+    {
+        uint32_t index = freeSlots.back();
+
+        freeSlots.pop_back();
+
+        handle.Id = index;
+        handle.Generation = generations[handle.Id];
+
+        generations[handle.Id]++;
+
+        cpuMeshes[handle.Id] = cpuMesh;
+        graphicsMeshes[handle.Id] = graphicsMesh;
+        meshBuffersInfo[handle.Id] = buffersInfo;
+    };
+
+    ApplyMeshToGPU(handle);
+
+    return handle;
+}
+MeshHandle MeshRegistry::CreateQuadMesh()
+{
+    MeshHandle handle;
+
+    CPUMesh cpuMesh
+    {
+        .Vertices = QuadGfxMesh::positions,
+        .Indices = QuadGfxMesh::indices,
+        .Normals = QuadGfxMesh::normals,
+        .Tangents = QuadGfxMesh::tangents
+    };
+
+    GraphicsMesh graphicsMesh
+    {
+        .VerticiesCount = static_cast<uint32_t>(QuadGfxMesh::positions.size()),
+        .IndicesCount = static_cast<uint32_t>(QuadGfxMesh::indices.size()),
+        .NormalsCount = static_cast<uint32_t>(QuadGfxMesh::normals.size()),
+        .ColorsCount = 0,
+        .UVsCount = 0,
+        .TangentsCount = static_cast<uint32_t>(QuadGfxMesh::tangents.size())
+    };
+
+    MeshBufferInfo buffersInfo
+    {
+        .Vertex = false,
+        .Index = false,
+        .Normal = false,
+        .Color = false,
+        .UV = false,
+        .Tangent = false
+    };
+
+    if(freeSlots.empty())
+    {
+        uint32_t size = cpuMeshes.size();
+        generations.push_back(0);
+
+        handle.Id = size;
+        handle.Generation = generations[handle.Id];
+
+        generations[handle.Id]++;
+
+        cpuMeshes.push_back(cpuMesh);
+        graphicsMeshes.push_back(graphicsMesh);
+        meshBuffersInfo.push_back(buffersInfo);
+    }
+    else 
+    {
+        uint32_t index = freeSlots.back();
+
+        freeSlots.pop_back();
+
+        handle.Id = index;
+        handle.Generation = generations[handle.Id];
+
+        generations[handle.Id]++;
+
+        cpuMeshes[handle.Id] = cpuMesh;
+        graphicsMeshes[handle.Id] = graphicsMesh;
+        meshBuffersInfo[handle.Id] = buffersInfo;
+    };
+
+    ApplyMeshToGPU(handle);
+
+    return handle;
+}
+
+
 void MeshRegistry::DestroyMesh(MeshHandle handle)
 {
     GraphicsMesh& graphicsMesh = graphicsMeshes[handle.Id];
@@ -132,16 +467,16 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
         graphicsMesh.VerticiesCount = cpuMesh.Vertices.size();
     }
 
-    // --- Indicies ---
-    if(!cpuMesh.Indicies.empty())
+    // --- Indices ---
+    if(!cpuMesh.Indices.empty())
     {
         if(bufferInfo.Index)
         {
-            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.IndexBuffer, cpuMesh.Indicies.size() * sizeof(uint32_t));
+            MemoryRegistry::ResizeBufferIfNeeded(graphicsMesh.IndexBuffer, cpuMesh.Indices.size() * sizeof(uint32_t));
         }
         else 
         {
-            uint64_t size = cpuMesh.Indicies.size() * sizeof(uint32_t);
+            uint64_t size = cpuMesh.Indices.size() * sizeof(uint32_t);
 
             BufferHandle newBuffer = MemoryRegistry::CreateGPUBuffer(size);
 
@@ -150,8 +485,8 @@ void MeshRegistry::ApplyMeshToGPU(MeshHandle handle)
             bufferInfo.Index = true;
         }
 
-        universalTransferPass.UploadBuffer(cpuMesh.Indicies.data(), graphicsMesh.IndexBuffer, cpuMesh.Indicies.size() * sizeof(glm::vec3), 0);
-        graphicsMesh.IndiciesCount = cpuMesh.Indicies.size();
+        universalTransferPass.UploadBuffer(cpuMesh.Indices.data(), graphicsMesh.IndexBuffer, cpuMesh.Indices.size() * sizeof(uint32_t), 0);
+        graphicsMesh.IndicesCount = cpuMesh.Indices.size();
     }
 
     // --- Normals ---
@@ -248,9 +583,9 @@ void MeshRegistry::SetVertices(MeshHandle meshHandle, std::vector<glm::vec3>& ve
 {
     cpuMeshes[meshHandle.Id].Vertices = verticies;
 }
-void MeshRegistry::SetIndicies(MeshHandle meshHandle, std::vector<uint32_t>& indicies)
+void MeshRegistry::SetIndices(MeshHandle meshHandle, std::vector<uint32_t>& indices)
 {
-    cpuMeshes[meshHandle.Id].Indicies = indicies;
+    cpuMeshes[meshHandle.Id].Indices = indices;
 }
 void MeshRegistry::SetNormals(MeshHandle meshHandle, std::vector<glm::vec3>& normals)
 {
