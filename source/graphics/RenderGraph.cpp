@@ -24,6 +24,7 @@
 #include <graphics/registers/ResourceRegistry.hpp>
 #include <graphics/ErrorManager.hpp>
 #include <imgui/imgui.h>
+#include <graphics/internal_shaders/MatricesComputeCalculator.hpp>
 
 
 using namespace Eve::Graphics;
@@ -616,7 +617,7 @@ namespace
 
 void RenderGraph::Initialize()
 {
-    matricesComputeShaderCalculator = ShaderRegistry::CreateComputeShader("matrices_calculator");
+    matricesComputeShaderCalculator = ShaderRegistry::CreateComputeShaderInternal("matrices_calculator", *MatricesComputeShaderCalculator);
 }
 
 bool RenderGraph::Execute(VkCommandBuffer cmdBuffer, uint32_t frameIndex, uint32_t swapchainImageIndex)

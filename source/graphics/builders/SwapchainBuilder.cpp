@@ -5,6 +5,7 @@
 #include <graphics/MemoryBin.hpp>
 #include <graphics/registers/ShaderRegistry.hpp>
 #include <graphics/ErrorManager.hpp>
+#include <graphics/internal_shaders/Swapchain.hpp>
 
 #include <EveSettings.hpp>
 #include <eve/debug/Debug.hpp>
@@ -153,7 +154,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
         .ColorFormat = format
     };
 
-    swapchain.shader = ShaderRegistry::CreateGraphicsShader(shaderInfo);
+    swapchain.shader = ShaderRegistry::CreateGraphicsShaderInternal(shaderInfo, *SwapchainShader);
 
     SamplerInfo samplerInfo
     {

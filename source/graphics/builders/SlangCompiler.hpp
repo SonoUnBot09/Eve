@@ -131,6 +131,55 @@ namespace Eve::Graphics
                 return Shader{result, properties};
             }
 
+            inline static Shader CompileVertFragInternal(const char* shaderModule, const char* source)
+            {
+                Slang::ComPtr<slang::IBlob> diagnostics;
+                slang::IModule* module = session->loadModuleFromSourceString(shaderModule, shaderModule, 
+                    source, diagnostics.writeRef());
+                CheckSlangDiagnostics(diagnostics.get(), "Module Load");
+
+                if (!module) 
+                {
+                    throw std::runtime_error("Unable to get a valid Slang module");
+                }
+
+                ShaderBytecode result;
+                Slang::ComPtr<slang::IComponentType> program;
+
+                result.vertex = CompileEntryPoint(session, module, "vertex", std::addressof(program));
+                result.fragment = CompileEntryPoint(session, module, "fragment");
+
+                MaterialProperties properties;
+                if (program) 
+                {
+                    properties = SearchProperties(program->getLayout());
+                }
+
+                return Shader{result, properties};
+            }
+
+            inline static Shader CompileComputeInternal(const char* shaderModule, const char* source)
+            {
+                Slang::ComPtr<slang::IBlob> diagnostics;
+                slang::IModule* module = session->loadModuleFromSourceString(shaderModule, shaderModule, 
+                    source, diagnostics.writeRef());
+                CheckSlangDiagnostics(diagnostics.get(), "Compute Module Load");
+
+                if (!module) 
+                {
+                    throw std::runtime_error("Unable to get a valid Slang module");
+                }
+
+                ShaderBytecode result;
+                Slang::ComPtr<slang::IComponentType> program;
+                
+                result.compute = CompileEntryPoint(session, module, "main", std::addressof(program));
+
+                MaterialProperties properties;
+
+                return Shader{result, properties};
+            }
+
         private:
 
             inline static MaterialProperties SearchProperties(slang::ProgramLayout* programLayout)

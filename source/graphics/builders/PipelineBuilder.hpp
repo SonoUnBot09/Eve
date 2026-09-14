@@ -26,6 +26,9 @@ namespace Eve::Graphics
             static bool BuildGraphicsPipeline(ShaderInfo shaderInfo,  GraphicsShaderObject& pipeline, MaterialProperties& properties);
             static bool BuildComputePipeline(std::string& shaderModule, ComputeShaderObject& pipeline);
 
+            static bool BuildGraphicsPipelineInternal(ShaderInfo shaderInfo, const char* source, GraphicsShaderObject& pipeline, MaterialProperties& properties);
+            static bool BuildComputePipelineInternal(std::string& shaderModule, const char* source, ComputeShaderObject& pipeline);
+
         private:
 
             inline static VkShaderModule CreateVertexModule(ShaderBytecode& input);

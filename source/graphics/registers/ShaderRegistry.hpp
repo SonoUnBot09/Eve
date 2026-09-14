@@ -15,6 +15,9 @@ namespace Eve::Graphics
             static ShaderHandle CreateGraphicsShader(ShaderInfo shaderInfo);
             static ComputeShaderHandle CreateComputeShader(std::string shaderModule);
 
+            static ShaderHandle CreateGraphicsShaderInternal(ShaderInfo shaderInfo, const char& source);
+            static ComputeShaderHandle CreateComputeShaderInternal(std::string shaderModule, const char& source);
+
             inline static GraphicsShaderObject GetShaderObject(ShaderHandle handle) { return graphicsShaderObjects[handle.Id]; }
             inline static MaterialProperties& GetMaterialProperties(ShaderHandle handle) { return materialProperties[handle.Id]; }
 

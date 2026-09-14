@@ -37,6 +37,31 @@ ComputeShaderHandle ShaderRegistry::CreateComputeShader(std::string shaderModule
     return ComputeShaderHandle{.Id = static_cast<uint32_t>(computeShaderObjects.size() - 1)};
 }
 
+ShaderHandle ShaderRegistry::CreateGraphicsShaderInternal(ShaderInfo shaderInfo, const char& source)
+{
+    GraphicsShaderObject shaderObject {};
+    MaterialProperties properties {};
+
+    PipelineBuilder::BuildGraphicsPipelineInternal(shaderInfo, &source, shaderObject, properties);
+
+    graphicsShaderObjects.push_back(shaderObject);
+
+    materialProperties.push_back(properties);
+
+    return ShaderHandle{.Id = static_cast<uint32_t>(graphicsShaderObjects.size() - 1)};
+}
+
+ComputeShaderHandle ShaderRegistry::CreateComputeShaderInternal(std::string shaderModule, const char& source)
+{
+    ComputeShaderObject shaderObject {};
+
+    PipelineBuilder::BuildComputePipelineInternal(shaderModule, &source, shaderObject);
+
+    computeShaderObjects.push_back(shaderObject);
+
+    return ComputeShaderHandle{.Id = static_cast<uint32_t>(computeShaderObjects.size() - 1)};
+}
+
 void ShaderRegistry::DestroyAllShaders()
 {
     VkPipelineLayout graphicsPipelineLayout {};
