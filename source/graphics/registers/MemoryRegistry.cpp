@@ -325,7 +325,7 @@ void MemoryRegistry::ResizeBufferIfNeeded(BufferHandle &buffer, uint64_t require
 {
     uint64_t currentSize = buffers[buffer.Id].AllocationInfo.size;
 
-    if(currentSize < requiredSize)
+    if(currentSize != requiredSize)
     {
         MemoryRegistry::DestroyBuffer(buffer);
 
