@@ -1,4 +1,6 @@
 #include "WindowBuilder.hpp"
+#include "EveSettings.hpp"
+#include "SDL3/SDL_video.h"
 
 #include <SDL3/SDL.h>
 #include <eve/debug/Debug.hpp>
@@ -35,14 +37,20 @@ bool WindowBuilder::InitializeSDLSubsystems()
 
 bool WindowBuilder::CreateWindow(Window& window)
 {
-    window.Window = SDL_CreateWindow("Eve", 512, 512, SDL_WINDOW_RESIZABLE);
-    window.Height = 512;
-    window.Width = 512;
+    SDL_WindowFlags flags = 0;
+
+    window.Window = SDL_CreateWindow("Eve", Eve::Settings::InitialWindowWidth, Eve::Settings::InitialWindowHeigth, SDL_WINDOW_VULKAN);
+    window.Height = Eve::Settings::InitialWindowWidth;
+    window.Width = Eve::Settings::InitialWindowHeigth;
 
     if(!window.Window)
     {
         return false;
     }
+
+    SDL_SetWindowFullscreen(window.Window, Eve::Settings::WindowFullScreen);
+    SDL_SetWindowResizable(window.Window, Eve::Settings::WindowResizable);
+    SDL_SetWindowBordered(window.Window, Eve::Settings::WindowBordered);
 
     return true;
 }

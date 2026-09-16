@@ -1,8 +1,10 @@
 #include <chrono>
 #include <graphics/GraphicsCore.hpp>
+#include "EveSettings.hpp"
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_mouse.h"
 #include <eve/graphics/UI.hpp>
+#include "eve/Eve.hpp"
 #include "imgui/imgui_impl_sdl3.h"
 #include "input/InputManager.hpp"
 #include <Core.hpp>
@@ -72,9 +74,11 @@ namespace
     }
 }
 
-bool Core::Initialize(std::vector<std::string>& searchShaderPaths)
+bool Core::Initialize(EveEngineCreateInfo info)
 {
-    if(!GraphicsCore::Initialize(searchShaderPaths))
+    SetEveSetting(info);
+
+    if(!GraphicsCore::Initialize())
     {
         std::cout << "Eve graphics initialization failed" << std::endl;
         return false;
@@ -85,19 +89,15 @@ bool Core::Initialize(std::vector<std::string>& searchShaderPaths)
     return true;
 }
 
-void Core::Start()
+void Core::Run()
 {
+    // Start
     SystemDispatcher::ExecuteAwakeStage();
-    
-    EntityManager::ExecuteAllCommandPools();
-
     SystemDispatcher::ExecuteStartStage();
 
     EntityManager::ExecuteAllCommandPools();
-}
 
-void Core::Run()
-{
+    // --- Loop ---
     uint32_t fps = 0;
     float timer = 0;
     uint64_t lastTick = SDL_GetTicksNS();
@@ -213,4 +213,17 @@ void Core::Run()
 void Core::Shutdown()
 {
     GraphicsCore::Destroy();
+}
+
+void Core::SetEveSetting(EveEngineCreateInfo& info)
+{
+    Eve::Settings::ShaderSearchPaths = info.ShaderSearchPaths;
+    Eve::Settings::PresentMode = info.VSync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR;
+
+    // Window
+    Eve::Settings::WindowFullScreen = info.WindowFullScreen;
+    Eve::Settings::WindowBordered = info.WindowBordered;
+    Eve::Settings::WindowResizable = info.WindowResizable;
+    Eve::Settings::InitialWindowWidth = info.WindowWidth;
+    Eve::Settings::InitialWindowHeigth = info.WindowHeight;
 }

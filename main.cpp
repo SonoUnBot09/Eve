@@ -1,24 +1,22 @@
-#include <Core.hpp>
+#include <eve/Eve.hpp>
 #include <iostream>
 
 int main(int argc, char* argv[])
 {
     std::cout <<"Hello World!" << std::endl;
     
-    std::vector<std::string> searchShaderPaths
+    Eve::EveEngineCreateInfo info
     {
-        "../../source/shaders"
+        .ShaderSearchPaths{"shaders"},
+        .VSync = false
     };
-
-    Eve::Core app;
-    if(app.Initialize(searchShaderPaths))
+    
+    if(Eve::EveEngine::Initialize(info))
     {
-        app.Start();
-        
-        app.Run();
+        Eve::EveEngine::Run();
     }
 
-    app.Shutdown();
+    Eve::EveEngine::Shutdown();
 
     return 0;
 }

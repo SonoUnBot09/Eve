@@ -14,7 +14,7 @@
 
 using namespace Eve::Graphics;
 
-bool GraphicsCore::Initialize(std::vector<std::string>& searchShaderPaths)
+bool GraphicsCore::Initialize()
 {
     if(!WindowBuilder::Build(Window))
     {
@@ -28,7 +28,7 @@ bool GraphicsCore::Initialize(std::vector<std::string>& searchShaderPaths)
 
     ResourceMapper::CreateGlobalDescriptor(1024, 8, 1024);
 
-    SlangCompiler::Initialize(searchShaderPaths);
+    SlangCompiler::Initialize();
     
     PipelineBuilder::Initialize();
 

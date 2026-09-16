@@ -105,7 +105,7 @@ bool SwapchainBuilder::Build(Swapchain& swapchain)
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = surfaceCaps.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR
+        .presentMode = Eve::Settings::PresentMode
     };
 
     VK_CHECK(vkCreateSwapchainKHR(GraphicsCore::Context.Device, &swapchainCI, nullptr, &swapchain.Swapchain));
@@ -265,7 +265,7 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = surfaceCaps.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR,
+        .presentMode = Eve::Settings::PresentMode,
         .oldSwapchain = oldSwapchain.Swapchain
     };
 

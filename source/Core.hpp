@@ -1,7 +1,6 @@
 #pragma once
 
-#include <vector>
-#include <string>
+#include <eve/Eve.hpp>
 
 namespace Eve
 {
@@ -9,13 +8,13 @@ namespace Eve
     {
         public:
 
-            static bool Initialize(std::vector<std::string>& searchShaderPaths);
-            static void Start();
+            static bool Initialize(EveEngineCreateInfo info);
             static void Run();
             static void Shutdown();
 
         private:
 
+            static void SetEveSetting(EveEngineCreateInfo& info);
             inline static bool isAppRunning = true;
     };
 }

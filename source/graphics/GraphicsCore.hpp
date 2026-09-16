@@ -20,7 +20,7 @@ namespace Eve::Graphics
     {
         public:
 
-            static bool Initialize(std::vector<std::string>& searchShaderPaths);
+            static bool Initialize();
             static void Destroy();
 
             static glm::ivec2 GetWindowSize() { return glm::ivec2(static_cast<int32_t>(Window.Width), static_cast<int32_t>(Window.Height)); }

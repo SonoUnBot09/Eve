@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EveSettings.hpp"
 #include <slang.h>
 #include <slang-com-ptr.h>
 #include <vector>
@@ -35,7 +36,7 @@ namespace Eve::Graphics
     {
         public:
 
-            inline static void Initialize(std::vector<std::string>& searchPaths)
+            inline static void Initialize()
             {
                 if (SLANG_FAILED(slang::createGlobalSession(globalSession.writeRef())))
                 {
@@ -56,9 +57,9 @@ namespace Eve::Graphics
                 fs::path executablePath = GetExecutableDirectory();
 
                 std::vector<std::string> fullPaths;
-                fullPaths.reserve(searchPaths.size());
+                fullPaths.reserve(Eve::Settings::ShaderSearchPaths.size());
 
-                for (const auto& path : searchPaths)
+                for (const auto& path : Eve::Settings::ShaderSearchPaths)
                 {
                     fs::path fullPath = executablePath / path;
                     fullPaths.push_back(fullPath.string());
