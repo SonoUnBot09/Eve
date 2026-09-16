@@ -60,7 +60,7 @@ glm::ivec2 Window::GetWindowSize()
     return Eve::Graphics::GraphicsCore::GetWindowSize();
 }
 
-bool Window::SetIcon(std::string path)
+bool Window::SetIconPNG(std::string path)
 {
     std::string iconPath = GetExecutableDirectory().string() + "\\" + path;
 
