@@ -129,7 +129,6 @@ void Core::Run()
             {
                 GraphicsCore::Window.Width = event.window.data1;
                 GraphicsCore::Window.Height = event.window.data2;
-                continue;
             }
             else if(event.type == SDL_EVENT_KEY_DOWN && event.key.repeat == 0)
             {
@@ -155,30 +154,6 @@ void Core::Run()
             {
                 InputManager::SetWindowLostFocus();
             }
-        
-            /*
-            if(event.type == SDL_EVENT_KEY_DOWN)
-            {
-                if(event.key.scancode == SDL_SCANCODE_ESCAPE)
-                {
-                    SDL_SetWindowRelativeMouseMode(window, false);
-                    continue;
-                }
-            }
-
-            if(event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
-            {
-                SDL_SetWindowRelativeMouseMode(window, false);
-                continue;
-            }
-            else if(event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
-            {
-                if (event.button.button == SDL_BUTTON_LEFT)
-                {   
-                    SDL_SetWindowRelativeMouseMode(window, true);
-                    continue;
-                }
-            }*/
         }
         
         UpdateKeys();
@@ -226,4 +201,5 @@ void Core::SetEveSetting(EveEngineCreateInfo& info)
     Eve::Settings::WindowResizable = info.WindowResizable;
     Eve::Settings::InitialWindowWidth = info.WindowWidth;
     Eve::Settings::InitialWindowHeigth = info.WindowHeight;
+    Eve::Settings::InitialWindowTitle = info.WindowTitle;
 }

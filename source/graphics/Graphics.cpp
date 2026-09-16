@@ -1,9 +1,9 @@
-#include "GraphicsCore.hpp"
-#include "eve/graphics/Mesh.hpp"
 #include "registers/MaterialRegistry.hpp"
+#include <graphics/registers/MemoryRegistry.hpp>
+#include "EveSettings.hpp"
+#include "eve/graphics/Mesh.hpp"
 #include "registers/RenderViewRegistry.hpp"
 #include <eve/graphics/Graphics.hpp>
-#include <graphics/registers/MemoryRegistry.hpp>
 #include <graphics/registers/MeshRegistry.hpp>
 #include <graphics/registers/ShaderRegistry.hpp>
 #include <graphics/RenderGraph.hpp>
@@ -166,4 +166,14 @@ void Graphics::AddPass(ComputePass& pass, uint32_t index)
 void Graphics::SetPresentTexture2D(TransientTextureHandle handle)
 {
     RenderGraph::SetPresentTexture2D(handle);
+}
+
+void Graphics::UseVSync(bool useVSync)
+{
+    VkPresentModeKHR newPresentMode = useVSync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR;
+
+    if(Eve::Settings::PresentMode == newPresentMode) { return; }
+
+    Eve::Settings::PresentMode = newPresentMode;
+    Eve::Graphics::GraphicsCore::NeedSwapchainRebuild();
 }

@@ -16,6 +16,7 @@ namespace Eve
             inline static bool WindowBordered;
             inline static uint32_t InitialWindowWidth;
             inline static uint32_t InitialWindowHeigth;
+            inline static std::string InitialWindowTitle;
 
             inline static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
             inline static constexpr uint32_t vulkanVersion {VK_API_VERSION_1_2};

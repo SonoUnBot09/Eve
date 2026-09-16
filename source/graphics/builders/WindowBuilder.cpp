@@ -39,9 +39,9 @@ bool WindowBuilder::CreateWindow(Window& window)
 {
     SDL_WindowFlags flags = 0;
 
-    window.Window = SDL_CreateWindow("Eve", Eve::Settings::InitialWindowWidth, Eve::Settings::InitialWindowHeigth, SDL_WINDOW_VULKAN);
-    window.Height = Eve::Settings::InitialWindowWidth;
-    window.Width = Eve::Settings::InitialWindowHeigth;
+    window.Window = SDL_CreateWindow(Eve::Settings::InitialWindowTitle.c_str(), Eve::Settings::InitialWindowWidth, Eve::Settings::InitialWindowHeigth, SDL_WINDOW_VULKAN);
+    window.Width = Eve::Settings::InitialWindowWidth;
+    window.Height = Eve::Settings::InitialWindowHeigth;
 
     if(!window.Window)
     {

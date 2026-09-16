@@ -14,6 +14,7 @@ namespace Eve
         bool WindowBordered = true;
         uint32_t WindowWidth = 620;
         uint32_t WindowHeight = 480;
+        std::string WindowTitle;
     };
 
     class EveEngine

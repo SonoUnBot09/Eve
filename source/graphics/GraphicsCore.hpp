@@ -32,6 +32,7 @@ namespace Eve::Graphics
 
             inline static uint32_t GetFrameIndex() { return frameIndex; }
             inline static bool CanRenderOnSwapchain() { return canRenderOnSwapchain; }
+            inline static void NeedSwapchainRebuild() { isSwapchainRebuildNeeded = true; }
         
         private:
             inline static bool isSwapchainRebuildNeeded = false;

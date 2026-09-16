@@ -16,10 +16,12 @@
 #include <glm/common.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <eve/graphics/UI.hpp>
+#include <eve/window/Window.hpp>
 
 using namespace Eve::Entities;
 using namespace Eve::Graphics;
 using namespace Eve::Input;
+using namespace Eve::Window;
 
 namespace
 {
@@ -73,7 +75,7 @@ namespace
 
     void Update(float deltaTime, uint32_t systemId)
     {
-        glm::ivec2 windowSize = Graphics::GetWindowSize();
+        glm::ivec2 windowSize = Window::GetWindowSize();
 
         TransientTextureInfo2D colorInfo
         {

@@ -48,6 +48,11 @@ void Window::SetPositionAtCenter()
     SDL_SetWindowPosition(Eve::Graphics::GraphicsCore::Window.Window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 }
 
+void Window::SetWindowTitle(std::string title)
+{
+    SDL_SetWindowTitle(Eve::Graphics::GraphicsCore::Window.Window, title.c_str());
+}
+
 glm::ivec2 Window::GetWindowSize()
 {
     return Eve::Graphics::GraphicsCore::GetWindowSize();

@@ -299,7 +299,7 @@ bool SwapchainBuilder::Rebuild(Swapchain& swapchain)
         VK_CHECK(vkCreateImageView(GraphicsCore::Context.Device, &imageViewCI, nullptr, &swapchain.swapchainImageViews[i]));
     }
 
-    Destroy(oldSwapchain);
+    Destroy(oldSwapchain); 
 
     return true;
 }
