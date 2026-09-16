@@ -1,8 +1,10 @@
+#include <filesystem>
 #include <graphics/GraphicsCore.hpp>
 #include "EveSettings.hpp"
 #include "SDL3/SDL_video.h"
 #include <eve/window/Window.hpp>
 #include <SDL3/SDL.h>
+#include <ExecutablePath.hpp>
 
 using namespace Eve::Window;
 
@@ -56,4 +58,26 @@ void Window::SetWindowTitle(std::string title)
 glm::ivec2 Window::GetWindowSize()
 {
     return Eve::Graphics::GraphicsCore::GetWindowSize();
+}
+
+bool Window::SetIcon(std::string path)
+{
+    std::string iconPath = GetExecutableDirectory().string() + "\\" + path;
+
+    SDL_Surface* icon = SDL_LoadPNG(iconPath.c_str());
+
+    if(icon)
+    {
+        std::cout << "Icon found" << std::endl;
+        
+        bool success = SDL_SetWindowIcon(Eve::Graphics::GraphicsCore::Window.Window, icon);
+
+        SDL_DestroySurface(icon);
+
+        return success;
+    }
+
+    std::cout << "Icon not found | " << "Path: " << iconPath << std::endl;
+
+    return false;
 }

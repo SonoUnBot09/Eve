@@ -44,6 +44,11 @@ namespace
 
     void Start(uint32_t systemId)
     {    
+
+        bool success = Window::SetIcon("eve_logo.png");
+
+        std::cout << success << std::endl;
+
         transforms.reserve(100000);
         ShaderInfo shaderInfo
         {

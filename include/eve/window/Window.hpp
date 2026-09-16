@@ -17,5 +17,6 @@ namespace Eve::Window
             static void SetPositionAtCenter();
             static void SetWindowTitle(std::string title);
             static glm::ivec2 GetWindowSize();
+            static bool SetIcon(std::string path);
     };
 }
