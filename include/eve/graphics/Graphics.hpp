@@ -64,7 +64,5 @@ namespace Eve::Graphics
             static void AddPass(ComputePass& pass, uint32_t index);
 
             static void SetPresentTexture2D(TransientTextureHandle handle);
-
-            static glm::ivec2 GetWindowSize();
     };
 }

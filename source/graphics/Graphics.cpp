@@ -167,8 +167,3 @@ void Graphics::SetPresentTexture2D(TransientTextureHandle handle)
 {
     RenderGraph::SetPresentTexture2D(handle);
 }
-
-glm::ivec2 Graphics::GetWindowSize()
-{
-    return GraphicsCore::GetWindowSize();
-}
