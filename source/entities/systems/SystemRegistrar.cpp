@@ -3,7 +3,7 @@
 
 using namespace Eve::Entities;
 
-// Awake, Start
+// Awake, Start, Shutdown
 SystemRegistrar::SystemRegistrar(void(* function)(uint32_t), SystemStage stage)
 {
     switch (stage)
@@ -14,6 +14,8 @@ SystemRegistrar::SystemRegistrar(void(* function)(uint32_t), SystemStage stage)
         case SystemStage::Awake:
             SystemDispatcher::GetAwakeStage().push_back(function);
             break;
+        case SystemStage::Shutdown:
+            SystemDispatcher::GetShutdownStage().push_back(function);
         default:
             break;
     }

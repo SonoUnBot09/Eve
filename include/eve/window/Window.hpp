@@ -18,5 +18,6 @@ namespace Eve::Window
             static void SetWindowTitle(std::string title);
             static glm::ivec2 GetWindowSize();
             static bool SetIconPNG(std::string path);
+            static bool IsWindowInFocus();
     };
 }

@@ -24,6 +24,9 @@ void SystemDispatcher::ExecuteStartStage()
 
         systemId++;
     }
+
+    // Reset system id
+    systemId = 0;
 }
 
 void SystemDispatcher::ExecuteUpdateStage(const float deltaTime)
@@ -33,6 +36,21 @@ void SystemDispatcher::ExecuteUpdateStage(const float deltaTime)
     for(UpdateStage &func : systemsFunc)
     {
         func(deltaTime, systemId);
+
+        systemId++;
+    }
+
+    // Reset system id
+    systemId = 0;
+}
+
+void SystemDispatcher::ExecuteShutdownStage()
+{
+    std::vector<ShutdownStage>& systemsFunc = GetShutdownStage();
+
+    for(ShutdownStage &func : systemsFunc)
+    {
+        func(systemId);
 
         systemId++;
     }
@@ -60,4 +78,11 @@ std::vector<UpdateStage>& SystemDispatcher::GetUpdateStage()
     static std::vector<UpdateStage> updateStages;
 
     return updateStages;
+}
+
+std::vector<ShutdownStage>& SystemDispatcher::GetShutdownStage()
+{
+    static std::vector<ShutdownStage> shutdownStage;
+
+    return shutdownStage;
 }

@@ -8,14 +8,15 @@ namespace Eve::Entities
     {
         Awake,
         Start,
-        Update
+        Update,
+        Shutdown
     };
 
     class SystemRegistrar
     {
         public:
 
-            // Awake, Start
+            // Awake, Start, Shutdown
             SystemRegistrar(void(* function)(uint32_t), SystemStage stage);
 
             // Update

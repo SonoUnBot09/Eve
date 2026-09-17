@@ -9,6 +9,7 @@ namespace Eve::Entities
     using AwakeStage = void(*)(uint32_t);
     using StartStage = void(*)(uint32_t);
     using UpdateStage = void(*)(float, uint32_t);
+    using ShutdownStage = void(*)(uint32_t);
 
     class SystemDispatcher
     {
@@ -17,6 +18,7 @@ namespace Eve::Entities
             static void ExecuteAwakeStage();
             static void ExecuteStartStage();
             static void ExecuteUpdateStage(const float deltaTime);
+            static void ExecuteShutdownStage();
 
         private:
 
@@ -25,6 +27,8 @@ namespace Eve::Entities
             static std::vector<StartStage>& GetStartStage();
 
             static std::vector<UpdateStage>& GetUpdateStage();
+
+            static std::vector<ShutdownStage>& GetShutdownStage();
 
             inline static uint32_t systemId;
 

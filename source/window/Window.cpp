@@ -2,6 +2,7 @@
 #include <graphics/GraphicsCore.hpp>
 #include "EveSettings.hpp"
 #include "SDL3/SDL_video.h"
+#include "input/InputManager.hpp"
 #include <eve/window/Window.hpp>
 #include <SDL3/SDL.h>
 #include <ExecutablePath.hpp>
@@ -68,8 +69,6 @@ bool Window::SetIconPNG(std::string path)
 
     if(icon)
     {
-        std::cout << "Icon found" << std::endl;
-        
         bool success = SDL_SetWindowIcon(Eve::Graphics::GraphicsCore::Window.Window, icon);
 
         SDL_DestroySurface(icon);
@@ -80,4 +79,9 @@ bool Window::SetIconPNG(std::string path)
     std::cout << "Icon not found | " << "Path: " << iconPath << std::endl;
 
     return false;
+}
+
+bool Window::IsWindowInFocus()
+{
+    return Input::InputManager::IsWindowInFocus();
 }

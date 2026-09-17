@@ -187,6 +187,8 @@ void Core::Run()
 
 void Core::Shutdown()
 {
+    SystemDispatcher::ExecuteShutdownStage();
+    
     GraphicsCore::Destroy();
 }
 

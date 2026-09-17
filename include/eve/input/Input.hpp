@@ -25,7 +25,5 @@ namespace Eve::Input
             static MouseState GetMouseState();
 
             static void LockMouseAtCenter(bool value);
-
-            static bool IsWindowInFocus();
     };
 }
