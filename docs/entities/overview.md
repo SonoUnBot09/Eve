@@ -18,4 +18,4 @@ Everything in Eve is based on the ECS which stands for *Entity, Component, Syste
 
 - Components registration is the act of assign a bit-index of a 64-bit number to a component. To see more go to `components_registry.md`.
 
-- Stages
+- System are managed can be recorded statically based on stages. To see more go to `systems.md`.
