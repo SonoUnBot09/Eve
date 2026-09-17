@@ -102,3 +102,7 @@ To add components to the existent `Entity` we can again use the `AddComponent(co
         // Clears the memory, does not deallocate it
         entityCommandInfo.Clear();
     }
+
+### **Notes:**
+
+- Creating an Entity with an `Archtype` that does not exist will force the `EntityManager` to create a `Table` with that `Archtype` using a default `Batch` size which is set to 16 KB

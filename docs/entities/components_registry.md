@@ -70,4 +70,5 @@ The `ComponentsRegistry` has a method to automate this process:
 - Is reccomended to register components in the `Awake` stage.
 
 ## **WARNING:**
-Any usage of unregistered components is **UB**.
+- Any usage of unregistered components is **UB**.
+- Every component must be POD otherwise the program will crash.
