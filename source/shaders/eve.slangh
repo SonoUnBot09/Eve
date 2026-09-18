@@ -47,16 +47,16 @@ namespace Internal
 
 public struct EveResources
 {
-    public inline Texture1D<float4> GetReadOnlyTexture1D(uint index) { return Internal::textures1DSampled[index]; }
-    public inline RWTexture1D<float4> GetReadWriteTexture1D(uint index) { return Internal::textures1DStorage[index]; }
-    public inline Texture2D<float4> GetReadOnlyTexture2D(uint index) { return Internal::textures2DSampled[index]; }
-    public inline RWTexture2D<float4> GetReadWriteTexture2D(uint index) { return Internal::textures2DStorage[index]; }
-    public inline Texture3D<float4> GetReadOnlyTexture3D(uint index) { return Internal::textures3DSampled[index]; }
-    public inline RWTexture3D<float4> GetReadWriteTexture3D(uint index) { return Internal::textures3DStorage[index]; }
-    public inline TextureCube<float4> GetReadOnlyTextureCube(uint index) { return Internal::texturesCubeSampled[index]; }
-    public inline RWTexture2DArray<float4> GetReadWriteTextureCube(uint index) { return Internal::texturesCubeStorage[index]; }
-    public inline SamplerState GetSampler(uint index) { return Internal::globalSamplers[index]; }
-    public inline T* GetBuffer<T>(uint index) { return (T *)Internal::globalBufferAddresses[index]; }
+    public inline Texture1D<float4> GetReadOnlyTexture1D(uint32_t index) { return Internal::textures1DSampled[index]; }
+    public inline RWTexture1D<float4> GetReadWriteTexture1D(uint32_t index) { return Internal::textures1DStorage[index]; }
+    public inline Texture2D<float4> GetReadOnlyTexture2D(uint32_t index) { return Internal::textures2DSampled[index]; }
+    public inline RWTexture2D<float4> GetReadWriteTexture2D(uint32_t index) { return Internal::textures2DStorage[index]; }
+    public inline Texture3D<float4> GetReadOnlyTexture3D(uint32_t index) { return Internal::textures3DSampled[index]; }
+    public inline RWTexture3D<float4> GetReadWriteTexture3D(uint32_t index) { return Internal::textures3DStorage[index]; }
+    public inline TextureCube<float4> GetReadOnlyTextureCube(uint32_t index) { return Internal::texturesCubeSampled[index]; }
+    public inline RWTexture2DArray<float4> GetReadWriteTextureCube(uint32_t index) { return Internal::texturesCubeStorage[index]; }
+    public inline SamplerState GetSampler(uint32_t index) { return Internal::globalSamplers[index]; }
+    public inline T *GetBuffer<T>(uint32_t index) { return (T *)Internal::globalBufferAddresses[index]; }
 
     public inline uint32_t GetGlobalInstanceOffsetID() { return Internal::pushConstant.GlobalInstanceOffsetID; }
     public inline uint32_t GetGlobalInstanceID(uint32_t instanceID) { return Internal::pushConstant.GlobalInstanceOffsetID + instanceID; }
@@ -67,8 +67,8 @@ public struct EveResources
     public inline float4x4 GetObjectToWorldMatrix(uint32_t globalInstanceID) { return GetBuffer<Internal::InstanceParams>(Internal::pushConstant.InstanceParamsBufferID)[globalInstanceID].ObjectToWorld; }
     public inline float4x4 GetWorldToObjectMatrix(uint32_t globalInstanceID) { return GetBuffer<Internal::InstanceParams>(Internal::pushConstant.InstanceParamsBufferID)[globalInstanceID].WorldToObject; }
 
-    public inline const T GetDrawInfoParams<T>() { return *(T *)(GetBuffer<uint8_t>(Internal::pushConstant.DrawComputeParamsBufferID) + Internal::pushConstant.DrawComputeParamsBufferOffset); }
-    public inline const T* GetDrawInfoParamsPtr<T>() { return (T *)(GetBuffer<uint8_t>(Internal::pushConstant.DrawComputeParamsBufferID) + Internal::pushConstant.DrawComputeParamsBufferOffset); }
+    public inline const T GetDrawComputeParams<T>() { return *(T *)(GetBuffer<uint8_t>(Internal::pushConstant.DrawComputeParamsBufferID) + Internal::pushConstant.DrawComputeParamsBufferOffset); }
+    public inline const T *GetDrawComputeParamsPtr<T>() { return (T *)(GetBuffer<uint8_t>(Internal::pushConstant.DrawComputeParamsBufferID) + Internal::pushConstant.DrawComputeParamsBufferOffset); }
 
     public inline float4x4 GetViewMatrix() { return GetBuffer<Internal::RenderViewObject>(Internal::pushConstant.RenderViewBufferID)[Internal::pushConstant.RenderViewID].ViewMatrix; }
     public inline float4x4 GetInvViewMatrix() { return GetBuffer<Internal::RenderViewObject>(Internal::pushConstant.RenderViewBufferID)[Internal::pushConstant.RenderViewID].InvViewMatrix; }

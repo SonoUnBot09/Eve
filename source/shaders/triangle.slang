@@ -33,7 +33,7 @@ V2F vertex(uint32_t vertexID : SV_VertexID, uint32_t instanceID : SV_InstanceID)
 
     Properties properties = Eve.GetMaterialProperties<Properties>();
 
-    DrawParams drawParams = Eve.GetDrawInfoParams<DrawParams>();
+    DrawParams drawParams = Eve.GetDrawComputeParams<DrawParams>();
     
     float3 *positions = Eve.GetBuffer<float3>(drawParams.vertexBufferId);
     float3 *normals = Eve.GetBuffer<float3>(drawParams.normalBufferId);
