@@ -8,6 +8,7 @@ namespace Eve
     struct EveEngineCreateInfo
     {
         std::vector<std::string> ShaderSearchPaths;
+        bool VulkanValidationLayers = false;
         bool VSync = true;
         bool WindowFullScreen = false;
         bool WindowResizable = true;

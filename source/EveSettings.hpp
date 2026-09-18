@@ -17,10 +17,10 @@ namespace Eve
             inline static uint32_t InitialWindowWidth;
             inline static uint32_t InitialWindowHeigth;
             inline static std::string InitialWindowTitle;
+            inline static bool useValidationLayers;
 
             inline static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
             inline static constexpr uint32_t vulkanVersion {VK_API_VERSION_1_2};
-            inline static constexpr bool useValidationLayers = true;
             inline static constexpr VkFormat swapchainFormats[] 
             {
                 VK_FORMAT_R8G8B8A8_SRGB,

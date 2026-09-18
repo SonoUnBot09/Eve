@@ -195,6 +195,7 @@ void Core::Shutdown()
 void Core::SetEveSetting(EveEngineCreateInfo& info)
 {
     Eve::Settings::ShaderSearchPaths = info.ShaderSearchPaths;
+    Eve::Settings::useValidationLayers = info.VulkanValidationLayers;
     Eve::Settings::PresentMode = info.VSync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR;
 
     // Window

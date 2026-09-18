@@ -115,3 +115,47 @@ PUBLIC
     GLM_FORCE_DEPTH_ZERO_TO_ONE 
     GLM_FORCE_QUAT_DATA_XYZW
     )
+
+# --- Post Build ----------------------------------------------------------------------------------------------------------------------------
+
+if(WIN32)
+
+    add_custom_command(TARGET Eve POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${slang_binaries_SOURCE_DIR}/bin/slang.dll"
+            "$<TARGET_FILE_DIR:Eve>"
+
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${slang_binaries_SOURCE_DIR}/bin/slang-compiler.dll"
+            "$<TARGET_FILE_DIR:Eve>"
+
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${slang_binaries_SOURCE_DIR}/bin/slang-glslang.dll"
+            "$<TARGET_FILE_DIR:Eve>"
+
+        COMMENT "Copying Slang runtime libraries"
+    )
+
+elseif(UNIX AND NOT APPLE)
+
+    add_custom_command(TARGET Eve POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${slang_binaries_SOURCE_DIR}/lib/libslang.so"
+            "$<TARGET_FILE_DIR:Eve>"
+
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${slang_binaries_SOURCE_DIR}/lib/libslang-compiler.so"
+            "$<TARGET_FILE_DIR:Eve>"
+
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${slang_binaries_SOURCE_DIR}/lib/libslang-glslang.so"
+            "$<TARGET_FILE_DIR:Eve>"
+
+        COMMENT "Copying Slang runtime libraries"
+    )
+
+    set_target_properties(Eve PROPERTIES
+        BUILD_RPATH "$ORIGIN"
+    )
+
+endif()
