@@ -7,6 +7,7 @@ project(Eve LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_BUILD_RPATH "$ORIGIN")
 
 # --- Vulkan Dependency ---
 
@@ -135,17 +136,17 @@ if(WIN32)
     add_custom_command(TARGET Eve POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${slang_binaries_SOURCE_DIR}/bin/slang.dll"
-            "$<TARGET_FILE_DIR:Eve>"
+            "${CMAKE_BINARY_DIR}"
 
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${slang_binaries_SOURCE_DIR}/bin/slang-compiler.dll"
-            "$<TARGET_FILE_DIR:Eve>"
+            "${CMAKE_BINARY_DIR}"
 
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${slang_binaries_SOURCE_DIR}/bin/slang-glslang.dll"
-            "$<TARGET_FILE_DIR:Eve>"
+            "${CMAKE_BINARY_DIR}"
 
-        COMMENT "Copying Slang runtime libraries"
+        COMMENT "Copying Slang runtime libraries to main build directory"
     )
 
 elseif(UNIX AND NOT APPLE)
@@ -153,21 +154,17 @@ elseif(UNIX AND NOT APPLE)
     add_custom_command(TARGET Eve POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${slang_binaries_SOURCE_DIR}/lib/libslang.so"
-            "$<TARGET_FILE_DIR:Eve>"
+            "${CMAKE_BINARY_DIR}"
 
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${slang_binaries_SOURCE_DIR}/lib/libslang-compiler.so"
-            "$<TARGET_FILE_DIR:Eve>"
+            "${CMAKE_BINARY_DIR}"
 
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${slang_binaries_SOURCE_DIR}/lib/libslang-glslang.so"
-            "$<TARGET_FILE_DIR:Eve>"
+            "${CMAKE_BINARY_DIR}"
 
-        COMMENT "Copying Slang runtime libraries"
-    )
-
-    set_target_properties(Eve PROPERTIES
-        BUILD_RPATH "$ORIGIN"
+        COMMENT "Copying Slang runtime libraries to main build directory"
     )
 
 endif()
