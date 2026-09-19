@@ -91,7 +91,7 @@ add_library(Eve
 
 target_compile_features(Eve PRIVATE cxx_std_20)
 
-target_link_libraries(Eve 
+target_link_libraries(Eve
 PUBLIC
     glm::glm
 PRIVATE
@@ -104,7 +104,8 @@ PRIVATE
 
 target_include_directories(Eve
 PUBLIC 
-    include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 PRIVATE
     third-parties
     source

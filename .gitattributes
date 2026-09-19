@@ -6,3 +6,4 @@
 /CMakePresets.json export-ignore
 /.gitignore export-ignore
 /.gitattributes export-ignore
+/.clangd export-ignore
