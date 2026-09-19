@@ -98,8 +98,6 @@ void Core::Run()
     EntityManager::ExecuteAllCommandPools();
 
     // --- Loop ---
-    uint32_t fps = 0;
-    float timer = 0;
     uint64_t lastTick = SDL_GetTicksNS();
     uint64_t currentTick = 0;
     while(isAppRunning)
@@ -158,16 +156,6 @@ void Core::Run()
         
         UpdateKeys();
         UpdateMouse();
-        
-        if(timer > 1)
-        {
-            print("FPS: " + std::to_string(fps));
-            timer = 0;
-            fps = 0;
-        }
-
-        timer += deltaTime;
-        fps++;
 
         // ImGUI new frame
         UI::StartRecording();
