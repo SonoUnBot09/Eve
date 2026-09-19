@@ -45,7 +45,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Eve)
 
-add_executable(Eve_Testing
+add_executable(YourProject
     main.cpp
     S_Entity.cpp
     S_Test.cpp
