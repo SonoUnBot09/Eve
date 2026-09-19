@@ -4,7 +4,6 @@
 #include "PipelineBuilder.hpp"
 #include <graphics/ErrorManager.hpp>
 
-#include <eve/Utils.hpp>
 #include <eve/debug/Debug.hpp>
 
 using namespace Eve::Graphics;

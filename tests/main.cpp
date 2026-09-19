@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
     Eve::EveEngineCreateInfo info
     {
         .ShaderSearchPaths{"shaders"},
-        .VulkanValidationLayers = true,
+        .VulkanValidationLayers = false,
         .VSync = false,
         .WindowWidth = 740,
         .WindowHeight = 512,

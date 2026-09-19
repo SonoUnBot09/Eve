@@ -1,6 +1,4 @@
 build
 .cache
-subprojects/packagecache
-subprojects/SDL3-3.4.0
-subprojects/glm-1.0.1
-subprojects/.wraplock
+.vscode
+assets

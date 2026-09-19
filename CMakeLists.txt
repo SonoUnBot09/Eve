@@ -4,6 +4,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(Eve LANGUAGES C CXX)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # --- Vulkan Dependency ---
 
 find_package(
@@ -79,8 +83,7 @@ file(GLOB_RECURSE THIRD_PARTIES
     "${CMAKE_CURRENT_SOURCE_DIR}/third-parties/*.cpp"
 )
 
-add_executable(Eve
-    main.cpp
+add_library(Eve
     ${SOURCES}
     ${THIRD_PARTIES}
     third-parties/where_am_i/whereami.c
@@ -114,7 +117,15 @@ PUBLIC
     GLM_FORCE_LEFT_HANDED 
     GLM_FORCE_DEPTH_ZERO_TO_ONE 
     GLM_FORCE_QUAT_DATA_XYZW
-    )
+)
+
+# --- TEST EXECUTABLE ---
+
+option(ENABLE_EVE_TEST "Enable test compilation" OFF)
+
+if(ENABLE_EVE_TEST)
+    add_subdirectory(tests)
+endif()
 
 # --- Post Build ----------------------------------------------------------------------------------------------------------------------------
 

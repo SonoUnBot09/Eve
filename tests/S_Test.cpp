@@ -5,7 +5,7 @@
 #include "eve/graphics/RenderViewHandle.hpp"
 #include "eve/graphics/ShaderHandle.hpp"
 #include "eve/graphics/Texture.hpp"
-#include <eve/components/Camera.hpp>
+#include "Camera.hpp"
 #include <eve/entities/SystemRegistrar.hpp>
 #include <eve/debug/Debug.hpp>
 #include <eve/entities/EntityManager.hpp>

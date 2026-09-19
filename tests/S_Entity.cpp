@@ -7,11 +7,10 @@
 #include <glm/gtc/quaternion.hpp>
 #include <eve/entities/SystemRegistrar.hpp>
 #include <eve/components/Transform.hpp>
-#include <eve/components/Camera.hpp>
+#include "Camera.hpp"
 #include <eve/entities/EntityManager.hpp>
 #include <eve/input/Input.hpp>
 #include <glm/glm.hpp>
-#include <imgui/imgui.h>
 
 using namespace Eve::Entities;
 using namespace Eve::Input;
@@ -150,6 +149,7 @@ namespace
 
         camera.renderView.SetTRS(transform);
     }
+
 }
 
 static SystemRegistrar start(Start, SystemStage::Start);
