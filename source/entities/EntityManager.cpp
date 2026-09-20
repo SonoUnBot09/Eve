@@ -22,6 +22,7 @@ Entity EntityManager::RequestNewEntity()
     if(!freeEntitySlots.empty())
     {
         uint32_t id = freeEntitySlots.back();
+        freeEntitySlots.pop_back();
         entities[id].GeneratationId++;
 
         entity = entities[id];
@@ -50,14 +51,12 @@ void EntityManager::UpdateEntityRecord(uint32_t entityId, uint32_t batchIndex, u
 void EntityManager::DestroyEntity(Entity entity)
 {
     activeEntities[entity.Id] = false;
+    entities[entity.Id].GeneratationId++;
     freeEntitySlots.push_back(entity.Id);
 
     EntityRecord& record = entityRecords[entity.Id];
-    
     Table& table = GetTable(record.Archtype);
-
     SlotInfo slotInfo {record.BatchIndex, record.RowIndex};
-
     table.FreeSlot(slotInfo);
 }
 
@@ -257,7 +256,6 @@ void EntityManager::ExecuteAllCommandPools()
             componentTypesToCopy.clear();
             sources.clear();
         }
-
     }
 
     for(auto& table : tables)

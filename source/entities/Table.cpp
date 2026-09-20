@@ -43,12 +43,11 @@ void Table::DestroyLastBatch()
 
 void Table::FreeSlot(SlotInfo slotInfo)
 {
-    entitiesCount--;
-
-    freeSlots.push_back(slotInfo);
-
     Batch& batch = batches[slotInfo.BatchIndex];
+    if(!batch.ActiveEntities[slotInfo.RowIndex]) { return; }
 
+    entitiesCount--;
+    freeSlots.push_back(slotInfo);
     batch.ActiveEntities[slotInfo.RowIndex] = false;
     batch.ActiveEntitiesCount--;
 }
@@ -159,7 +158,7 @@ void Table::CompactBatches()
 {
     uint32_t batchIndexOffset = 0;
     uint32_t rowIndexOffset = 0;
-    
+
     bool isAlreadyCompacted = false;
     for (int32_t batchIndex = static_cast<int32_t>(batchesCount) - 1; batchIndex >= 0; batchIndex--)
     {
