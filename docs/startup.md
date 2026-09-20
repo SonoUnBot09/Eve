@@ -38,3 +38,9 @@ If you do not respect the order the program will crash. Any interaction with the
     }
 
     Eve::EveEngine::Shutdown();
+
+## **Important:**
+
+- Once you compile an executable with Eve is very important you provide Slang's dll to the executable. It needs `slang.dll`, `slang-compiler.dll` and `slang-glslang.dll`. Usually you can find the in the inside `_deps\slang_binaries-src\bin`.
+
+- Every path you give to Eve is based on the executable directory.
