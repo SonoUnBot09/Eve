@@ -2,14 +2,15 @@
 
 #include <cstdint>
 #include <vector>
+#include <functional>
 
 namespace Eve::Entities
 {
 
-    using AwakeStage = void(*)(uint32_t);
-    using StartStage = void(*)(uint32_t);
-    using UpdateStage = void(*)(float, uint32_t);
-    using ShutdownStage = void(*)(uint32_t);
+    using AwakeStage = std::function<void(uint32_t)>;
+    using StartStage = std::function<void(uint32_t)>;
+    using UpdateStage = std::function<void(float, uint32_t)>;
+    using ShutdownStage = std::function<void(uint32_t)>;
 
     class SystemDispatcher
     {

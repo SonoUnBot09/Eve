@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 namespace Eve::Entities
 {
@@ -17,9 +18,9 @@ namespace Eve::Entities
         public:
 
             // Awake, Start, Shutdown
-            SystemRegistrar(void(* function)(uint32_t), SystemStage stage);
+            SystemRegistrar(std::function<void(uint32_t)> function, SystemStage stage);
 
             // Update
-            SystemRegistrar(void(* function)(float, uint32_t), SystemStage stage);
+            SystemRegistrar(std::function<void(float, uint32_t)> function, SystemStage stage);
     };
 }

@@ -4,7 +4,7 @@
 using namespace Eve::Entities;
 
 // Awake, Start, Shutdown
-SystemRegistrar::SystemRegistrar(void(* function)(uint32_t), SystemStage stage)
+SystemRegistrar::SystemRegistrar(std::function<void(uint32_t)> function, SystemStage stage)
 {
     switch (stage)
     {
@@ -22,7 +22,7 @@ SystemRegistrar::SystemRegistrar(void(* function)(uint32_t), SystemStage stage)
 }
 
 // Update
-SystemRegistrar::SystemRegistrar(void(* function)(float, uint32_t), SystemStage stage)
+SystemRegistrar::SystemRegistrar(std::function<void(float, uint32_t)> function, SystemStage stage)
 {
     switch (stage)
     {
