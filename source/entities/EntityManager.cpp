@@ -50,6 +50,7 @@ void EntityManager::UpdateEntityRecord(uint32_t entityId, uint32_t batchIndex, u
 void EntityManager::DestroyEntity(Entity entity)
 {
     activeEntities[entity.Id] = false;
+    freeEntitySlots.push_back(entity.Id);
 
     EntityRecord& record = entityRecords[entity.Id];
     

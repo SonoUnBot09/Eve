@@ -215,6 +215,8 @@ void Table::CompactBatches()
 
         batch.PeakBatchSize = batch.ActiveEntitiesCount;
     }
+
+    freeSlots.clear();
 }
 
 SlotInfo Table::FindFreeSlot(uint32_t batchIndex, uint32_t rowIndex)

@@ -37,7 +37,7 @@ struct MemoryLayout
                 uint32_t index = std::countr_zero(componentType.to_ullong());
                 componentMemoryInfos[index] = memoryInfo;
 
-                offset =+ componentSize * maxEntitiesCount;
+                offset += componentSize * maxEntitiesCount;
             }
 
             this->maxEntitiesCount = maxEntitiesCount;
