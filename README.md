@@ -19,7 +19,7 @@ Eve is a **extandable**, **open-source**, **cross-platform** (Windows, Linux), *
 First of all to develop in Eve is required the Vulkan SDK 1.2+. You can install it [here](https://vulkan.lunarg.com/sdk/home)
 
 
-To use Eve you need to clone this repository in your PC. You can directory copy the this repository or get the source code from releases which offers smaller download sizes.
+To use Eve you need to clone this repository in your PC. You can directly copy the this repository or get the source code from releases which offers smaller download sizes.
 
 
 **Example (CMake Fetch Content):**
@@ -139,6 +139,10 @@ Graphics::SetPresentTexture2D(colorTexture);
 <img width="1895" height="979" alt="Screenshot 2026-09-07 165640" src="https://github.com/user-attachments/assets/7ae49cdc-9323-4c1f-a4af-7d3d60202bfe" />
 
 <img width="1611" height="875" alt="image" src="https://github.com/user-attachments/assets/4d0a2d6a-4b91-4696-9fee-db032677c850" />
+
+<img width="1711" height="923" alt="Screenshot 2026-09-20 185311" src="https://github.com/user-attachments/assets/a30b116c-3d3a-431a-a052-c0a94933cd16" />
+
+<img width="1919" height="1000" alt="Screenshot 2026-09-20 195806" src="https://github.com/user-attachments/assets/e063695e-4bfc-4213-8a6b-141a50470e3d" />
 
 ## 📒 **Resources Used:**
 - [Basic Vulkan Tutorial YT](https://www.youtube.com/watch?v=DC9FBRQKNck&t=268s)
