@@ -55,6 +55,11 @@ void UI::Space()
     ImGui::NewLine();
 }
 
+void UI::Text(std::string value)
+{
+    ImGui::Text("%s", value.c_str());
+}
+
 #pragma endregion
 
 #pragma region Float/Int

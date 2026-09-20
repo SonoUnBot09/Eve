@@ -21,6 +21,7 @@ namespace Eve::Graphics
             static void Separator();
             static void SeparatorText(std::string name);
             static void Space();
+            static void Text(std::string value);
 
             static void Float(std::string name, float& value, float step = 1.0f);
             static void Float(std::string name, float& value, float min, float max);
