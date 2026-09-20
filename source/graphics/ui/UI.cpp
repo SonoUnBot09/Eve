@@ -272,4 +272,6 @@ void UI::EndRecording()
         ImGui::End();
         isAWindowAlreadyOpen = false;
     }
+
+    ImGui::EndFrame();
 }
