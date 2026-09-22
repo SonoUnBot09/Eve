@@ -1,22 +1,26 @@
 # **Eve Engine**
 
+Eve is an **open-source**, **cross-platform** (Windows, Linux), **simple** and **optimized graphics framework** built to simplify **Vulkan** usage. Eve lets easily draw objects on the screen without losing performance and customization. Eve has a demo in the releases with a precompiled executable (Windows). You can use Eve by cloning this repository, more info on how to use Eve below.
+
+
 <img width="693" height="445" alt="image" src="https://github.com/user-attachments/assets/27fe442a-1679-41a0-8577-3336eb283cf5" />
 
-## ✨ **Quick Overview:**
 
-Eve is a **extandable**, **open-source**, **cross-platform** (Windows, Linux), **simple** and **optimized graphics framework** written to simplify and learn **Vulkan**. Eve lets easily draw objects on the screen without losing performance and customization.
+## **Eve Demo:**
 
-### 🕹️ **Requirements:**
+Eve offers a **demo**, it is in the releases already precompiled for Windows. Linux users need to compile the code to get an executable. If you just want to try the executable on Windows you can directly install it, to compile the code (action needed for Linux users) all the below requirements must be met.
+
+Eve's demo source code and executable are in the releases, check the source code if you want to learn more about on how to use **Eve**. More info on how to use them in the releases.
+
+## **Setup:**
+
+### Requirements:
 
 - OS: Windows, Linux
 - Compiler and support for C++20
 - CMake (3.28+)
 - GPU drivers supporting Vulkan 1.2+
-- Vulkan SDK (1.2+)
-
-### 🪐 **Quick Start:**
-
-First of all to develop in Eve is required the Vulkan SDK 1.2+. You can install it [here](https://vulkan.lunarg.com/sdk/home)
+- Vulkan SDK (1.2+) (You can download it [here](https://vulkan.lunarg.com/sdk/home))
 
 
 To use Eve you need to clone this repository in your PC. You can directly copy the this repository or get the source code from releases which offers smaller download sizes.
@@ -56,9 +60,9 @@ target_link_libraries(YourProject PRIVATE Eve)
 ```
 To start using Eve check the docs [here](https://github.com/SonoUnBot09/Eve/tree/main/docs). To directly see how you can initialize Eve go [here](https://github.com/SonoUnBot09/Eve/blob/main/docs/startup.md).
 
-## 🚀 **Features:**
+## **Features:**
 
-- **Render Graph:** Automatically inserts **barriers** where necessary; it employs **memory aliasing** to limit memory usage and attempts to reuse resources from previous frames rather than constantly creating new ones
+- **Render Graph:** Automatically inserts **barriers** where necessary; it employs **memory aliasing** and **resource pooling** to enhance performance.
 - **Custom ECS:** A Unity DOTS-style **ECS** approach that utilizes **archetypes** and minimizes CPU cache misses to enhance performance.
 - **Material System:** Allows properties to be set simply by **using their names** as defined in the shader
 - **Input System:** A simple and efficient Input System that lets intercept keyboard and mouse inputs.
@@ -66,7 +70,7 @@ To start using Eve check the docs [here](https://github.com/SonoUnBot09/Eve/tree
 - **Compute Shaders:** Compute support is included to enhance general performance and parallelize task on the GPU.
 - **Mesh System:** A simple and fully customizable **Mesh System** which lets handle **Meshes** and their buffers.
 
-## 💻 **Code Snippets:**
+## **Code Snippets:**
 
 ```cpp
 // Register the transform component
@@ -134,7 +138,7 @@ pass.Draw(gfxMesh.IndicesCount, transforms.data(), material, camera.renderView, 
 Graphics::SetPresentTexture2D(colorTexture);
 ```
 
-## 📸 **Screenshots:**
+## **Screenshots:**
 
 <img width="1895" height="979" alt="Screenshot 2026-09-07 165640" src="https://github.com/user-attachments/assets/7ae49cdc-9323-4c1f-a4af-7d3d60202bfe" />
 
@@ -144,7 +148,7 @@ Graphics::SetPresentTexture2D(colorTexture);
 
 <img width="1919" height="1000" alt="Screenshot 2026-09-20 195806" src="https://github.com/user-attachments/assets/e063695e-4bfc-4213-8a6b-141a50470e3d" />
 
-## 📒 **Resources Used:**
+## **Resources Used:**
 - [Basic Vulkan Tutorial YT](https://www.youtube.com/watch?v=DC9FBRQKNck&t=268s)
 - [Render Graph high level introduction](https://www.youtube.com/watch?v=uQQzDRFKm_4)
 - [Render Graph Frostbite](https://www.youtube.com/watch?v=1Sb3s7Xie4M&t=2886s)
