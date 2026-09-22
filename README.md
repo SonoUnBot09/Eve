@@ -8,7 +8,7 @@ Eve is an **open-source**, **cross-platform** (Windows, Linux), **simple** and *
 
 ## **Eve Demo:**
 
-**Eve** offers a **demo**, it is in the releases already precompiled for Windows. Linux users need to compile the code to get an executable. If you just want to try the executable on Windows you can directly install it, to compile the code (action needed for Linux users) all the below requirements must be met.
+**Eve** offers a **demo**, it is in the releases already precompiled for Windows. Linux users need to compile the code to get an executable. If you just want to try the executable on Windows you can directly install it, to compile the code (action needed for Linux users) all the below requirements must be met. You can find the releases and the Eve demo [here](https://github.com/SonoUnBot09/Eve/releases)
 
 Eve's demo source code and executable are in the releases, check the source code if you want to learn more about on how to use **Eve**. More info on how to use them in the releases.
 
