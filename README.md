@@ -8,7 +8,7 @@ Eve is an **open-source**, **cross-platform** (Windows, Linux), **simple** and *
 
 ## **Eve Demo:**
 
-Eve offers a **demo**, it is in the releases already precompiled for Windows. Linux users need to compile the code to get an executable. If you just want to try the executable on Windows you can directly install it, to compile the code (action needed for Linux users) all the below requirements must be met.
+**Eve** offers a **demo**, it is in the releases already precompiled for Windows. Linux users need to compile the code to get an executable. If you just want to try the executable on Windows you can directly install it, to compile the code (action needed for Linux users) all the below requirements must be met.
 
 Eve's demo source code and executable are in the releases, check the source code if you want to learn more about on how to use **Eve**. More info on how to use them in the releases.
 
@@ -39,7 +39,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-
 include(FetchContent)
 
 FetchContent_Declare(
@@ -52,13 +51,11 @@ FetchContent_MakeAvailable(Eve)
 
 add_executable(YourProject
     main.cpp
-    S_Entity.cpp
-    S_Test.cpp
 )
 
 target_link_libraries(YourProject PRIVATE Eve)
 ```
-To start using Eve check the docs [here](https://github.com/SonoUnBot09/Eve/tree/main/docs). To directly see how you can initialize Eve go [here](https://github.com/SonoUnBot09/Eve/blob/main/docs/startup.md).
+To see how you can use Eve go [here](https://github.com/SonoUnBot09/Eve/tree/main/docs). To directly see how you can initialize Eve go [here](https://github.com/SonoUnBot09/Eve/blob/main/docs/startup.md).
 
 ## **Features:**
 
@@ -71,6 +68,8 @@ To start using Eve check the docs [here](https://github.com/SonoUnBot09/Eve/tree
 - **Mesh System:** A simple and fully customizable **Mesh System** which lets handle **Meshes** and their buffers.
 
 ## **Code Snippets:**
+
+Some **Eve methods** to understand a little bit how to use the engine. If you want to go deeper and understand better how to use **Eve** go [here](https://github.com/SonoUnBot09/Eve/tree/main/docs).
 
 ```cpp
 // Register the transform component
